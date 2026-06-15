@@ -11,7 +11,7 @@
   
   <groupId>br.com.tasknoteapp</groupId>
   <artifactId>server</artifactId>
-  <version>31</version>
+  <version>32</version>
   <name>tasknote-api</name>
   <description>Java backend REST API to serve TaskNote frontend client</description>
   
