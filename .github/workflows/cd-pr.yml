@@ -45,8 +45,8 @@ jobs:
       - name: Determine deployment values
         id: deploy-vars
         run: |
-          backend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/api:candidate"
-          frontend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/app:candidate"
+          backend_image="rmcampos/tasknote-api:candidate"
+          frontend_image="rmcampos/tasknote-app:candidate"
 
           echo "backend_image=$backend_image" >> "$GITHUB_OUTPUT"
           echo "frontend_image=$frontend_image" >> "$GITHUB_OUTPUT"

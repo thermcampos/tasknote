@@ -11,28 +11,28 @@ on:
       - 'server/**/*.xml'
       - 'server/pom.xml'
       - 'server/**/*.yml'
-      - '.github/workflows/server-ci.yml'
+      - '.github/workflows/ci-pr-backend.yml'
 
 jobs:
   run-checks:
     name: Checks
-    runs-on: ubuntu-latest
+    runs-on: graalvm-25
     permissions:
       contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
         with:
-          distribution: 'temurin'
-          java-version: '25'
-          cache: 'maven'
-          cache-dependency-path: 'server/pom.xml'
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/server/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Run Check Style
         working-directory: ./server
@@ -48,7 +48,7 @@ jobs:
 
   build-and-push:
     name: Build & Push
-    runs-on: ubuntu-latest
+    runs-on: graalvm-25
     needs: ["run-checks"]
     permissions:
       contents: read
@@ -57,74 +57,43 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set lowercase repo name
-        id: repo
-        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
         with:
-          distribution: 'temurin'
-          java-version: '25'
-          cache: 'maven'
-          cache-dependency-path: 'server/pom.xml'
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/server/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Cache Buildpack layers
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/reproducible-builds
-          key: ${{ runner.os }}-buildpack-${{ hashFiles('server/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-buildpack-
-  
       - name: Build Docker image with Spring Boot
         working-directory: ./server
         run: |
           ./mvnw -Pnative -DskipTests spring-boot:build-image \
-            -Dspring-boot.build-image.imageName=ghcr.io/${{ steps.repo.outputs.name }}/api:latest \
+            -Dspring-boot.build-image.imageName=rmcampos/tasknote-api:latest \
             -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:latest
 
       - name: Tag and push Docker image
         run: |
-          docker tag ghcr.io/${{ steps.repo.outputs.name }}/api:latest ghcr.io/${{ steps.repo.outputs.name }}/api:candidate
-          docker tag ghcr.io/${{ steps.repo.outputs.name }}/api:latest ghcr.io/${{ steps.repo.outputs.name }}/api:pr-${{ github.event.pull_request.number }}
-          docker push ghcr.io/${{ steps.repo.outputs.name }}/api:candidate
-          docker push ghcr.io/${{ steps.repo.outputs.name }}/api:pr-${{ github.event.pull_request.number }}
+          docker tag docker.io/rmcampos/tasknote-api:latest docker.io/rmcampos/tasknote-api:candidate
+          docker tag docker.io/rmcampos/tasknote-api:latest docker.io/rmcampos/tasknote-api:pr-${{ github.event.pull_request.number }}
+          docker push docker.io/rmcampos/tasknote-api:candidate
+          docker push docker.io/rmcampos/tasknote-api:pr-${{ github.event.pull_request.number }}
 
-      - name: Create GitHub deployment for staging
+      - name: Create Gitea deployment for staging
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const ref = context.payload.pull_request.head.sha;
-            const env = 'staging';
-            const resp = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref,
-              required_contexts: [],
-              environment: env,
-              description: `PR #${context.payload.pull_request.number} preview deployment`,
-              transient_environment: true,
-              auto_merge: false
-            });
-            // create a deployment status pointing to the staging URL
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: resp.data.id,
-              state: 'success',
-              environment_url: 'https://tasknote-stg.darkroasted.vps-kinghost.net'
-            });
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.REGISTRY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://lightroasted.vps-kinghost.net/api/v1/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}" \
+            -d "{\"context\": \"staging/deploy\", \"state\": \"success\", \"description\": \"PR #${{ github.event.pull_request.number }} staging ready\", \"target_url\": \"https://tasknote-stg.darkroasted.vps-kinghost.net\"}"
