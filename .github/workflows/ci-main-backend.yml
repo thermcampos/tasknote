@@ -76,10 +76,11 @@ jobs:
 
       - name: Promote Docker image
         run: |
-          docker buildx imagetools create \
-            --tag rmcampos/tasknote-api:latest \
-            --tag rmcampos/tasknote-api:${{ steps.version.outputs.version }} \
-            rmcampos/tasknote-api:${{ steps.find_pr.outputs.tag }}
+          docker pull docker.io/rmcampos/tasknote-api:${{ steps.find_pr.outputs.tag }}
+          docker tag docker.io/rmcampos/tasknote-api:${{ steps.find_pr.outputs.tag }} docker.io/rmcampos/tasknote-api:latest
+          docker tag docker.io/rmcampos/tasknote-api:${{ steps.find_pr.outputs.tag }} docker.io/rmcampos/tasknote-api:${{ steps.version.outputs.version }}
+          docker push docker.io/rmcampos/tasknote-api:latest
+          docker push docker.io/rmcampos/tasknote-api:${{ steps.version.outputs.version }}
 
       - name: Create and push Git tag
         run: |
