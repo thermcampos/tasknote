@@ -65,7 +65,7 @@ jobs:
           PR_NUMBER=$(curl -s \
             -H "Authorization: token ${{ secrets.REGISTRY_TOKEN }}" \
             "https://lightroasted.vps-kinghost.net/api/v1/repos/${{ github.repository }}/commits/${{ github.sha }}/pull" \
-            | jq -r 'if type == "object" then .number | tostring else empty end')
+            | jq -r 'if type == "object" and .number != null then .number | tostring else empty end')
           if [ -z "$PR_NUMBER" ]; then
             echo "No merged PR found for this commit. Falling back to 'candidate' tag."
             PR_NUMBER="candidate"
