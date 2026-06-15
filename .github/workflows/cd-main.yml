@@ -20,14 +20,14 @@ on:
 jobs:
   terraform-plan:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: easynode-debian
     outputs:
       no_changes: ${{ steps.check-changes.outputs.no_changes }}
     permissions:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -69,10 +69,10 @@ jobs:
           fi
 
           if [ -z "$backend_image" ]; then
-            backend_image="ghcr.io/rmcampos/tasknote/api:$latest_backend_tag"
+            backend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/api:$latest_backend_tag"
           fi
           if [ -z "$frontend_image" ]; then
-            frontend_image="ghcr.io/rmcampos/tasknote/app:$latest_frontend_tag"
+            frontend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/app:$latest_frontend_tag"
           fi
 
           echo "Resolved backend_image=$backend_image"
@@ -124,13 +124,13 @@ jobs:
           fi
 
       - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: tfplan
           path: terraform/tfplan
 
   terraform-apply:
-    runs-on: ubuntu-latest
+    runs-on: easynode-debian
     needs: terraform-plan
     if: >
       (github.event_name == 'push' || github.event_name == 'workflow_run' || inputs.apply == 'true')
@@ -142,13 +142,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Download plan artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: tfplan
           path: terraform

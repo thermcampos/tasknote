@@ -9,8 +9,8 @@ on:
 jobs:
   terraform-plan-stg:
     name: Plan changs to staging
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: easynode-debian
     outputs:
       no_changes: ${{ steps.check-changes.outputs.no_changes }}
     permissions:
@@ -45,8 +45,8 @@ jobs:
       - name: Determine deployment values
         id: deploy-vars
         run: |
-          backend_image="ghcr.io/rmcampos/tasknote/api:candidate"
-          frontend_image="ghcr.io/rmcampos/tasknote/app:candidate"
+          backend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/api:candidate"
+          frontend_image="lightroasted.vps-kinghost.net/rmcampos/tasknote/app:candidate"
 
           echo "backend_image=$backend_image" >> "$GITHUB_OUTPUT"
           echo "frontend_image=$frontend_image" >> "$GITHUB_OUTPUT"
@@ -93,13 +93,13 @@ jobs:
           fi
 
       - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: tfplan
           path: terraform-stg/tfplan
 
   terraform-apply:
-    runs-on: ubuntu-latest
+    runs-on: easynode-debian
     needs: terraform-plan-stg
     if: needs.terraform-plan-stg.outputs.no_changes == 'false'
     environment:
@@ -109,13 +109,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Download plan artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: tfplan
           path: terraform-stg
