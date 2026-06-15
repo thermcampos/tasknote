@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## api-v29 && app
+## api-v32 && app-v2026.06.15.97 - 2026-06-15
 
 ### Changed
-- Bumped Spring Boot to 4.1.0
+- Bumped Spring Boot to 4.0.7
 - CI/CD workflow files updated to run on Gitea.
 - Container registry switched to Docker Hub.
+
+### Docker images
+- [rmcampos/tasknote-api:32](https://hub.docker.com/layers/rmcampos/tasknote-api/32/images/sha256-4b719a08dbed4a9d4a6eece0059573954ee5193ab8247787fb0e30c037f6b1c6)
+- [rmcampos/tasknote-app:app-v2026.06.15.97](https://hub.docker.com/layers/rmcampos/tasknote-app/app-v2026.06.15.97/images/sha256-945a215a7105e34f97ab8e43094092e157156c0b557364260c019c4036cf845d)
 
 ## [app-v2026.06.08.22](https://github.com/RMCampos/tasknote/releases/tag/app-v2026.06.08.22) - 2026-06-08
 
