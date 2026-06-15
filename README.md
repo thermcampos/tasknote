@@ -1,3 +1,7 @@
+# Archived repo
+
+The new content can be found in Gitea: https://lightroasted.vps-kinghost.net/rmcampos/tasknote
+
 # TaskNote
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
