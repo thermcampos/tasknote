@@ -1,10 +1,9 @@
 # TaskNote
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![React App CI](https://github.com/RMCampos/tasknote/actions/workflows/client-ci.yml/badge.svg)](https://github.com/RMCampos/tasknote/actions/workflows/client-ci.yml)
-[![Server API CI](https://github.com/RMCampos/tasknote/actions/workflows/server-ci.yml/badge.svg)](https://github.com/RMCampos/tasknote/actions/workflows/server-ci.yml)
-[![Build and Push App Docker Image](https://github.com/RMCampos/tasknote/actions/workflows/main-client.yml/badge.svg)](https://github.com/RMCampos/tasknote/actions/workflows/main-client.yml)
-[![Build and Push API Docker Image](https://github.com/RMCampos/tasknote/actions/workflows/main-server.yml/badge.svg)](https://github.com/RMCampos/tasknote/actions/workflows/main-server.yml)
+[![Frontend CI](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-main-frontend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-main-frontend.yml)
+[![Backend CI](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-main-backend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-main-backend.yml)
+[![Deploy](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/cd-main.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=cd-main.yml)
 
 ## 📋 Table of Contents
 
@@ -102,113 +101,50 @@ tasknote/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Docker & Docker Compose** (recommended for easy setup)
-- **Node.js 20+** and **npm** (for frontend development)
-- **Java 25+** and **Maven 3.6+** (for backend development)
-- **PostgreSQL 15+** (if running without Docker)
+- [Docker](https://docs.docker.com/engine/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Task](https://taskfile.dev) (`brew install go-task` / `npm install -g @go-task/cli`)
+- [Doppler CLI](https://docs.doppler.com/docs/install-cli) (`brew install dopplerhq/cli/doppler`)
 
-### Quick Start with Docker
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/rmcampos/tasknote.git
-   cd tasknote
-   ```
+### Setup
 
-2. **Start the database**
-   ```bash
-   bash tools/run-docker-db.sh
-   ```
-
-3. **Start the backend server**
-   ```bash
-   bash tools/run-docker-server.sh
-   ```
-
-4. **Start the frontend application**
-   ```bash
-   bash tools/run-docker-client.sh
-   ```
-
-5. **Access the application**
-   - Frontend: http://localhost:5000
-
-## 🛠️ Development
-
-### Frontend Development
 ```bash
-cd client
-npm install           # Install dependencies
-npm start            # Start development server (port 5000)
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues
+# 1. Authenticate with Doppler and link the project
+doppler login
+doppler setup   # uses doppler.yaml to link to the shell-whats project
 ```
 
-### Backend Development
+### Running locally
+
 ```bash
-cd server
-./mvnw spring-boot:run                    # Start development server
-./mvnw clean compile                      # Compile sources
-./mvnw spring-boot:build-image           # Build Docker image
-./mvnw clean verify -Pnative             # Build GraalVM native image
+task dev-run
 ```
 
-### Quality Checks
-Run quality checks before submitting changes:
+This exports the public vars from the `dev_tokens` Doppler config and starts the server in watch mode with secrets injected from `dev_secrets`. No `.env` file needed.
+
+## Building the Docker images
+
 ```bash
-bash tools/check-frontend.sh    # Frontend linting, testing, coverage
-bash tools/check-backend.sh     # Backend compilation, tests, checkstyle
+# Build the backend
+task docker-build-api
+
+# Build the frontend
+task docker-build-web
 ```
 
-## 🧪 Testing
+## 🧪 Testing & Checks
 
 ### Frontend Testing
-- **Framework**: Vitest with React Testing Library
-- **Coverage**: Comprehensive test coverage with reports in `client/coverage/`
-- **Commands**:
-  ```bash
-  npm test                    # Run tests in watch mode
-  npm run test:coverage      # Generate coverage report
-  ```
+
+```bash
+./tools/check-frontend.sh
+```
 
 ### Backend Testing
-- **Unit Tests**: Fast, isolated tests with mocked dependencies
-- **Integration Tests**: Full application context with test database
-- **Coverage**: JaCoCo reporting with 75% minimum requirement
-- **Commands**:
-  ```bash
-  ./mvnw test                           # Unit tests only
-  ./mvnw clean verify -Ptests          # All tests with coverage
-  ```
 
-## 📦 Deployment
-
-### Production Deployment
-The application supports multiple deployment strategies:
-
-1. **Docker Containers** (recommended)
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
-
-2. **Traditional JAR Deployment**
-   ```bash
-   cd server && ./mvnw clean package
-   java -jar target/tasknote-api.jar
-   ```
-
-3. **GraalVM Native Image** (for optimal performance)
-   ```bash
-   cd server && ./mvnw clean verify -Pnative
-   ./target/tasknote-api
-   ```
-
-### Environment Configuration
-- Database connection via environment variables
-- JWT secret configuration for production
-- Email service configuration for notifications
-- CORS settings for frontend domain
+```bash
+./tools/check-backend.sh
+```
 
 ## 🤝 Contributing
 
@@ -249,34 +185,6 @@ We welcome contributions from the community! This project follows the **Fork & M
 - Keep commits focused and descriptive
 
 For detailed setup instructions and development workflows, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## 👨‍💻 Developer
-
-**Ricardo Campos** - Full-Stack Developer & Project Maintainer
-
-- **GitHub**: [@RMCampos](https://github.com/RMCampos)
-- **Twitter/X**: [@RMCamposs](https://x.com/RMCamposs)
-- **LinkedIn**: [Ricardo Campos](https://www.linkedin.com/in/ricardompcampos/)
-
-### About the Developer
-Ricardo is a passionate full-stack developer with expertise in modern web technologies, cloud architecture, and agile development practices. This project showcases his skills in:
-
-- **Frontend Development**: React, TypeScript, modern CSS, responsive design
-- **Backend Development**: Java, Spring Boot, RESTful APIs, microservices
-- **DevOps & Infrastructure**: Docker, CI/CD, cloud deployment, monitoring
-- **Software Quality**: Testing strategies, code coverage, static analysis
-- **Open Source**: Community engagement, documentation, maintainership
-
-The TaskNote project represents a commitment to clean code, comprehensive testing, and user-centered design principles.
-
-## 📞 Contact
-
-For questions, suggestions, or collaboration opportunities:
-
-- **Email**: Contact via GitHub issues or discussions
-- **Twitter/X**: [@RMCamposs](https://x.com/RMCamposs) for quick questions
-- **GitHub Issues**: [Create an issue](https://github.com/rmcampos/tasknote/issues) for bugs or feature requests
-- **GitHub Discussions**: [Join discussions](https://github.com/rmcampos/tasknote/discussions) for general questions
 
 ## 📄 License
 
