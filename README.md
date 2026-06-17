@@ -1,8 +1,8 @@
 # TaskNote
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Frontend CI](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-main-frontend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-main-frontend.yml)
-[![Backend CI](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-main-backend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-main-backend.yml)
+[![Frontend Build](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-pr-frontend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-pr-frontend.yml)
+[![Backend Build](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/ci-pr-backend.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=ci-pr-backend.yml)
 [![Deploy](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/workflows/cd-main.yml/badge.svg)](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/actions/?workflow=cd-main.yml)
 
 ## 📋 Table of Contents
