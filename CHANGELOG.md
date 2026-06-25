@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## app-v2026.06.24.? - 2026-06-25
+
+### Changed
+- Bumped client minor and major dependencies.
+
+### Docker images
+- `docker.io/rmcampos/tasknote-app:app-v2026.06.24.?`
+
 ## api-v32 && app-v2026.06.15.97 - 2026-06-15
 
 ### Changed
