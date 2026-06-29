@@ -26,12 +26,22 @@ resource "google_cloud_run_v2_service" "backend" {
         value = google_sql_database_instance.instance.private_ip_address
       }
       env {
-        name  = "POSTGRES_USER"
-        value = var.db_user
+        name = "POSTGRES_USER"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_user.secret_id
+            version = google_secret_manager_secret_version.db_user_version.version
+          }
+        }
       }
       env {
-        name  = "POSTGRES_PASSWORD"
-        value = var.db_password
+        name = "POSTGRES_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.db_password.secret_id
+            version = google_secret_manager_secret_version.db_password_version.version
+          }
+        }
       }
       env {
         name  = "POSTGRES_PORT"

@@ -56,7 +56,7 @@ public class SecurityConfig {
                     .requestMatchers("/rest/**")
                     .authenticated()
                     .anyRequest()
-                    .permitAll())
+                    .denyAll())
         .httpBasic(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .sessionManagement(
@@ -77,7 +77,7 @@ public class SecurityConfig {
 
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder(12);
   }
 
   /**

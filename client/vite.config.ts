@@ -29,7 +29,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     ],
     build: {
       outDir: 'dist',
-      sourcemap: true
+      sourcemap: mode === 'development'
     },
     server: {
       port: 5000

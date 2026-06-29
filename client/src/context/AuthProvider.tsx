@@ -127,6 +127,19 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!signed) return;
+    const TWENTY_FIVE_MINUTES = 25 * 60 * 1000;
+    const intervalId = setInterval(() => {
+      checkCurrentAuthUser(window.location.pathname).catch(() => {
+        setSigned(false);
+        setUser(undefined);
+        localStorage.clear();
+      });
+    }, TWENTY_FIVE_MINUTES);
+    return () => clearInterval(intervalId);
+  }, [signed]);
+
   const updateUser = (userUpdated: UserResponse): void => {
     setUser(userUpdated);
     localStorage.setItem(USER_DATA, JSON.stringify(userUpdated));

@@ -3,14 +3,12 @@ package br.com.tasknoteapp.server.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import br.com.tasknoteapp.server.entity.UserEntity;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -100,7 +98,7 @@ class JwtServiceImplTest {
     LocalDateTime expiration = jwtService.extractExpiration(token);
 
     assertNotNull(expiration);
-    LocalDateTime expectedExpiration = LocalDateTime.now().plusDays(7).withNano(0);
+    LocalDateTime expectedExpiration = LocalDateTime.now().plusMinutes(30).withNano(0);
     assertFalse(ChronoUnit.SECONDS.between(expiration.withNano(0), expectedExpiration) > 5);
   }
 
@@ -131,7 +129,7 @@ class JwtServiceImplTest {
             .signWith(getKey())
             .compact();
 
-    assertThrows(ExpiredJwtException.class, () -> jwtService.isTokenExpired(expiredToken));
+    assertTrue(jwtService.isTokenExpired(expiredToken));
   }
 
   @Test

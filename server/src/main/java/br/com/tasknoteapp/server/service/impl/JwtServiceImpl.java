@@ -3,8 +3,8 @@ package br.com.tasknoteapp.server.service.impl;
 import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -29,7 +29,7 @@ class JwtServiceImpl implements JwtService {
   private static final long MINUTE = SECOND * 60;
   private static final long HOUR = MINUTE * 60;
   private static final long DAY = HOUR * 24;
-  private static final long EXPIRATION_TIME = DAY * 7;
+  private static final long EXPIRATION_TIME = MINUTE * 30;
   private final SecretKey key;
 
   public JwtServiceImpl(@Value("${br.com.tasknote.server.jwt-secret}") String secretKey) {
@@ -122,7 +122,7 @@ class JwtServiceImpl implements JwtService {
     try {
       return Optional.of(
           Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
-    } catch (MalformedJwtException me) {
+    } catch (JwtException e) {
       return Optional.empty();
     }
   }

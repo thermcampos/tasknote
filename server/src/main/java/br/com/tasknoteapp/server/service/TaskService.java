@@ -95,7 +95,7 @@ public class TaskService {
     UserEntity user = getCurrentUser();
     logger.info("Get task ID {} to user ID {}", taskId, user.getId());
 
-    Optional<TaskEntity> task = taskRepository.findById(taskId);
+    Optional<TaskEntity> task = taskRepository.findByIdAndUser_id(taskId, user.getId());
     if (task.isEmpty()) {
       throw new TaskNotFoundException();
     }
@@ -152,7 +152,7 @@ public class TaskService {
 
     logger.info("Patching task ID {} to user ID {}", taskId, user.getId());
 
-    Optional<TaskEntity> task = taskRepository.findById(taskId);
+    Optional<TaskEntity> task = taskRepository.findByIdAndUser_id(taskId, user.getId());
     if (task.isEmpty()) {
       throw new TaskNotFoundException();
     }
@@ -198,7 +198,7 @@ public class TaskService {
 
     logger.info("Deleting task ID {} to user ID {}", taskId, user.getId());
 
-    Optional<TaskEntity> task = taskRepository.findById(taskId);
+    Optional<TaskEntity> task = taskRepository.findByIdAndUser_id(taskId, user.getId());
     if (task.isEmpty()) {
       throw new TaskNotFoundException();
     }

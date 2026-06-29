@@ -264,9 +264,11 @@ class AuthServiceTest {
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(existing));
 
     UserPwdLimitEntity limit1 = new UserPwdLimitEntity();
-    limit1.setWhenHappened(LocalDateTime.now().minusMinutes(1));
+    limit1.setWhenHappened(LocalDateTime.now().minusSeconds(30));
     UserPwdLimitEntity limit2 = new UserPwdLimitEntity();
+    limit2.setWhenHappened(LocalDateTime.now().minusMinutes(1));
     UserPwdLimitEntity limit3 = new UserPwdLimitEntity();
+    limit3.setWhenHappened(LocalDateTime.now().minusMinutes(2));
     when(userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(existing.getId()))
         .thenReturn(List.of(limit1, limit2, limit3));
 
@@ -417,12 +419,15 @@ class AuthServiceTest {
     existing.setName(null);
     existing.setEmail(email);
     existing.setAdmin(false);
+    existing.setPassword("hashedCurrentPassword");
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
-
     when(userRepository.save(any())).thenReturn(existing);
 
+    String currentPassword = "currentPw123@";
+    when(passwordEncoder.matches(currentPassword, "hashedCurrentPassword")).thenReturn(true);
+
     UserPatchRequest patchRequest =
-        new UserPatchRequest("Kong", "newemail@domain.com", null, null, null);
+        new UserPatchRequest("Kong", "newemail@domain.com", null, null, null, currentPassword);
     UserResponse response = authService.patchUserInfo(patchRequest);
 
     Assertions.assertNotNull(response);
@@ -441,13 +446,17 @@ class AuthServiceTest {
     existing.setName(null);
     existing.setEmail(email);
     existing.setAdmin(false);
+    existing.setPassword("hashedCurrentPassword");
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
-
     when(userRepository.save(any())).thenReturn(existing);
+
+    String currentPassword = "currentPw123@";
+    when(passwordEncoder.matches(currentPassword, "hashedCurrentPassword")).thenReturn(true);
 
     String newPassword = "TestHackedPw@difficult!#:)";
     UserPatchRequest patchRequest =
-        new UserPatchRequest("Kong", "newemail@domain.com", newPassword, newPassword, "en");
+        new UserPatchRequest(
+            "Kong", "newemail@domain.com", newPassword, newPassword, "en", currentPassword);
 
     when(authUtil.validatePassword(patchRequest.password())).thenReturn(Optional.empty());
 

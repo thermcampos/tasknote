@@ -103,7 +103,8 @@ class UserControllerTest {
   void patchUserInfo_happyPath_shouldSucceed() throws Exception {
     UserResponse response =
         new UserResponse(1L, "John", "email@example.com", false, null, null, null, null);
-    UserPatchRequest request = new UserPatchRequest("John Doe", response.email(), null, null, null);
+    UserPatchRequest request =
+        new UserPatchRequest("John Doe", response.email(), null, null, null, null);
     when(authService.patchUserInfo(request)).thenReturn(response);
 
     String jsonString =

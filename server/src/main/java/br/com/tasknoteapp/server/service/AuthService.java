@@ -292,7 +292,7 @@ public class AuthService {
 
     String token = jwtService.generateToken(currentUser);
 
-    logger.info("User refreshed! Token {}", token);
+    logger.info("User refreshed! Token {}...", token.substring(0, 6));
     return token;
   }
 
@@ -329,11 +329,26 @@ public class AuthService {
     boolean shouldUpdate = false;
     boolean emailChanged = false;
 
+    boolean changingEmail =
+        !Objects.isNull(patchRequest.email()) && !patchRequest.email().isBlank();
+    boolean changingPassword =
+        !Objects.isNull(patchRequest.password()) && !patchRequest.password().isBlank();
+
+    if (changingEmail || changingPassword) {
+      if (Objects.isNull(patchRequest.currentPassword())
+          || patchRequest.currentPassword().isBlank()) {
+        throw new BadPasswordException("Current password is required to change email or password");
+      }
+      if (!passwordEncoder.matches(patchRequest.currentPassword(), currentUser.getPassword())) {
+        throw new InvalidCredentialsException();
+      }
+    }
+
     if (!Objects.isNull(patchRequest.name()) && !patchRequest.name().isBlank()) {
       currentUser.setName(patchRequest.name().trim());
       shouldUpdate = true;
     }
-    if (!Objects.isNull(patchRequest.email()) && !patchRequest.email().isBlank()) {
+    if (changingEmail) {
       currentUser.setEmail(patchRequest.email().trim());
       shouldUpdate = true;
       emailChanged = true;
@@ -344,8 +359,7 @@ public class AuthService {
     }
 
     boolean updatePassword =
-        !Objects.isNull(patchRequest.password())
-            && !patchRequest.password().isBlank()
+        changingPassword
             && !Objects.isNull(patchRequest.passwordAgain())
             && !patchRequest.passwordAgain().isBlank();
 
@@ -563,11 +577,11 @@ public class AuthService {
 
     // if it's more than 3 times in the last 10 minutes, raise timer of 3 hours.
     if (userPwdList.size() >= 3) {
-      UserPwdLimitEntity mostRecent = userPwdList.getFirst();
-      logger.warn("Oldest: {}", mostRecent.getWhenHappened());
-      Duration duration = Duration.between(mostRecent.getWhenHappened(), LocalDateTime.now());
+      UserPwdLimitEntity oldest = userPwdList.getLast();
+      logger.warn("Oldest failed attempt: {}", oldest.getWhenHappened());
+      Duration duration = Duration.between(oldest.getWhenHappened(), LocalDateTime.now());
       if (duration.toMinutes() <= 3L) {
-        logger.warn("Wait more {}", 3L - duration.toMinutes());
+        logger.warn("Account locked, minutes remaining: {}", 3L - duration.toMinutes());
         throw new MaxLoginLimitAttemptException();
       }
     }

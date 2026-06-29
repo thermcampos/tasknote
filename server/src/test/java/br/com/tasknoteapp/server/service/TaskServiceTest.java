@@ -85,7 +85,7 @@ class TaskServiceTest {
     taskEntity.setHighPriority(true);
     taskEntity.setTags(Set.of(new TagEntity("test", userEntity)));
     taskEntity.setUser(userEntity);
-    when(taskRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
     TaskResponse taskResponse = taskService.getTaskById(taskId);
 
@@ -108,7 +108,7 @@ class TaskServiceTest {
 
     Long taskId = 9976L;
 
-    when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.empty());
 
     assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(taskId));
   }
@@ -312,7 +312,7 @@ class TaskServiceTest {
     taskEntity.setHighPriority(true);
     taskEntity.setTags(Set.of(new TagEntity("test", userEntity)));
     taskEntity.setUser(userEntity);
-    when(taskRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
     when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
 
@@ -335,7 +335,7 @@ class TaskServiceTest {
 
     Long taskId = 2526L;
 
-    when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.empty());
 
     assertThrows(TaskNotFoundException.class, () -> taskService.deleteTask(taskId));
   }
@@ -359,7 +359,7 @@ class TaskServiceTest {
     taskEntity.setDone(false);
     taskEntity.setTags(Set.of(new TagEntity("test", userEntity)));
     taskEntity.setUser(userEntity);
-    when(taskRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
     when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
 
@@ -410,7 +410,7 @@ class TaskServiceTest {
     taskEntity.setDone(false);
     taskEntity.setTags(Set.of(new TagEntity("test", userEntity)));
     taskEntity.setUser(userEntity);
-    when(taskRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
     TaskUrlEntity urlEntity = new TaskUrlEntity();
     urlEntity.setId(new TaskUrlEntityPk(taskId, "www.url.com"));
@@ -460,7 +460,7 @@ class TaskServiceTest {
 
     Long taskId = 2525L;
 
-    when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.empty());
 
     List<String> tags = List.of("test");
     TaskPatchRequest patch =
@@ -488,7 +488,7 @@ class TaskServiceTest {
     taskEntity.setDone(false);
     taskEntity.setTags(Set.of(new TagEntity("test", userEntity)));
     taskEntity.setUser(userEntity);
-    when(taskRepository.findById(taskId)).thenReturn(Optional.of(taskEntity));
+    when(taskRepository.findByIdAndUser_id(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
     when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
 

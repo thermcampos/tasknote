@@ -2,14 +2,14 @@ br:
   com:
     tasknote:
       server:
-        jwt-secret: ${SECURITY_KEY:empty}
+        jwt-secret: ${SECURITY_KEY}
         target-env: ${TARGET_ENV:development}
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost}
 logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
-    br.com.tasknoteapp: TRACE
+    br.com.tasknoteapp: INFO
 
 mailgun:
   api-key: ${MAILGUN_APIKEY:abc123456}
@@ -19,7 +19,7 @@ mailgun:
 server:
   port: 8585
   error:
-    include-message: always
+    include-message: never
   servlet:
     context-path: ${SERVER_SERVLET_CONTEXT_PATH:/server}
 spring:
@@ -27,7 +27,7 @@ spring:
     name: tasknote-api
   datasource:
     driver-class-name: org.postgresql.Driver
-    password: ${POSTGRES_PASSWORD:default}
+    password: ${POSTGRES_PASSWORD}
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5435}/${POSTGRES_DB:tasknote}
     username: ${POSTGRES_USER:tasknoteuser}
   flyway:

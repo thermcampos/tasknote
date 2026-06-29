@@ -78,12 +78,8 @@ public class LoginRequest {
         + "email='"
         + email
         + '\''
-        + ", password='"
-        + password
-        + '\''
-        + ", passwordAgain='"
-        + passwordAgain
-        + '\''
+        + ", password='[REDACTED]'"
+        + ", passwordAgain='[REDACTED]'"
         + ", lang='"
         + lang
         + '\''
