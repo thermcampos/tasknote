@@ -115,12 +115,12 @@ jobs:
             -var="frontend_image=${{ steps.deploy-vars.outputs.frontend_image }}"
           terraform show -json tfplan > tfplan.json
           if jq -e '.resource_changes | length == 0' tfplan.json >/dev/null; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
             echo "No changes to apply."
             exit 0
           else
             echo "Changes detected. Proceeding with apply"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Terraform Apply
