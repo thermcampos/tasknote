@@ -22,7 +22,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: easynode-debian
     outputs:
-      no_changes: ${{ steps.check-changes.outputs.no_changes }}
+      has_changes: ${{ steps.check-changes.outputs.has_changes }}
     permissions:
       contents: read
     steps:
@@ -115,17 +115,17 @@ jobs:
             -var="frontend_image=${{ steps.deploy-vars.outputs.frontend_image }}"
           terraform show -json tfplan > tfplan.json
           if jq -e '.resource_changes | length == 0' tfplan.json >/dev/null; then
-            echo "no_changes=true" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "No changes to apply."
             exit 0
           else
             echo "Changes detected. Proceeding with apply"
-            echo "no_changes=false" >> "$GITHUB_OUTPUT"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Terraform Apply
         working-directory: terraform
-        if: needs.terraform-plan.outputs.no_changes == 'false'
+        if: steps.check-changes.outputs.has_changes == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
