@@ -31,14 +31,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate version tag
-        id: version
-        run: |
-          DATE=$(date +'%Y.%m.%d')
-          TAG="app-v${DATE}.${{ github.run_number }}"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "Generated tag: ${TAG}"
-
       - name: Set up Docker Buildx
         run: docker buildx inspect --bootstrap
 
@@ -63,11 +55,24 @@ jobs:
           fi
           echo "tag=${PR_NUMBER}" >> $GITHUB_OUTPUT
 
+      - name: Extract version from image
+        id: version
+        run: |
+          docker pull rmcampos/tasknote-app:${{ steps.find_pr.outputs.tag }}
+          VITE_BUILD=$(docker inspect rmcampos/tasknote-app:${{ steps.find_pr.outputs.tag }} \
+            --format '{{ range .Config.Env }}{{ println . }}{{ end }}' \
+            | grep '^VITE_BUILD=' | cut -d= -f2)
+          if [ -z "$VITE_BUILD" ]; then
+            echo "Could not extract VITE_BUILD from image" >&2
+            exit 1
+          fi
+          echo "tag=${VITE_BUILD}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VITE_BUILD}"
+
       - name: Promote Docker image
         run: |
           docker buildx imagetools create \
             --tag rmcampos/tasknote-app:latest \
-            --tag rmcampos/tasknote-app:${{ steps.version.outputs.tag }} \
             rmcampos/tasknote-app:${{ steps.find_pr.outputs.tag }}
 
       - name: Create and push Git tag

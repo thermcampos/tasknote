@@ -48,7 +48,9 @@ jobs:
         with:
           context: ./client
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            rmcampos/tasknote-app:${{ steps.version.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=rmcampos/tasknote-app:buildcache
           cache-to: type=registry,ref=rmcampos/tasknote-app:buildcache,mode=max
