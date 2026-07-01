@@ -56,3 +56,9 @@ jobs:
           cache-to: type=registry,ref=rmcampos/tasknote-app:buildcache,mode=max
           build-args: |
             VITE_BUILD=${{ steps.version.outputs.tag }}
+
+      - name: Log pushed images
+        run: |
+          echo "Pushed images:"
+          echo "  rmcampos/tasknote-app:candidate"
+          echo "  rmcampos/tasknote-app:${{ steps.version.outputs.tag }}"

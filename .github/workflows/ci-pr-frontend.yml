@@ -126,3 +126,10 @@ jobs:
             -H "Content-Type: application/json" \
             "https://lightroasted.vps-kinghost.net/api/v1/repos/${{ github.repository }}/statuses/${{ github.event.pull_request.head.sha }}" \
             -d "{\"context\": \"staging/deploy\", \"state\": \"success\", \"description\": \"PR #${{ github.event.pull_request.number }} staging ready\", \"target_url\": \"https://tasknote-stg.darkroasted.vps-kinghost.net\"}"
+
+      - name: Log pushed images
+        run: |
+          echo "Pushed images:"
+          echo "  rmcampos/tasknote-app:candidate"
+          echo "  rmcampos/tasknote-app:pr-${{ github.event.pull_request.number }}"
+          echo "  rmcampos/tasknote-app:${{ steps.version.outputs.tag }}"

@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## app-v2026.06.24.? - 2026-06-25
+## app-v2026.07.01.140 - 2026-07-01
+
+### Added
+- Support for `Draft` notes and tasks.
+- Memory for open notes in the home page, if a tab is closed, the app will remember.
+
+### Fixed
+- Frontend app build version release getting lost in workflows. 
+
+### Security
+- Addressed a list of critical security issues including validations, logging, and passwords.
+
+### Docker images
+- `rmcampos/tasknote-app:app-v2026.07.01.140`
 
 ### Changed
 - Bumped client minor and major dependencies.

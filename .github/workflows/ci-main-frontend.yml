@@ -81,3 +81,9 @@ jobs:
           git config user.email "gitea-actions[bot]@noreply.lightroasted.vps-kinghost.net"
           git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
           git push origin ${{ steps.version.outputs.tag }}
+
+      - name: Log pushed images
+        run: |
+          echo "Pushed images:"
+          echo "  rmcampos/tasknote-app:latest"
+          echo "  rmcampos/tasknote-app:${{ steps.version.outputs.tag }}"

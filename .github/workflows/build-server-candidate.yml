@@ -43,3 +43,9 @@ jobs:
         run: |
           docker tag rmcampos/tasknote-api:latest rmcampos/tasknote-api:candidate
           docker push rmcampos/tasknote-api:candidate
+
+      - name: Log pushed images
+        run: |
+          echo "Pushed images:"
+          echo "  rmcampos/tasknote-api:latest"
+          echo "  rmcampos/tasknote-api:candidate"
