@@ -55,7 +55,19 @@ vi.mock('../../components/AlertError', () => ({
 }));
 
 vi.mock('../../components/ModalMarkdown', () => ({
-  default: (props: any) => <div data-testid="modal-markdown">{props.show ? 'Modal Open' : ''}</div>
+  default: (props: any) => (
+    <div data-testid="modal-markdown">
+      {props.show ? (
+        <div>
+          <div data-testid="modal-title">{props.title}</div>
+          <div data-testid="modal-content">{props.markdownText}</div>
+          <button data-testid="modal-close" onClick={props.onHide}>Close</button>
+        </div>
+      ) : (
+        ''
+      )}
+    </div>
+  )
 }));
 
 vi.mock('../../components/TaskTitle', () => ({
@@ -67,7 +79,14 @@ vi.mock('../../components/TaskTimeLeft', () => ({
 }));
 
 vi.mock('../../components/TaskTag', () => ({
-  default: (props: any) => <div data-testid="task-tag">{props.tag}</div>
+  default: (props: any) => (
+    <div data-testid="task-tag">
+      {props.tag}
+      {props.taskOrNote === 'note' && props.onClick && (
+        <a href="#" data-testid="open-it" onClick={props.onClick}>Open it</a>
+      )}
+    </div>
+  )
 }));
 
 vi.mock('../../components/NoteTitle', () => ({
@@ -544,6 +563,79 @@ describe('Home Component', () => {
       expect(screen.getAllByTestId('task-title').length).toBe(1);
       expect(screen.getAllByTestId('task-title')[0].textContent).toBe('Task 1');
     });
+  });
+
+  test('saves note ID to localStorage when opening modal', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('open-it').length).toBe(2);
+    });
+
+    const openItLinks = screen.getAllByTestId('open-it');
+    await act(async () => {
+      fireEvent.click(openItLinks[1]);
+    });
+
+    expect(localStorage.getItem('OPEN_NOTE_ID')).toBe('1');
+    expect(screen.getByTestId('modal-title').textContent).toBe('Note 1');
+    expect(screen.getByTestId('modal-content').textContent).toBe('Line 1\nLine 2\nLine 3');
+  });
+
+  test('restores open note modal from localStorage on reload', async () => {
+    localStorage.setItem('OPEN_NOTE_ID', '2');
+
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('modal-title').textContent).toBe('Note 2');
+    });
+
+    expect(screen.getByTestId('modal-content').textContent).toBe('This is a sample\nnote content');
+  });
+
+  test('does not restore modal if localStorage note ID not found', async () => {
+    localStorage.setItem('OPEN_NOTE_ID', '999');
+
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('note-title').length).toBe(2);
+    });
+
+    const modal = screen.getByTestId('modal-markdown');
+    expect(modal.textContent).toBe('');
+    expect(localStorage.getItem('OPEN_NOTE_ID')).toBeNull();
+  });
+
+  test('clears localStorage when closing modal', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('open-it').length).toBe(2);
+    });
+
+    const openItLinks = screen.getAllByTestId('open-it');
+    await act(async () => {
+      fireEvent.click(openItLinks[1]);
+    });
+
+    expect(localStorage.getItem('OPEN_NOTE_ID')).toBe('1');
+
+    const closeButton = screen.getByTestId('modal-close');
+    await act(async () => {
+      fireEvent.click(closeButton);
+    });
+
+    expect(localStorage.getItem('OPEN_NOTE_ID')).toBeNull();
   });
   /*
   test('getFirstRows properly formats note preview', async () => {

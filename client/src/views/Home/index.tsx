@@ -28,6 +28,8 @@ import TaskTimeLeft from '../../components/TaskTimeLeft';
 import TaskTag from '../../components/TaskTag';
 import NoteTitle from '../../components/NoteTitle';
 
+const OPEN_NOTE_ID_KEY = 'OPEN_NOTE_ID';
+
 /**
  * Home page component.
  *
@@ -299,7 +301,10 @@ function Home(): React.ReactNode {
     return preview.join('\n');
   };
 
-  const handleCloseModal = () => setShowMarkdownView(false);
+  const handleCloseModal = () => {
+    setShowMarkdownView(false);
+    localStorage.removeItem(OPEN_NOTE_ID_KEY);
+  };
 
   const getSelectedLabel = (): string => {
     if (selectedOption === 'everything') return t('home_radio_everything');
@@ -344,6 +349,22 @@ function Home(): React.ReactNode {
   useEffect(() => {
     applyFilter(filterText, selectedOption, savedTasks, savedNotes);
   }, [savedTasks, savedNotes, filterText, selectedOption]);
+
+  useEffect(() => {
+    const openNoteId = localStorage.getItem(OPEN_NOTE_ID_KEY);
+    if (openNoteId && notes.length > 0) {
+      const noteId = Number(openNoteId);
+      const foundNote = notes.find(n => n.id === noteId);
+      if (foundNote) {
+        setModalTitle(foundNote.title);
+        setModalContent(foundNote.description);
+        setShowMarkdownView(true);
+      }
+      else {
+        localStorage.removeItem(OPEN_NOTE_ID_KEY);
+      }
+    }
+  }, [notes]);
 
   return (
     <Container fluid>
@@ -602,6 +623,7 @@ function Home(): React.ReactNode {
                     setModalTitle(note.title);
                     setModalContent(note.description);
                     setShowMarkdownView(true);
+                    localStorage.setItem(OPEN_NOTE_ID_KEY, note.id.toString());
                   }}
                 />
               </Card.Footer>
