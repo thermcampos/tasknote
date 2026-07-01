@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Card,
   Col,
@@ -23,6 +24,14 @@ import AlertError from '../../components/AlertError';
 
 type TaskAction = 'add' | 'edit';
 
+interface TaskDraft {
+  description: string;
+  taskUrl: string;
+  dueDate: string | null;
+  highPriority: boolean;
+  tags: string[];
+}
+
 /**
  * TaskAdd component for adding and editing tasks.
  *
@@ -42,10 +51,15 @@ function TaskAdd(): React.ReactNode {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState<boolean>(false);
+  const [draftBanner, setDraftBanner] = useState<boolean>(false);
   const { i18n, t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
   const tagContainerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasUserEdited = useRef<boolean>(false);
+
+  const draftKey = params?.id ? `draft:task:edit:${params.id}` : 'draft:task:new';
 
   const loadTags = async (): Promise<void> => {
     try {
@@ -85,7 +99,6 @@ function TaskAdd(): React.ReactNode {
     catch (e) {
       handleError(e);
     }
-
     return false;
   };
 
@@ -118,28 +131,112 @@ function TaskAdd(): React.ReactNode {
     setHighPriority(false);
     setCurrentTag('');
     setSelectedTags([]);
-
     setAction('add');
     setValidated(false);
   };
 
+  const saveDraft = (
+    description: string,
+    taskUrl: string,
+    due: Date | null,
+    priority: boolean,
+    draftTags: string[]
+  ): void => {
+    if (!hasUserEdited.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const draft: TaskDraft = {
+        description,
+        taskUrl,
+        dueDate: due ? due.toISOString() : null,
+        highPriority: priority,
+        tags: draftTags
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+    }, 1500);
+  };
+
+  const clearDraft = (): void => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    localStorage.removeItem(draftKey);
+  };
+
+  const applyDraft = (): void => {
+    const raw = localStorage.getItem(draftKey);
+    if (!raw) return;
+    try {
+      const draft: TaskDraft = JSON.parse(raw);
+      setTaskDescription(draft.description ?? '');
+      setTaskUrl(draft.taskUrl ?? '');
+      const parsedDate = draft.dueDate ? new Date(draft.dueDate) : null;
+      setDueDate(parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null);
+      setHighPriority(draft.highPriority ?? false);
+      setSelectedTags(draft.tags ?? []);
+      setDraftBanner(true);
+    }
+    catch {
+      localStorage.removeItem(draftKey);
+    }
+  };
+
+  const setTaskFromServer = (task: TaskResponse): void => {
+    setTaskId(task.id);
+    setTaskDescription(task.description);
+    setTaskUrl(task.urls.length ? task.urls[0] : '');
+    setTaskDone(task.done);
+    if (task.dueDateFmt) {
+      setDueDate(new Date(task.dueDate));
+    }
+    setHighPriority(task.highPriority);
+    if (task.tags) {
+      setSelectedTags(task.tags);
+    }
+  };
+
+  const handleDiscardDraft = async (): Promise<void> => {
+    setDraftBanner(false);
+    if (params?.id) {
+      try {
+        const taskToEdit: TaskResponse = await api.getJSON(`${ApiConfig.tasksUrl}/${params.id}`);
+        setTaskFromServer(taskToEdit);
+      }
+      catch (e) {
+        handleError(e);
+      }
+      finally {
+        clearDraft();
+      }
+    }
+    else {
+      clearDraft();
+      resetInputs();
+    }
+  };
+
   const addTag = (tagName: string): void => {
     const normalized = tagName.trim().toLowerCase();
+    let newTags = [...selectedTags];
     if (normalized && !selectedTags.includes(normalized)) {
-      setSelectedTags([...selectedTags, normalized]);
+      newTags = [...selectedTags, normalized];
+      setSelectedTags(newTags);
     }
+    hasUserEdited.current = true;
+    saveDraft(taskDescription, taskUrl, dueDate, highPriority, newTags);
     setCurrentTag('');
     setShowTagDropdown(false);
   };
 
   const removeTag = (tagToRemove: string): void => {
-    setSelectedTags(selectedTags.filter(t => t !== tagToRemove));
+    const newTags = selectedTags.filter(t => t !== tagToRemove);
+    setSelectedTags(newTags);
+    hasUserEdited.current = true;
+    saveDraft(taskDescription, taskUrl, dueDate, highPriority, newTags);
   };
 
   /**
    * Handles the form submission.
    *
-   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   * @param {React.SubmitEvent<HTMLFormElement>} event - The form submission event.
    */
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -157,7 +254,6 @@ function TaskAdd(): React.ReactNode {
       dueDateFormatted = dueDate.toISOString().substring(0, 10);
     }
 
-    // Add current tag if not empty before submitting
     const finalTags = [...selectedTags];
     if (currentTag.trim()) {
       const normalized = currentTag.trim().toLowerCase();
@@ -177,6 +273,7 @@ function TaskAdd(): React.ReactNode {
 
       const added: boolean = await addTask(addPayload);
       if (added) {
+        clearDraft();
         form.reset();
         resetInputs();
         navigate('/home');
@@ -197,6 +294,7 @@ function TaskAdd(): React.ReactNode {
 
       const edited: boolean = await submitEditTask(editPayload);
       if (edited) {
+        clearDraft();
         form.reset();
         resetInputs();
         navigate('/home');
@@ -211,18 +309,9 @@ function TaskAdd(): React.ReactNode {
     if (params.id) {
       try {
         const taskToEdit: TaskResponse = await api.getJSON(`${ApiConfig.tasksUrl}/${params.id}`);
-        setTaskId(taskToEdit.id);
-        setTaskDescription(taskToEdit.description);
-        setTaskUrl(taskToEdit.urls.length ? taskToEdit.urls[0] : '');
-        setTaskDone(taskToEdit.done);
-        if (taskToEdit.dueDateFmt) {
-          setDueDate(new Date(taskToEdit.dueDate));
-        }
-        setHighPriority(taskToEdit.highPriority);
-        if (taskToEdit.tags) {
-          setSelectedTags(taskToEdit.tags);
-        }
+        setTaskFromServer(taskToEdit);
         setAction('edit');
+        applyDraft();
       }
       catch (e) {
         handleError(e);
@@ -234,6 +323,10 @@ function TaskAdd(): React.ReactNode {
     loadTags();
     checkEditUrl();
 
+    if (!params?.id) {
+      applyDraft();
+    }
+
     const handleClickOutside = (event: MouseEvent): void => {
       if (tagContainerRef.current && !tagContainerRef.current.contains(event.target as Node)) {
         setShowTagDropdown(false);
@@ -243,6 +336,7 @@ function TaskAdd(): React.ReactNode {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
 
@@ -268,6 +362,22 @@ function TaskAdd(): React.ReactNode {
                 onClose={() => setErrorMessage('')}
               />
 
+              {draftBanner && (
+                <Alert variant="warning" dismissible onClose={() => setDraftBanner(false)}>
+                  Draft restored from a previous session.
+                  {' '}
+                  <Alert.Link
+                    href="#"
+                    onClick={(e: React.MouseEvent) => {
+                      e.preventDefault();
+                      void handleDiscardDraft();
+                    }}
+                  >
+                    Discard draft
+                  </Alert.Link>
+                </Alert>
+              )}
+
               <Form
                 noValidate
                 validated={validated}
@@ -285,6 +395,8 @@ function TaskAdd(): React.ReactNode {
                   value={taskDescription}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setTaskDescription(e.target.value);
+                    hasUserEdited.current = true;
+                    saveDraft(e.target.value, taskUrl, dueDate, highPriority, selectedTags);
                   }}
                 />
 
@@ -301,6 +413,8 @@ function TaskAdd(): React.ReactNode {
                       value={taskUrl}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setTaskUrl(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(taskDescription, e.target.value, dueDate, highPriority, selectedTags);
                       }}
                     />
                   </Col>
@@ -316,6 +430,8 @@ function TaskAdd(): React.ReactNode {
                       valueDate={dueDate}
                       onChangeDate={(date: Date | null) => {
                         setDueDate(date);
+                        hasUserEdited.current = true;
+                        saveDraft(taskDescription, taskUrl, date, highPriority, selectedTags);
                       }}
                     />
                   </Col>
@@ -402,7 +518,11 @@ function TaskAdd(): React.ReactNode {
                   className="mb-3"
                   name="highPriority"
                   checked={highPriority}
-                  onChange={() => setHighPriority(!highPriority)}
+                  onChange={() => {
+                    setHighPriority(!highPriority);
+                    hasUserEdited.current = true;
+                    saveDraft(taskDescription, taskUrl, dueDate, !highPriority, selectedTags);
+                  }}
                 />
 
                 <button
@@ -416,6 +536,7 @@ function TaskAdd(): React.ReactNode {
                   type="button"
                   className="ms-2 home-new-item-secondary task-note-btn"
                   onClick={() => {
+                    clearDraft();
                     navigate('/home');
                   }}
                 >

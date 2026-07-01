@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Badge,
   Card,
   Col,
@@ -23,6 +24,13 @@ import ContentHeader from '../../components/ContentHeader';
 
 type NoteAction = 'add' | 'edit';
 
+interface NoteDraft {
+  title: string;
+  content: string;
+  noteUrl: string;
+  tags: string[];
+}
+
 /**
  * NoteAdd component for adding and editing notes.
  *
@@ -41,10 +49,15 @@ function NoteAdd(): React.ReactNode {
   const [showTagDropdown, setShowTagDropdown] = useState<boolean>(false);
   const [action, setAction] = useState<NoteAction>('add');
   const [showPreviewMd, setShowPreviewMd] = useState<boolean>(false);
+  const [draftBanner, setDraftBanner] = useState<boolean>(false);
   const { i18n, t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
   const tagContainerRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasUserEdited = useRef<boolean>(false);
+
+  const draftKey = params?.id ? `draft:note:edit:${params.id}` : 'draft:note:new';
 
   const loadTags = async (): Promise<void> => {
     try {
@@ -84,7 +97,6 @@ function NoteAdd(): React.ReactNode {
     catch (e) {
       handleError(e);
     }
-
     return false;
   };
 
@@ -115,28 +127,84 @@ function NoteAdd(): React.ReactNode {
     setNoteContent('');
     setCurrentTag('');
     setSelectedTags([]);
-
     setAction('add');
     setValidated(false);
   };
 
+  const saveDraft = (title: string, content: string, noteUrl: string, draftTags: string[]): void => {
+    if (!hasUserEdited.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const draft: NoteDraft = { title, content, noteUrl, tags: draftTags };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+    }, 1500);
+  };
+
+  const clearDraft = (): void => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    localStorage.removeItem(draftKey);
+  };
+
+  const applyDraft = (): void => {
+    const raw = localStorage.getItem(draftKey);
+    if (!raw) return;
+    try {
+      const draft: NoteDraft = JSON.parse(raw);
+      setNoteTitle(draft.title ?? '');
+      setNoteContent(draft.content ?? '');
+      setNoteUrl(draft.noteUrl ?? '');
+      setSelectedTags(draft.tags ?? []);
+      setDraftBanner(true);
+    }
+    catch {
+      localStorage.removeItem(draftKey);
+    }
+  };
+
+  const handleDiscardDraft = async (): Promise<void> => {
+    setDraftBanner(false);
+    if (params?.id) {
+      try {
+        const noteToEdit: NoteResponse = await api.getJSON(`${ApiConfig.notesUrl}/${params.id}`);
+        setNoteFromServer(noteToEdit);
+      }
+      catch (e) {
+        handleError(e);
+      }
+      finally {
+        clearDraft();
+      }
+    }
+    else {
+      clearDraft();
+      resetInputs();
+    }
+  };
+
   const addTag = (tagName: string): void => {
     const normalized = tagName.trim().toLowerCase();
+    let newTags = [...selectedTags];
     if (normalized && !selectedTags.includes(normalized)) {
-      setSelectedTags([...selectedTags, normalized]);
+      newTags = [...selectedTags, normalized];
+      setSelectedTags(newTags);
     }
+    hasUserEdited.current = true;
+    saveDraft(noteTitle, noteContent, noteUrl, newTags);
     setCurrentTag('');
     setShowTagDropdown(false);
   };
 
   const removeTag = (tagToRemove: string): void => {
-    setSelectedTags(selectedTags.filter(t => t !== tagToRemove));
+    const newTags = selectedTags.filter(t => t !== tagToRemove);
+    setSelectedTags(newTags);
+    hasUserEdited.current = true;
+    saveDraft(noteTitle, noteContent, noteUrl, newTags);
   };
 
   /**
    * Handles the form submission.
    *
-   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   * @param {React.SubmitEvent<HTMLFormElement>} event - The form submission event.
    */
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -149,7 +217,6 @@ function NoteAdd(): React.ReactNode {
       return;
     }
 
-    // Add current tag if not empty before submitting
     const finalTags = [...selectedTags];
     if (currentTag.trim()) {
       const normalized = currentTag.trim().toLowerCase();
@@ -172,6 +239,7 @@ function NoteAdd(): React.ReactNode {
 
       const added: boolean = await addNote(payload);
       if (added) {
+        clearDraft();
         form.reset();
         resetInputs();
         navigate('/home');
@@ -191,6 +259,7 @@ function NoteAdd(): React.ReactNode {
 
       const edited: boolean = await submitEditNote(payload);
       if (edited) {
+        clearDraft();
         form.reset();
         resetInputs();
         navigate('/home');
@@ -207,6 +276,7 @@ function NoteAdd(): React.ReactNode {
         const noteToEdit: NoteResponse = await api.getJSON(`${ApiConfig.notesUrl}/${params.id}`);
         setNoteFromServer(noteToEdit);
         setAction('edit');
+        applyDraft();
       }
       catch (e) {
         handleError(e);
@@ -238,16 +308,16 @@ function NoteAdd(): React.ReactNode {
     }
   };
 
-  const setNoteFromServer = (noteContent: NoteResponse) => {
-    setNoteId(noteContent.id);
-    setNoteTitle(noteContent.title);
-    if (noteContent.url) {
-      setNoteUrl(noteContent.url);
+  const setNoteFromServer = (noteData: NoteResponse) => {
+    setNoteId(noteData.id);
+    setNoteTitle(noteData.title);
+    if (noteData.url) {
+      setNoteUrl(noteData.url);
     }
-    if (noteContent.tags) {
-      setSelectedTags(noteContent.tags);
+    if (noteData.tags) {
+      setSelectedTags(noteData.tags);
     }
-    setNoteContent(noteContent.description);
+    setNoteContent(noteData.description);
   };
 
   /**
@@ -271,6 +341,10 @@ function NoteAdd(): React.ReactNode {
     checkEditUrl();
     checkCloneUrl();
 
+    if (!params?.id && !window.location.search.includes('cloneFrom=')) {
+      applyDraft();
+    }
+
     const handleClickOutside = (event: MouseEvent): void => {
       if (tagContainerRef.current && !tagContainerRef.current.contains(event.target as Node)) {
         setShowTagDropdown(false);
@@ -280,6 +354,7 @@ function NoteAdd(): React.ReactNode {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
 
@@ -304,6 +379,22 @@ function NoteAdd(): React.ReactNode {
                 onClose={() => setErrorMessage('')}
               />
 
+              {draftBanner && (
+                <Alert variant="warning" dismissible onClose={() => setDraftBanner(false)}>
+                  Draft restored from a previous session.
+                  {' '}
+                  <Alert.Link
+                    href="#"
+                    onClick={(e: React.MouseEvent) => {
+                      e.preventDefault();
+                      void handleDiscardDraft();
+                    }}
+                  >
+                    Discard draft
+                  </Alert.Link>
+                </Alert>
+              )}
+
               <Form
                 noValidate
                 validated={validated}
@@ -321,6 +412,8 @@ function NoteAdd(): React.ReactNode {
                   value={noteTitle}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setNoteTitle(e.target.value);
+                    hasUserEdited.current = true;
+                    saveDraft(e.target.value, noteContent, noteUrl, selectedTags);
                   }}
                 />
 
@@ -337,6 +430,8 @@ function NoteAdd(): React.ReactNode {
                       value={noteUrl}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setNoteUrl(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(noteTitle, noteContent, e.target.value, selectedTags);
                       }}
                     />
                   </Col>
@@ -438,6 +533,8 @@ function NoteAdd(): React.ReactNode {
                     value={noteContent}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                       setNoteContent(e.target.value);
+                      hasUserEdited.current = true;
+                      saveDraft(noteTitle, e.target.value, noteUrl, selectedTags);
                     }}
                     data-testid="note-content-input-area"
                   />
@@ -454,6 +551,7 @@ function NoteAdd(): React.ReactNode {
                   type="button"
                   className="ms-2 home-new-item-secondary task-note-btn"
                   onClick={() => {
+                    clearDraft();
                     navigate('/home');
                   }}
                 >

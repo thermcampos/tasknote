@@ -123,51 +123,9 @@ jobs:
             echo "no_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: tfplan
-          path: terraform/tfplan
-
-  terraform-apply:
-    runs-on: easynode-debian
-    needs: terraform-plan
-    if: >
-      (github.event_name == 'push' || github.event_name == 'workflow_run' || inputs.apply == 'true')
-      && needs.terraform-plan.outputs.no_changes == 'false'
-    environment:
-      name: production
-      url: https://tasknote.darkroasted.vps-kinghost.net
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Download plan artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: tfplan
-          path: terraform
-
-      - name: Setup Kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      - name: Terraform Init
-        working-directory: terraform
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false
-
       - name: Terraform Apply
         working-directory: terraform
+        if: needs.terraform-plan.outputs.no_changes == 'false'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
