@@ -37,7 +37,7 @@ jobs:
         run: |
           ./mvnw -Pnative -DskipTests spring-boot:build-image \
             -Dspring-boot.build-image.imageName=rmcampos/tasknote-api:latest \
-            -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:latest
+            -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
 
       - name: Tag and push candidate
         run: |
