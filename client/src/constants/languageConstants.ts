@@ -19,6 +19,8 @@ export const timeAgoTranslations: Record<string, string> = {
   'month left_pt_br': '{X} mês restante',
   'days left_pt_br': '{X} dias restantes',
   'day left_pt_br': '{X} dia restante',
+  'due tomorrow_pt_br': 'Vence amanhã',
+  'due today_pt_br': 'Vence hoje',
 
   'years ago_es': 'Hace {X} años',
   'year ago_es': 'Hace {X} año',
@@ -40,6 +42,8 @@ export const timeAgoTranslations: Record<string, string> = {
   'month left_es': 'Falta {X} mes',
   'days left_es': 'Faltan {X} días',
   'day left_es': 'Falta {X} día',
+  'due tomorrow_es': 'Vence mañana',
+  'due today_es': 'Vence hoy',
 
   'years ago_ru': '{X} года назад',
   'year ago_ru': '{X} год назад',
@@ -60,7 +64,9 @@ export const timeAgoTranslations: Record<string, string> = {
   'months left_ru': 'осталось {X} месяца',
   'month left_ru': 'Остался {X} месяц',
   'days left_ru': 'осталось {X} дня',
-  'day left_ru': 'Остался {X} день'
+  'day left_ru': 'Остался {X} день',
+  'due tomorrow_ru': 'Срок завтра',
+  'due today_ru': 'Срок сегодня'
 };
 
 export const serverResponsesTranslations: Record<string, string> = {

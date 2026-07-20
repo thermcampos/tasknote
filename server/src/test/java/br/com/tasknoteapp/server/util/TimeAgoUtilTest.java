@@ -41,7 +41,7 @@ class TimeAgoUtilTest {
     Assertions.assertNull(TimeAgoUtil.formatDueDate(null));
 
     LocalDate localDate1 = LocalDate.now().plusDays(1L);
-    String expected1 = "1 day left" + getFormattedSuffix(localDate1);
+    String expected1 = "Due tomorrow" + getFormattedSuffix(localDate1);
     Assertions.assertEquals(expected1, TimeAgoUtil.formatDueDate(localDate1));
 
     LocalDate localDate2 = LocalDate.now().plusDays(12L);
@@ -74,7 +74,7 @@ class TimeAgoUtilTest {
   void formatDueDateEdgeCasesTest() {
     // Test for today
     LocalDate today = LocalDate.now();
-    String expectedToday = "0 days left" + getFormattedSuffix(today);
+    String expectedToday = "Due today" + getFormattedSuffix(today);
     Assertions.assertEquals(expectedToday, TimeAgoUtil.formatDueDate(today));
 
     // Test for a past date

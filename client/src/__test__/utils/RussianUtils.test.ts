@@ -49,6 +49,8 @@ describe('Russian Utils unit tests', () => {
     expect(translateTimeMessage('7 days left', 'ru')).toBe('осталось 7 дней');
     expect(translateTimeMessage('8 days left', 'ru')).toBe('осталось 8 дней');
     expect(translateTimeMessage('9 days left', 'ru')).toBe('осталось 9 дней');
+    expect(translateTimeMessage('Due tomorrow', 'ru')).toBe('Срок завтра');
+    expect(translateTimeMessage('Due today', 'ru')).toBe('Срок сегодня');
     expect(translateTimeMessage('lala', 'ru')).toBe('lala');
     expect(translateTimeMessage('null', 'ru')).toBe('null');
   });

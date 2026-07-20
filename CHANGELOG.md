@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-07-20
+
+### Changed
+- Labels in tasks due date to use the time ago format.
+- Bumped all minor deps in the frontend.
+
+### Fixed
+- Background image position in landing, login and register pages.
+
+### Removed
+- React Date Picker dependency in favour of regular browser input date UI.
+
 ## app-v2026.07.01.140 - 2026-07-01
 
 ### Added

@@ -4,8 +4,9 @@
   position: relative;
   text-align: center;
   color: $dark-text;
-  background: var(--bs-landing-bg) no-repeat center center;
+  background: var(--bs-landing-bg) no-repeat center center fixed;
   background-size: cover; // Ensures the image covers the whole background
+  min-height: 100vh;
 
   &::before {
     content: '';

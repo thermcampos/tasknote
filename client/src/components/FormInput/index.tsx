@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 import * as Icons from 'react-bootstrap-icons';
-import DatePicker from 'react-datepicker';
-import { MiddlewareReturn } from '@floating-ui/core';
-import { MiddlewareState } from '@floating-ui/dom';
-import 'react-datepicker/dist/react-datepicker.css';
-import './custom-datepicker.scss';
+import './FormInput.scss';
 
 type IconName = keyof typeof Icons;
 
@@ -17,9 +13,7 @@ interface Props {
   name: string;
   placeholder?: string;
   value?: string;
-  valueDate?: Date | null;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onChangeDate?: (date: Date | null) => void;
   dataTestId?: string;
   pwdHideText?: string;
   pwdShowText?: string;
@@ -67,36 +61,16 @@ function FormInput(props: React.PropsWithChildren<Props>): React.ReactNode {
             <InputGroup.Text>
               <Icon />
             </InputGroup.Text>
-            {props.type == 'date'
+            {props.type === 'date'
               ? (
-                  <DatePicker
-                    selected={props?.valueDate}
-                    onChange={(date: Date | null) => {
-                      if (props.onChangeDate) {
-                        props.onChangeDate(date);
-                      }
-                    }}
-                    dateFormat="MMMM d, yyyy"
-                    className="form-control"
-                    id="date-input"
-                    placeholderText={props.placeholder}
-                    popperPlacement="bottom"
-                    popperModifiers={[
-                      {
-                        name: 'preventOverflow',
-                        options: {
-                          enabled: true,
-                          boundariesElement: 'viewport'
-                        },
-                        fn: function (state: MiddlewareState): MiddlewareReturn | Promise<MiddlewareReturn> {
-                          return state;
-                        }
-                      }
-                    ]}
-                    withPortal
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
+                  <Form.Control
+                    required={props.required}
+                    type="date"
+                    name={props.name}
+                    placeholder={props.placeholder ? props.placeholder : ''}
+                    value={props?.value}
+                    onChange={props.onChange}
+                    data-testid={props.dataTestId}
                   />
                 )
               : (

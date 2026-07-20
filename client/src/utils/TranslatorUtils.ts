@@ -15,6 +15,14 @@ function translateTimeMessage(message: string, target: string): string {
     return message;
   }
 
+  if (message === 'Due tomorrow') {
+    return timeAgoTranslations[`due tomorrow_${target}`] ?? message;
+  }
+
+  if (message === 'Due today') {
+    return timeAgoTranslations[`due today_${target}`] ?? message;
+  }
+
   const firstSpace = message.indexOf(' ');
   const numberValue = message.substring(0, firstSpace);
   const textValue = message.substring(firstSpace).trim();

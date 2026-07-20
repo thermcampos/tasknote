@@ -45,7 +45,7 @@ function TaskAdd(): React.ReactNode {
   const [taskUrl, setTaskUrl] = useState<string>('');
   const [taskDone, setTaskDone] = useState<boolean>(false);
   const [action, setAction] = useState<TaskAction>('add');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDate, setDueDate] = useState<string>('');
   const [highPriority, setHighPriority] = useState<boolean>(false);
   const [currentTag, setCurrentTag] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -127,7 +127,7 @@ function TaskAdd(): React.ReactNode {
     setTaskDescription('');
     setTaskDone(false);
     setTaskUrl('');
-    setDueDate(null);
+    setDueDate('');
     setHighPriority(false);
     setCurrentTag('');
     setSelectedTags([]);
@@ -138,7 +138,7 @@ function TaskAdd(): React.ReactNode {
   const saveDraft = (
     description: string,
     taskUrl: string,
-    due: Date | null,
+    due: string,
     priority: boolean,
     draftTags: string[]
   ): void => {
@@ -148,7 +148,7 @@ function TaskAdd(): React.ReactNode {
       const draft: TaskDraft = {
         description,
         taskUrl,
-        dueDate: due ? due.toISOString() : null,
+        dueDate: due || null,
         highPriority: priority,
         tags: draftTags
       };
@@ -168,8 +168,8 @@ function TaskAdd(): React.ReactNode {
       const draft: TaskDraft = JSON.parse(raw);
       setTaskDescription(draft.description ?? '');
       setTaskUrl(draft.taskUrl ?? '');
-      const parsedDate = draft.dueDate ? new Date(draft.dueDate) : null;
-      setDueDate(parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null);
+      const parsedDate = draft.dueDate ? draft.dueDate : '';
+      setDueDate(parsedDate);
       setHighPriority(draft.highPriority ?? false);
       setSelectedTags(draft.tags ?? []);
       setDraftBanner(true);
@@ -185,7 +185,7 @@ function TaskAdd(): React.ReactNode {
     setTaskUrl(task.urls.length ? task.urls[0] : '');
     setTaskDone(task.done);
     if (task.dueDateFmt) {
-      setDueDate(new Date(task.dueDate));
+      setDueDate(task.dueDate);
     }
     setHighPriority(task.highPriority);
     if (task.tags) {
@@ -249,10 +249,7 @@ function TaskAdd(): React.ReactNode {
       return;
     }
 
-    let dueDateFormatted: string = '';
-    if (dueDate) {
-      dueDateFormatted = dueDate.toISOString().substring(0, 10);
-    }
+    const dueDateFormatted: string = dueDate;
 
     const finalTags = [...selectedTags];
     if (currentTag.trim()) {
@@ -427,11 +424,10 @@ function TaskAdd(): React.ReactNode {
                       type="date"
                       name="dueDate"
                       placeholder={t('task_form_duedate_placeholder')}
-                      valueDate={dueDate}
-                      onChangeDate={(date: Date | null) => {
-                        setDueDate(date);
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setDueDate(e.target.value);
                         hasUserEdited.current = true;
-                        saveDraft(taskDescription, taskUrl, date, highPriority, selectedTags);
+                        saveDraft(taskDescription, taskUrl, e.target.value, highPriority, selectedTags);
                       }}
                     />
                   </Col>

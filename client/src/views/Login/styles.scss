@@ -1,11 +1,12 @@
 @import '../../styles/theme.scss';
 
 .login-page {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: var(--bs-landing-bg) no-repeat center center;
+  background: var(--bs-landing-bg) no-repeat center center fixed;
   background-size: cover;
 
   &::before {

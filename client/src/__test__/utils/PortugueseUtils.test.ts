@@ -28,6 +28,8 @@ describe('Portuguese Utils unit tests', () => {
     expect(translateTimeMessage('1 month left', 'pt_br')).toBe('1 mês restante');
     expect(translateTimeMessage('2 days left', 'pt_br')).toBe('2 dias restantes');
     expect(translateTimeMessage('1 day left', 'pt_br')).toBe('1 dia restante');
+    expect(translateTimeMessage('Due tomorrow', 'pt_br')).toBe('Vence amanhã');
+    expect(translateTimeMessage('Due today', 'pt_br')).toBe('Vence hoje');
     expect(translateTimeMessage('lala', 'pt_br')).toBe('lala');
     expect(translateTimeMessage('null', 'pt_br')).toBe('null');
   });
