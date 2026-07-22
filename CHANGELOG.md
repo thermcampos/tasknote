@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Removed deployments to staging in PR pipelines. PR only runs CI now.
+
+### Removed
+- Old files from project and moved scripts to `tools` folder.
+
 ## 2026-07-20
 
 ### Changed
