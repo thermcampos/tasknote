@@ -202,6 +202,51 @@ function NoteAdd(): React.ReactNode {
   };
 
   /**
+   * Saves the note, either adding a new one or editing an existing one.
+   *
+   * @returns {Promise<boolean>} True if the note was saved successfully, false otherwise.
+   */
+  const saveNote = async (): Promise<boolean> => {
+    setValidated(true);
+
+    if (!noteTitle.trim() || !noteContent.trim()) {
+      setErrorMessage(translateServerResponse('Please fill in all the fields', i18n.language));
+      return false;
+    }
+
+    const finalTags = [...selectedTags];
+    if (currentTag.trim()) {
+      const normalized = currentTag.trim().toLowerCase();
+      if (!finalTags.includes(normalized)) {
+        finalTags.push(normalized);
+      }
+    }
+
+    const payload: NoteResponse = {
+      id: action === 'edit' ? noteId : 0,
+      title: noteTitle,
+      description: noteContent,
+      url: noteUrl,
+      tags: finalTags,
+      lastUpdate: '',
+      shared: false,
+      shareToken: null
+    };
+
+    const saved = action === 'add'
+      ? await addNote(payload)
+      : await submitEditNote(payload);
+
+    if (saved) {
+      clearDraft();
+      resetInputs();
+      navigate('/home');
+    }
+
+    return saved;
+  };
+
+  /**
    * Handles the form submission.
    *
    * @param {React.SubmitEvent<HTMLFormElement>} event - The form submission event.
@@ -217,54 +262,7 @@ function NoteAdd(): React.ReactNode {
       return;
     }
 
-    const finalTags = [...selectedTags];
-    if (currentTag.trim()) {
-      const normalized = currentTag.trim().toLowerCase();
-      if (!finalTags.includes(normalized)) {
-        finalTags.push(normalized);
-      }
-    }
-
-    if (action === 'add') {
-      const payload: NoteResponse = {
-        id: 0,
-        title: noteTitle,
-        description: noteContent,
-        url: noteUrl,
-        tags: finalTags,
-        lastUpdate: '',
-        shared: false,
-        shareToken: null
-      };
-
-      const added: boolean = await addNote(payload);
-      if (added) {
-        clearDraft();
-        form.reset();
-        resetInputs();
-        navigate('/home');
-      }
-    }
-    else if (action === 'edit') {
-      const payload: NoteResponse = {
-        id: noteId,
-        title: noteTitle,
-        description: noteContent,
-        url: noteUrl,
-        tags: finalTags,
-        lastUpdate: '',
-        shared: false,
-        shareToken: null
-      };
-
-      const edited: boolean = await submitEditNote(payload);
-      if (edited) {
-        clearDraft();
-        form.reset();
-        resetInputs();
-        navigate('/home');
-      }
-    }
+    await saveNote();
   };
 
   /**
@@ -569,6 +567,8 @@ function NoteAdd(): React.ReactNode {
         onHide={handleCloseModal}
         title={noteTitle}
         markdownText={noteContent}
+        onSave={saveNote}
+        saveButtonLabel={t('note_form_submit')}
       />
     </Container>
   );

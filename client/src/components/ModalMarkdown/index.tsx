@@ -10,6 +10,8 @@ type Props = {
   title: string;
   markdownText: string;
   onHide: () => void;
+  onSave?: () => Promise<boolean>;
+  saveButtonLabel?: string;
 };
 
 /**
@@ -73,13 +75,18 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
                 )}
           </Modal.Body>
           <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-end">
-            <Button variant="outline-secondary" onClick={handleHide}>
+            <Button
+              variant="outline-secondary"
+              onClick={handleHide}
+              className="modal-action-btn"
+            >
               Close
             </Button>
             <Button
               variant={showSource ? 'info' : 'outline-info'}
               onClick={handleToggleSource}
               data-testid="modal-source-button"
+              className="modal-action-btn"
             >
               Source
             </Button>
@@ -87,9 +94,23 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
               variant="outline-primary"
               onClick={handleCopy}
               data-testid="modal-copy-button"
+              className="modal-action-btn"
             >
               {copied ? 'Copied!' : 'Copy'}
             </Button>
+            {props.onSave && (
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  handleHide();
+                  await props.onSave!();
+                }}
+                data-testid="modal-save-button"
+                className="home-new-item modal-action-btn"
+              >
+                {props.saveButtonLabel ?? 'Save note'}
+              </Button>
+            )}
           </Modal.Footer>
         </Modal>
       )

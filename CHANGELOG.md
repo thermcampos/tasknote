@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-07-22
+
+### Added
+- Button to save notes from the preview modal. Closes [#15](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/issues/15)
+
 ### Changed
 - Removed deployments to staging in PR pipelines. PR only runs CI now. Closes [#14](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/issues/14)
 
 ### Removed
 - Old files from project and moved scripts to `tools` folder.
+
+```bash
+# Docker images
+docker pull rmcampos/tasknote-app:app-v2026.07.22.?
+```
 
 ## 2026-07-20
 
