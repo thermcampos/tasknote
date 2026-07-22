@@ -17,9 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Background image position in landing, login and register pages.
 
 ### Removed
-- React Date Picker dependency in favour of regular browser input date UI.
+- React Date Picker dependency in favor of regular browser input date UI.
 
-## app-v2026.07.01.140 - 2026-07-01
+```bash
+# Docker images
+docker pull rmcampos/tasknote-app:app-v2026.07.20.161
+```
+
+## 2026-07-01
 
 ### Added
 - Support for `Draft` notes and tasks.
@@ -38,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped client minor and major dependencies.
 
 ### Docker images
-- `docker.io/rmcampos/tasknote-app:app-v2026.06.24.?`
+- `rmcampos/tasknote-app:app-v2026.06.25.102`
 
 ## api-v32 && app-v2026.06.15.97 - 2026-06-15
 
