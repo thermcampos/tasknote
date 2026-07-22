@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Removed deployments to staging in PR pipelines. PR only runs CI now.
+- Removed deployments to staging in PR pipelines. PR only runs CI now. Closes [#14](https://lightroasted.vps-kinghost.net/rmcampos/tasknote/issues/14)
 
 ### Removed
 - Old files from project and moved scripts to `tools` folder.

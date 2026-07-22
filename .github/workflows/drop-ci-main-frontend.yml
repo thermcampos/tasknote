@@ -2,20 +2,6 @@ name: Main CI-Frontend
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'client/**/*.html'
-      - 'client/**/*.png'
-      - 'client/**/*.json'
-      - 'client/**/*.txt'
-      - 'client/**/*.ts'
-      - 'client/**/*.tsx'
-      - 'client/**/*.js'
-      - 'client/Dockerfile'
-      - 'client/Caddyfile'
-      - '.github/workflows/ci-main-frontend.yml'
 
 jobs:
   build-and-push:

@@ -2,9 +2,6 @@
 
 version: '3'
 
-vars:
-  GREETING: Hello, World!
-
 tasks:
   docker-build-web:
     desc: Build the tasknote-web prod-ready docker image, tagging it as candidate

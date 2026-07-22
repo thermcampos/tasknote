@@ -25,10 +25,10 @@
 - Frontend local dev: run from `client/` with `npm start`; backend local dev: run from `server/` with `./mvnw spring-boot:run`.
 
 ## CI/CD and release behavior
-- PR workflows (`.github/workflows/ci-pr-frontend.yml`, `.github/workflows/ci-pr-backend.yml`) run checks then push `:candidate` and `:pr-<N>` images to GHCR.
-- Main workflows (`.github/workflows/ci-main-frontend.yml`, `.github/workflows/ci-main-backend.yml`) push versioned tags (`app-v<date>.<run>` / `api-v<pom-version>`) + `latest`; backend workflow also increments `server/pom.xml` version.
-- Staging deploy workflow (`.github/workflows/cd-pr.yml`) triggers on completion of either PR CI workflow and applies Terraform in `terraform-stg/` using a plan→apply split.
-- Production deploy workflow (`.github/workflows/cd-main.yml`) triggers on completion of either Main CI workflow and applies Terraform in `terraform/` using a plan→apply split; `apply` can be skipped if there are no Terraform changes.
+- PR workflows (`.github/workflows/drop-ci-pr-frontend.yml`, `.github/workflows/drop-ci-pr-backend.yml`) run checks then push `:candidate` and `:pr-<N>` images to GHCR.
+- Main workflows (`.github/workflows/drop-ci-main-frontend.yml`, `.github/workflows/drop-ci-main-backend.yml`) push versioned tags (`app-v<date>.<run>` / `api-v<pom-version>`) + `latest`; backend workflow also increments `server/pom.xml` version.
+- Staging deploy workflow (`.github/workflows/drop-cd-pr.yml`) triggers on completion of either PR CI workflow and applies Terraform in `terraform-stg/` using a plan→apply split.
+- Production deploy workflow (`.github/workflows/deploy.yml`) triggers on completion of either Main CI workflow and applies Terraform in `terraform/` using a plan→apply split; `apply` can be skipped if there are no Terraform changes.
 - Infra wiring (secrets, services, ingress, image vars) is defined in `terraform/main.tf`; an alternative GCP target is under `terraform-gcp/`.
 
 ## Project conventions to preserve

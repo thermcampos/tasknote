@@ -2,9 +2,6 @@ name: Pull Request CD-Deploy to Staging
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: [ "Pull Request CI-Backend", "Pull Request CI-Frontend" ]
-    types: [ completed ]
 
 jobs:
   terraform-plan-stg:

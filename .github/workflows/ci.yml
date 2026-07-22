@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ['**/*']
+
+jobs:
+  build-backend:
+    name: Build Backend
+    runs-on: graalvm-25
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/server/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run Check Style
+        working-directory: ./server
+        run: ./mvnw --no-transfer-progress checkstyle:check -Dcheckstyle.skip=false
+
+      - name: Run build
+        working-directory: ./server
+        run: ./mvnw --no-transfer-progress clean compile -DskipTests
+
+      - name: Run tests
+        working-directory: ./server
+        run: ./mvnw --no-transfer-progress clean verify -P tests --file pom.xml
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: easynode-debian
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./client
+
+      - name: Run lint
+        run: npm run lint
+        working-directory: ./client
+
+      - name: Run build
+        run: npm run build
+        working-directory: ./client
+
+      - name: Run tests
+        run: npm run test:no-watch
+        working-directory: ./client

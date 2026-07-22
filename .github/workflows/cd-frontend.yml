@@ -1,0 +1,96 @@
+name: Frontend CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/frontend-cd.yml'
+
+jobs:
+  build:
+    runs-on: easynode-debian
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./client
+
+      - name: Run build
+        run: npm run build
+        working-directory: ./client
+
+      - name: Generate version tag
+        id: version
+        run: |
+          DATE=$(date +'%Y.%m.%d')
+          TAG="app-v${DATE}.${{ github.run_number }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}"
+
+      - name: Set up Docker Buildx
+        run: docker buildx inspect --bootstrap
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: rmcampos/tasknote-app
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}
+            type=raw,value=latest,enable={{ is_default_branch }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            rmcampos/tasknote-app:${{ steps.version.outputs.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=rmcampos/tasknote-app:buildcache
+          cache-to: type=registry,ref=rmcampos/tasknote-app:buildcache,mode=max
+          build-args: |
+            VITE_BUILD=${{ steps.version.outputs.tag }}
+
+      - name: Output Docker image URLs
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "🚀 Docker Images Published Successfully!"
+          echo "=========================================="
+          echo ""
+          echo "App Image:"
+          echo "  rmcampos/tasknote-app:${{ steps.version.outputs.tag }}"
+          echo "  rmcampos/tasknote-app:latest"
+          echo ""
+          echo "=========================================="
+
+      - name: Create and push Git tag
+        run: |
+          git config user.name "gitea-actions[bot]"
+          git config user.email "gitea-actions[bot]@noreply.lightroasted.vps-kinghost.net"
+          git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin ${{ steps.version.outputs.tag }}

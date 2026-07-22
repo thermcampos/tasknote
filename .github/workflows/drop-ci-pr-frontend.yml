@@ -2,21 +2,6 @@ name: Pull Request CI-Frontend
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - 'main'
-    paths:
-      - 'client/**/*.html'
-      - 'client/**/*.png'
-      - 'client/**/*.json'
-      - 'client/**/*.txt'
-      - 'client/**/*.ts'
-      - 'client/**/*.tsx'
-      - 'client/**/*.js'
-      - 'client/Dockerfile'
-      - 'client/Caddyfile'
-      - '.github/workflows/ci-pr-frontend.yml'
 
 jobs:
   run-checks:

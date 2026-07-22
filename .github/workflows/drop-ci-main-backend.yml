@@ -2,14 +2,6 @@ name: Main CI-Backend
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'server/**/*.java'
-      - 'server/**/*.xml'
-      - 'server/pom.xml'
-      - '.github/workflows/ci-main-backend.yml'
 
 jobs:
   build-and-push:
