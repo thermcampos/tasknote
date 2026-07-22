@@ -6,7 +6,7 @@ services:
     depends_on:
       tasknote-api:
         condition: service_healthy
-    image: ghcr.io/rmcampos/tasknote/app:latest
+    image: rmcampos/tasknote-app:latest
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -31,7 +31,7 @@ services:
       SECURITY_KEY: ${SECURITY_KEY}
       MAILGUN_APIKEY: ${MAILGUN_APIKEY}
     ports: ["8585:8585"]
-    image: ghcr.io/rmcampos/tasknote/api:latest
+    image: rmcampos/tasknote-api:latest
     healthcheck:
       test: ["CMD", "/layers/local_healthcheck/healthcheck/bin/healthcheck"]
       interval: 10s

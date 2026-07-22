@@ -80,12 +80,12 @@ variable "root_log_level" {
 
 variable "backend_image" {
   type    = string
-  default = "pull ghcr.io/rmcampos/tasknote/api:15"
+  default = "rmcampos/tasknote-api:latest"
 }
 
 variable "frontend_image" {
   type    = string
-  default = "ghcr.io/rmcampos/tasknote/app:app-v2026.03.17.18"
+  default = "rmcampos/tasknote-app:latest"
 }
 
 resource "kubernetes_namespace_v1" "tasknote" {

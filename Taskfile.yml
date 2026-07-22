@@ -5,11 +5,11 @@ version: '3'
 tasks:
   docker-build-web:
     desc: Build the tasknote-web prod-ready docker image, tagging it as candidate
-    cmd: docker build --no-cache --build-arg VITE_BUILD="v999-$(date '+%Y-%m-%d-%H%M%S')" --build-arg SOURCE_PR="v999-123456789-$(date '+%Y-%m-%d-%H%M%S')" -t ghcr.io/rmcampos/tasknote/app:latest ./client
+    cmd: docker build --no-cache --build-arg VITE_BUILD="v999-$(date '+%Y-%m-%d-%H%M%S')" --build-arg SOURCE_PR="v999-123456789-$(date '+%Y-%m-%d-%H%M%S')" -t rmcampos/tasknote-app:latest ./client
 
   docker-build-api:
     desc: Build the tasknote-api prod-ready docker image, tagging it as candidate
-    cmd: cd server && mvn -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/rmcampos/tasknote/api:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
+    cmd: cd server && mvn -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=rmcampos/tasknote-api:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
 
   prod-up-web:
     desc: Speed up the tasknote-web prod-like image, building it if required

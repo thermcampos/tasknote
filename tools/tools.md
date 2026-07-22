@@ -4,7 +4,7 @@ All kind of tools and useful links and commands can be found here!
 
 ## Links
 
-- **GitHub Container Registry:** https://ghcr.io/
+- **Docker Hub Container Registry:** https://hub.docker.io/
 - **Time tracking:** https://track.toggl.com/timer
 
 ## Building locally
@@ -74,7 +74,7 @@ docker run -d -p 8585:8585 --rm \
   -e POSTGRES_PORT=$POSTGRES_PORT \
   -e POSTGRES_HOST=$POSTGRES_HOST \
   -e CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS \
-  ghcr.io/ricardo-campos-org/react-typescript-todolist/tasknote-api:<PR-Number>
+  rmcampos/tasknote-api:<tag>
 ```
 
 Build Cloud Native: `./mvnw -B package -Pnative -DskipTests`
@@ -89,19 +89,19 @@ The frontend app will run on Nginx.
 
 ```
 export CR_PAT=YOUR_TOKEN
-echo $CR_PAT | docker login ghcr.io -u RMCampos --password-stdin
+echo $CR_PAT | docker login -u RMCampos --password-stdin
 ```
 
 **Pulling images:**
 
 ```sh
-docker pull ghcr.io/ricardo-campos-org/react-typescript-todolist/tasknote-web:50
-docker pull ghcr.io/ricardo-campos-org/react-typescript-todolist/tasknote-api:50
+docker pull rmcampos/tasknote-app:latest
+docker pull rmcampos/tasknote-api:latest
 ```
 
 **Pushing images:**
 ```sh
-docker push ghcr.io/ricardo-campos-org/react-typescript-todolist/tasknote-api:316
+docker push rmcampos/tasknote-api:latest
 ```
 
 - Get container IP

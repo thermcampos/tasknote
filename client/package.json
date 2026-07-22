@@ -9,7 +9,7 @@
     "node",
     "nestjs"
   ],
-  "repository": "https://github.com/ricardo-campos-org/react-typescript-todolist",
+  "repository": "https://lightroasted.vps-kinghost.net/rmcampos/tasknote",
   "private": true,
   "dependencies": {
     "@popperjs/core": "^2.11.8",

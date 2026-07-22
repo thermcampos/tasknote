@@ -9,7 +9,7 @@ If you want to contribute, please create a fork and a Merge Request. Take a look
 ## Steps to Contribute
 
 1. Fork the Project
-2. Clone it on your local (`git clone https://github.com/ricardo-campos-org/react-typescript-todolist`)
+2. Clone it on your local (`git clone https://lightroasted.vps-kinghost.net/rmcampos/tasknote.git`)
 3. Develop your amazing feature/changes
 4. Make sure your name is set (`git config user.name 'YOUR NAME'; git config user.email 'YOUR EMAIL'`)
 5. Commit your changes (`git commit -m 'Add some amazing feature'`)
@@ -24,18 +24,24 @@ The easiest way of having the app up and running is using [Docker](https://www.d
 
 1. Start the database engine (PostgreSQL)
    ```sh
-   bash tools/run-docker-db.sh
+   task dev-run-db
    ```
 2. Start the back-end engine (Java & Spring Boot)
    ```sh
-   bash tools/run-docker-server.sh
+   task dev-run-api
    ```
 3. Start the app server
    ```sh
-   bash tools/run-docker-client.sh
+   task dev-run-web
    ```
 
 >  Remember to follow up logs with 'docker ps' and 'docker logs -f <name>'
+
+Or start all services at once with Docker Compose:
+
+```sh
+docker compose -f docker-compose.dev.yml up -d
+```
 
 If everything went well, you can head to [http://localhost:5000](http://localhost:5000) and create your user.
 
