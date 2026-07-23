@@ -241,6 +241,19 @@ a:hover, .btn-link:hover {
   background-color: #333b42;
 }
 
+.home-new-item-danger {
+  border: 1px solid #FB1A41;
+  border-radius: 3px;
+  padding: 8px 16px;
+  color: #fff;
+  background-color: #FB1A41;
+  font-weight: 500;
+}
+
+.home-new-item-danger:hover {
+  background-color: #d91638;
+}
+
 .task-note-btn {
   height: 48px;
 }

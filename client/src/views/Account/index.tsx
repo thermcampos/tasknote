@@ -286,22 +286,29 @@ function Account(): React.ReactNode {
               </span>
 
               <p className="mt-4 mb-2">{t('account_privacy_text')}</p>
-              <Button
-                variant="danger"
-                type="button"
-                onClick={() => setShowAlert(true)}
-                className=""
-              >
-                {t('account_privacy_delete_btn')}
-              </Button>
+              <div className="d-grid">
+                <button
+                  type="button"
+                  onClick={() => setShowAlert(true)}
+                  className="home-new-item-danger task-note-btn"
+                >
+                  {t('account_privacy_delete_btn')}
+                </button>
+              </div>
 
               {showAlert && (
                 <Alert className="mt-3" variant="danger" onClose={() => setShowAlert(false)} dismissible>
                   <Alert.Heading>{t('account_delete_title')}</Alert.Heading>
                   <p>{t('account_delete_description')}</p>
-                  <Button onClick={() => deleteAccount()} variant="outline-danger">
-                    {t('account_delete_btn')}
-                  </Button>
+                  <div className="d-grid">
+                    <button
+                      type="button"
+                      onClick={() => deleteAccount()}
+                      className="home-new-item-danger task-note-btn"
+                    >
+                      {t('account_delete_btn')}
+                    </button>
+                  </div>
                 </Alert>
               )}
             </Card.Body>
