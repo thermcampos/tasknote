@@ -381,24 +381,41 @@ function TaskAdd(): React.ReactNode {
                 onSubmit={handleSubmit}
                 autoComplete="off"
               >
-                {/* Description */}
-                <FormInput
-                  labelText={t('task_form_desc_label')}
-                  iconName="PencilFill"
-                  required={true}
-                  type="text"
-                  name="description"
-                  placeholder={t('task_form_desc_placeholder')}
-                  value={taskDescription}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setTaskDescription(e.target.value);
-                    hasUserEdited.current = true;
-                    saveDraft(e.target.value, taskUrl, dueDate, highPriority, selectedTags);
-                  }}
-                />
-
                 <Row>
-                  <Col xs={12} sm={12} xxl={6}>
+                  <Col xs={12} md={6} xxl={6}>
+                    {/* Description */}
+                    <FormInput
+                      labelText={t('task_form_desc_label')}
+                      iconName="PencilFill"
+                      required={true}
+                      type="text"
+                      name="description"
+                      placeholder={t('task_form_desc_placeholder')}
+                      value={taskDescription}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setTaskDescription(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(e.target.value, taskUrl, dueDate, highPriority, selectedTags);
+                      }}
+                    />
+                  </Col>
+                  <Col xs={12} sm={6} md={3} xxl={3}>
+                    {/* Due date */}
+                    <FormInput
+                      labelText={t('task_form_duedate_label')}
+                      iconName="CalendarCheck"
+                      required={false}
+                      type="date"
+                      name="dueDate"
+                      placeholder={t('task_form_duedate_placeholder')}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setDueDate(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(taskDescription, taskUrl, e.target.value, highPriority, selectedTags);
+                      }}
+                    />
+                  </Col>
+                  <Col xs={12} sm={6} md={3} xxl={3}>
                     {/* Task URL */}
                     <FormInput
                       labelText={t('task_form_url_label')}
@@ -415,23 +432,10 @@ function TaskAdd(): React.ReactNode {
                       }}
                     />
                   </Col>
-                  <Col xs={12} sm={6} xxl={6}>
-                    {/* Due date */}
-                    <FormInput
-                      labelText={t('task_form_duedate_label')}
-                      iconName="CalendarCheck"
-                      required={false}
-                      type="date"
-                      name="dueDate"
-                      placeholder={t('task_form_duedate_placeholder')}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setDueDate(e.target.value);
-                        hasUserEdited.current = true;
-                        saveDraft(taskDescription, taskUrl, e.target.value, highPriority, selectedTags);
-                      }}
-                    />
-                  </Col>
-                  <Col xs={12} sm={12} xxl={12}>
+                </Row>
+
+                <Row>
+                  <Col xs={12}>
                     {/* Tag with suggestion dropdown */}
                     <Form.Group className="mb-3" ref={tagContainerRef} style={{ position: 'relative' }}>
                       <Form.Label>Tags</Form.Label>
@@ -521,23 +525,25 @@ function TaskAdd(): React.ReactNode {
                   }}
                 />
 
-                <button
-                  type="submit"
-                  className="home-new-item task-note-btn"
-                >
-                  {t('task_form_submit')}
-                </button>
+                <div className="d-flex justify-content-end gap-2">
+                  <button
+                    type="submit"
+                    className="home-new-item task-note-btn"
+                  >
+                    {t('task_form_submit')}
+                  </button>
 
-                <button
-                  type="button"
-                  className="ms-2 home-new-item-secondary task-note-btn"
-                  onClick={() => {
-                    clearDraft();
-                    navigate('/home');
-                  }}
-                >
-                  Cancel
-                </button>
+                  <button
+                    type="button"
+                    className="home-new-item-secondary task-note-btn"
+                    onClick={() => {
+                      clearDraft();
+                      navigate('/home');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </Form>
             </Card.Body>
           </Card>

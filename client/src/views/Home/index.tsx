@@ -20,7 +20,7 @@ import AuthContext from '../../context/AuthContext';
 import FilterContext from '../../context/FilterContext';
 import ContentHeader from '../../components/ContentHeader';
 import AlertError from '../../components/AlertError';
-import { ThreeDotsVertical } from 'react-bootstrap-icons';
+import { CheckSquare, JournalText, ThreeDotsVertical } from 'react-bootstrap-icons';
 import { NavLink } from 'react-router';
 import ModalMarkdown from '../../components/ModalMarkdown';
 import TaskTitle from '../../components/TaskTitle';
@@ -498,6 +498,9 @@ function Home(): React.ReactNode {
                 <Row>
                   <Col xs={10}>
                     <Card.Title>
+                      <span className="home-item-icon">
+                        <CheckSquare />
+                      </span>
                       <TaskTitle
                         title={task.description}
                         done={task.done}
@@ -558,6 +561,9 @@ function Home(): React.ReactNode {
                 <Row>
                   <Col xs={10}>
                     <Card.Title>
+                      <span className="home-item-icon">
+                        <JournalText />
+                      </span>
                       <NoteTitle
                         title={note.title}
                         noteUrl={note.url}

@@ -168,11 +168,6 @@
   max-height: 60vh;
 }
 
-.modal-action-btn {
-  border-radius: 3px;
-  height: 48px;
-}
-
 @media (max-width: 576px) {
   .markdown-source {
     font-size: 12px;

@@ -42,7 +42,9 @@ vi.mock('react-router', () => ({
 }));
 
 vi.mock('react-bootstrap-icons', () => ({
-  ThreeDotsVertical: () => <div data-testid="three-dots-icon">•••</div>
+  ThreeDotsVertical: () => <div data-testid="three-dots-icon">•••</div>,
+  CheckSquare: () => <div data-testid="task-icon">☑</div>,
+  JournalText: () => <div data-testid="note-icon">📝</div>
 }));
 
 // Mock components
@@ -217,6 +219,8 @@ describe('Home Component', () => {
     await waitFor(() => {
       expect(screen.getAllByTestId('task-title').length).toBe(2);
       expect(screen.getAllByTestId('note-title').length).toBe(2);
+      expect(screen.getAllByTestId('task-icon').length).toBe(2);
+      expect(screen.getAllByTestId('note-icon').length).toBe(2);
     });
   });
 

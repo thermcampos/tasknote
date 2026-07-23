@@ -1,3 +1,4 @@
 .card-tag {
   font-size: 13px;
+  color: rgba(var(--bs-body-color-rgb), 0.55);
 }

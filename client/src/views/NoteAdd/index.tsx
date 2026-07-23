@@ -538,23 +538,25 @@ function NoteAdd(): React.ReactNode {
                   />
                 </Form.Group>
 
-                <button
-                  type="submit"
-                  className="home-new-item task-note-btn mt-3"
-                >
-                  {t('note_form_submit')}
-                </button>
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <button
+                    type="submit"
+                    className="home-new-item task-note-btn"
+                  >
+                    {t('note_form_submit')}
+                  </button>
 
-                <button
-                  type="button"
-                  className="ms-2 home-new-item-secondary task-note-btn"
-                  onClick={() => {
-                    clearDraft();
-                    navigate('/home');
-                  }}
-                >
-                  Cancel
-                </button>
+                  <button
+                    type="button"
+                    className="home-new-item-secondary task-note-btn"
+                    onClick={() => {
+                      clearDraft();
+                      navigate('/home');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </Form>
 
             </Card.Body>

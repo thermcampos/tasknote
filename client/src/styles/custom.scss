@@ -254,6 +254,14 @@ a:hover, .btn-link:hover {
   background-color: #d91638;
 }
 
+.home-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  margin-right: 0.5rem;
+}
+
 .task-note-btn {
   height: 48px;
 }
@@ -391,7 +399,6 @@ p.search-result-item-title {
 
 .task-card {
   margin-bottom: 1rem;
-  padding: 0.5rem;
 }
 
 .dropdown-toggle::after {

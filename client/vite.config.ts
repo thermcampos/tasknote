@@ -32,7 +32,8 @@ export default defineConfig(({ mode }: ConfigEnv) => {
       sourcemap: mode === 'development'
     },
     server: {
-      port: 5000
+      port: 5000,
+      allowedHosts: ['.ngrok-free.dev']
     },
     preview: {
       port: 5000

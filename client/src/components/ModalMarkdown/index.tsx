@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -75,41 +74,41 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
                 )}
           </Modal.Body>
           <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-end">
-            <Button
-              variant="outline-secondary"
+            <button
+              type="button"
               onClick={handleHide}
-              className="modal-action-btn"
+              className="home-new-item-secondary task-note-btn"
             >
               Close
-            </Button>
-            <Button
-              variant={showSource ? 'info' : 'outline-info'}
+            </button>
+            <button
+              type="button"
               onClick={handleToggleSource}
               data-testid="modal-source-button"
-              className="modal-action-btn"
+              className={`${showSource ? 'home-new-item' : 'home-new-item-secondary'} task-note-btn`}
             >
               Source
-            </Button>
-            <Button
-              variant="outline-primary"
+            </button>
+            <button
+              type="button"
               onClick={handleCopy}
               data-testid="modal-copy-button"
-              className="modal-action-btn"
+              className="home-new-item-secondary task-note-btn"
             >
               {copied ? 'Copied!' : 'Copy'}
-            </Button>
+            </button>
             {props.onSave && (
-              <Button
-                variant="primary"
+              <button
+                type="button"
                 onClick={async () => {
                   handleHide();
                   await props.onSave!();
                 }}
                 data-testid="modal-save-button"
-                className="home-new-item modal-action-btn"
+                className="home-new-item task-note-btn"
               >
                 {props.saveButtonLabel ?? 'Save note'}
-              </Button>
+              </button>
             )}
           </Modal.Footer>
         </Modal>
