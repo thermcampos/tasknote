@@ -4,17 +4,17 @@ import { CalendarCheck } from 'react-bootstrap-icons';
 
 interface Props {
   text: string;
-  done: boolean;
+  completed: boolean;
   tooltip: string;
 }
 
 /**
- * Renders the TaskTimeLeft component if the task is not done, displaying
+ * Renders the TaskTimeLeft component if the task is not completed, displaying
  * a calendar icon and the time left for the task.
  *
  * @param {Props} props - Props for the TaskTimeLeft component.
  * @param {string} props.text - The time left for the task.
- * @param {boolean} props.done - Boolean value indicating if the task is done.
+ * @param {boolean} props.completed - Boolean value indicating if the task is completed.
  * @param {string} props.tooltip - The string representation of a Date instance.
  * @returns
  */
@@ -27,7 +27,7 @@ function TaskTimeLeft(props: React.PropsWithChildren<Props>): React.ReactNode | 
       }).format(new Date(props.tooltip))
     : '';
 
-  return props.done
+  return props.completed
     ? null
     : (
         <div className="d-block task-due-date">

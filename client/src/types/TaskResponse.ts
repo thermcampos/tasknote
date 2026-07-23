@@ -1,7 +1,7 @@
 type TaskResponse = {
   id: number;
   description: string;
-  done: boolean;
+  completed: boolean;
   highPriority: boolean;
   dueDate: string;
   dueDateFmt: string;

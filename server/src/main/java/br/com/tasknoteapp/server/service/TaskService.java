@@ -117,7 +117,7 @@ public class TaskService {
 
     TaskEntity task = new TaskEntity();
     task.setDescription(taskRequest.description());
-    task.setDone(false);
+    task.setCompleted(false);
     task.setUser(user);
     task.setLastUpdate(LocalDateTime.now());
     if (!Objects.isNull(taskRequest.dueDate()) && !taskRequest.dueDate().isBlank()) {
@@ -161,8 +161,8 @@ public class TaskService {
     if (!Objects.isNull(patch.description()) && !patch.description().isBlank()) {
       taskEntity.setDescription(patch.description().trim());
     }
-    if (!Objects.isNull(patch.done())) {
-      taskEntity.setDone(patch.done());
+    if (!Objects.isNull(patch.completed())) {
+      taskEntity.setCompleted(patch.completed());
     }
 
     patchDueDate(taskEntity, patch);
@@ -257,7 +257,7 @@ public class TaskService {
 
     List<TaskEntity> allTasks =
         taskRepository.findAllByUser_id(user.getId()).stream()
-            .filter(t -> t.getDone().equals(Boolean.FALSE))
+            .filter(t -> t.getCompleted().equals(Boolean.FALSE))
             .toList();
     if (allTasks.isEmpty()) {
       return List.of();

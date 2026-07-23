@@ -13,7 +13,7 @@ select 'health', (select id from users where email='test@domain.com')
 where not exists (select 1 from tags where name = 'health' and user_id = (select id from users where email='test@domain.com'));
 
 -- Create a task
-insert into tasks (description, done, user_id, last_update, due_date, high_priority)
+insert into tasks (description, completed, user_id, last_update, due_date, high_priority)
 select 'Install Debian', false, (select id from users where email='test@domain.com'), current_timestamp, '2025-12-12', false
 where not exists (select 1 from tasks where description = 'Install Debian' and user_id = (select id from users where email='test@domain.com'));
 
@@ -31,7 +31,7 @@ select (select id from tasks where description = 'Install Debian'), 'debian.org'
 where not exists (select 1 from task_url where url = 'debian.org');
 
 -- Create another task
-insert into tasks (description, done, user_id, last_update, due_date, high_priority)
+insert into tasks (description, completed, user_id, last_update, due_date, high_priority)
 select 'Workout', false, (select id from users where email='test@domain.com'), current_timestamp, '2025-12-12', false
 where not exists (select 1 from tasks where description = 'Workout' and user_id = (select id from users where email='test@domain.com'));
 

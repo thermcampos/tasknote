@@ -43,7 +43,7 @@ function TaskAdd(): React.ReactNode {
   const [taskId, setTaskId] = useState<number>(0);
   const [taskDescription, setTaskDescription] = useState<string>('');
   const [taskUrl, setTaskUrl] = useState<string>('');
-  const [taskDone, setTaskDone] = useState<boolean>(false);
+  const [taskCompleted, setTaskCompleted] = useState<boolean>(false);
   const [action, setAction] = useState<TaskAction>('add');
   const [dueDate, setDueDate] = useState<string>('');
   const [highPriority, setHighPriority] = useState<boolean>(false);
@@ -64,7 +64,7 @@ function TaskAdd(): React.ReactNode {
   const loadTags = async (): Promise<void> => {
     try {
       const response: string[] = await api.getJSON(`${ApiConfig.homeUrl}/tasks/tags`);
-      setTags(response);
+      setTags(response.filter(tag => tag !== 'untagged'));
     }
     catch (e) {
       handleError(e);
@@ -125,7 +125,7 @@ function TaskAdd(): React.ReactNode {
   const resetInputs = (): void => {
     setTaskId(0);
     setTaskDescription('');
-    setTaskDone(false);
+    setTaskCompleted(false);
     setTaskUrl('');
     setDueDate('');
     setHighPriority(false);
@@ -183,7 +183,7 @@ function TaskAdd(): React.ReactNode {
     setTaskId(task.id);
     setTaskDescription(task.description);
     setTaskUrl(task.urls.length ? task.urls[0] : '');
-    setTaskDone(task.done);
+    setTaskCompleted(task.completed);
     if (task.dueDateFmt) {
       setDueDate(task.dueDate);
     }
@@ -280,7 +280,7 @@ function TaskAdd(): React.ReactNode {
       const editPayload: TaskResponse = {
         id: taskId,
         description: taskDescription.trim(),
-        done: taskDone,
+        completed: taskCompleted,
         highPriority: highPriority,
         dueDate: dueDateFormatted,
         dueDateFmt: '',
@@ -439,7 +439,7 @@ function TaskAdd(): React.ReactNode {
                     {/* Tag with suggestion dropdown */}
                     <Form.Group className="mb-3" ref={tagContainerRef} style={{ position: 'relative' }}>
                       <Form.Label>Tags</Form.Label>
-                      <InputGroup className="mb-3">
+                      <InputGroup>
                         <InputGroup.Text>
                           <Hash />
                         </InputGroup.Text>
@@ -462,13 +462,16 @@ function TaskAdd(): React.ReactNode {
                           autoComplete="off"
                         />
                       </InputGroup>
+                      <Form.Text className="text-muted mb-3">
+                        Type a tag and press Enter
+                      </Form.Text>
                       <div className="mb-2 d-flex flex-wrap gap-1">
                         {selectedTags.map(t => (
                           <Badge
                             key={t}
                             bg="warning"
                             text="dark"
-                            className="p-2"
+                            className="p-2 mt-3"
                             style={{ cursor: 'pointer' }}
                             onClick={() => removeTag(t)}
                           >
@@ -496,11 +499,14 @@ function TaskAdd(): React.ReactNode {
                               <ListGroup.Item
                                 key={t}
                                 action
+                                variant="warning"
+                                className="d-flex align-items-center gap-2"
                                 onMouseDown={(e: React.MouseEvent) => {
                                   e.preventDefault();
                                   addTag(t);
                                 }}
                               >
+                                <i className="bi bi-tag"></i>
                                 #
                                 {t}
                               </ListGroup.Item>

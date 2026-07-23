@@ -24,7 +24,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
         upper(t.description) like upper(concat('%', :searchTerm, '%')) or
         upper(tg.name) like upper(concat('%', :searchTerm, '%')) or
         upper(tu.id.url) like upper(concat('%', :searchTerm, '%'))
-        ) and t.user.id = :userId and t.done = false
+        ) and t.user.id = :userId and t.completed = false
       """)
   List<TaskEntity> findAllBySearchTerm(
       @Param("searchTerm") String searchTerm, @Param("userId") Long userId);

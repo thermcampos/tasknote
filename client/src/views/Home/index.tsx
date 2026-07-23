@@ -2,12 +2,14 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Badge,
+  Button,
   Card,
   Col,
   Container,
   Dropdown,
   Form,
   InputGroup,
+  Modal,
   Row
 } from 'react-bootstrap';
 import { TaskResponse } from '../../types/TaskResponse';
@@ -48,9 +50,12 @@ function Home(): React.ReactNode {
   const [modalTitle, setModalTitle] = useState<string>('');
   const [modalContent, setModalContent] = useState<string>('');
   const [tasks, setTasks] = useState<TaskResponse[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<TaskResponse[]>([]);
   const [notes, setNotes] = useState<NoteResponse[]>([]);
   const [savedNotes, setSavedNotes] = useState<NoteResponse[]>([]);
   const [savedTasks, setSavedTasks] = useState<TaskResponse[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'task' | 'note'; id: number } | null>(null);
 
   /**
    * Handles the error by setting the error message.
@@ -77,13 +82,28 @@ function Home(): React.ReactNode {
   };
 
   /**
-   * Mark a task as done or undone.
+   * Toggle a task's completed status.
    *
-   * @param {TaskResponse} task The task to be marked as done or undone.
+   * @param {TaskResponse} task The task to be marked as completed or uncompleted.
    */
-  const markAsDone = async (task: TaskResponse): Promise<void> => {
+  const toggleTaskCompleted = async (task: TaskResponse): Promise<void> => {
     try {
-      await api.deleteNoContent(`${ApiConfig.tasksUrl}/${task.id}`);
+      await api.patchJSON(`${ApiConfig.tasksUrl}/${task.id}`, { completed: !task.completed });
+      await loadAllTasks();
+    }
+    catch (e) {
+      handleError(e);
+    }
+  };
+
+  /**
+   * Delete a task.
+   *
+   * @param {number} taskIdParam The task ID to be deleted.
+   */
+  const deleteTask = async (taskIdParam: number) => {
+    try {
+      await api.deleteNoContent(`${ApiConfig.tasksUrl}/${taskIdParam}`);
       await loadAllTasks();
     }
     catch (e) {
@@ -104,6 +124,35 @@ function Home(): React.ReactNode {
     catch (e) {
       handleError(e);
     }
+  };
+
+  /**
+   * Opens the delete confirmation modal for a task or note.
+   *
+   * @param {object} target The target to delete with type and id.
+   */
+  const confirmDelete = (target: { type: 'task' | 'note'; id: number }) => {
+    setDeleteTarget(target);
+    setShowDeleteModal(true);
+  };
+
+  /**
+   * Confirms and executes the delete action.
+   */
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    if (deleteTarget.type === 'task') {
+      await deleteTask(deleteTarget.id);
+    }
+    else {
+      await deleteNote(deleteTarget.id);
+    }
+
+    setShowDeleteModal(false);
+    setDeleteTarget(null);
   };
 
   /**
@@ -143,9 +192,13 @@ function Home(): React.ReactNode {
    * @param {NoteResponse[]} allNotes - The full list of notes to filter from.
    */
   const applyFilter = (text: string, radioFilter: string | undefined, allTasks: TaskResponse[], allNotes: NoteResponse[]): void => {
+    const activeTasks = allTasks.filter((task: TaskResponse) => !task.completed);
+    const doneTasks = allTasks.filter((task: TaskResponse) => task.completed);
+
     if (!text && (!radioFilter || radioFilter === 'everything')) {
       setNotes([...allNotes]);
-      setTasks([...allTasks]);
+      setTasks([...activeTasks]);
+      setCompletedTasks([...doneTasks]);
       return;
     }
 
@@ -175,9 +228,10 @@ function Home(): React.ReactNode {
 
     if (radioFilter && radioFilter === 'onlyNotes') {
       setTasks([]);
+      setCompletedTasks([]);
     }
     else {
-      let filteredTasks = allTasks.filter((task: TaskResponse) => {
+      let filteredTasks = activeTasks.filter((task: TaskResponse) => {
         return task.description.toLowerCase().includes(text.toLowerCase())
           || task.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()))
           || task.urls.filter((url: string) => url.includes(text.toLowerCase())).length > 0;
@@ -191,6 +245,21 @@ function Home(): React.ReactNode {
       }
 
       setTasks([...filteredTasks]);
+
+      let filteredCompletedTasks = doneTasks.filter((task: TaskResponse) => {
+        return task.description.toLowerCase().includes(text.toLowerCase())
+          || task.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()))
+          || task.urls.filter((url: string) => url.includes(text.toLowerCase())).length > 0;
+      });
+
+      if (tagToFilter === 'untagged') {
+        filteredCompletedTasks = filteredCompletedTasks.filter((task: TaskResponse) => !task.tags || task.tags.length === 0);
+      }
+      else if (tagToFilter) {
+        filteredCompletedTasks = filteredCompletedTasks.filter((task: TaskResponse) => task.tags && task.tags.includes(tagToFilter));
+      }
+
+      setCompletedTasks([...filteredCompletedTasks]);
     }
   };
 
@@ -210,10 +279,16 @@ function Home(): React.ReactNode {
       const tasksFetched: TaskResponse[] = await api.getJSON(ApiConfig.tasksUrl);
       const translated = translateTaskResponse(tasksFetched, i18n.language);
       translated.sort((t1, t2) => {
-        if (t1.highPriority === t2.highPriority) {
-          return 0;
+        if (t1.completed === t2.completed) {
+          if (t1.highPriority === t2.highPriority) {
+            return 0;
+          }
+          if (t1.highPriority) {
+            return -1;
+          }
+          return 1;
         }
-        if (t1.highPriority) {
+        if (t1.completed) {
           return -1;
         }
         return 1;
@@ -503,7 +578,7 @@ function Home(): React.ReactNode {
                       </span>
                       <TaskTitle
                         title={task.description}
-                        done={task.done}
+                        completed={task.completed}
                         taskUrl={task.urls}
                       />
                     </Card.Title>
@@ -514,7 +589,7 @@ function Home(): React.ReactNode {
                         <ThreeDotsVertical />
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        {!task.done && (
+                        {!task.completed && (
                           <NavLink to={`/tasks/edit/${task.id}`}>
                             <Dropdown.Item as="span">
                               {t('task_table_action_edit')}
@@ -523,10 +598,17 @@ function Home(): React.ReactNode {
                         )}
                         <Dropdown.Item
                           as="button"
-                          onClick={() => markAsDone(task)}
+                          onClick={() => toggleTaskCompleted(task)}
                           data-testid={`task-dropdown-done-item-${task.id}`}
                         >
-                          {task.done ? t('task_table_action_undone') : t('task_table_action_done')}
+                          {task.completed ? t('task_table_action_undone') : t('task_table_action_done')}
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          as="button"
+                          onClick={() => confirmDelete({ type: 'task', id: task.id })}
+                          data-testid={`task-dropdown-delete-item-${task.id}`}
+                        >
+                          {t('task_table_action_delete')}
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
@@ -536,7 +618,7 @@ function Home(): React.ReactNode {
                 {task.dueDateFmt && (
                   <TaskTimeLeft
                     text={task.dueDateFmt}
-                    done={task.done}
+                    completed={task.completed}
                     tooltip={task.dueDate}
                   />
                 )}
@@ -604,7 +686,7 @@ function Home(): React.ReactNode {
                         )}
                         <Dropdown.Item
                           as="button"
-                          onClick={() => deleteNote(note.id)}
+                          onClick={() => confirmDelete({ type: 'note', id: note.id })}
                           data-testid={`note-dropdown-delete-item-${note.id}`}
                         >
                           {t('task_table_action_delete')}
@@ -638,12 +720,105 @@ function Home(): React.ReactNode {
         ))}
       </Row>
 
+      {completedTasks.length > 0 && (
+        <Row className="mt-4">
+          <Col xs={12}>
+            <h5 className="text-muted">{t('home_completed_tasks_title')}</h5>
+          </Col>
+          {completedTasks.map((task: TaskResponse) => (
+            <Col xs={12} key={`completed-${task.id.toString()}`}>
+              <Card className={`task-card task-completed ${task.highPriority ? 'high-importance' : ''}`}>
+                <Card.Body>
+                  <Row>
+                    <Col xs={10}>
+                      <Card.Title>
+                        <span className="home-item-icon">
+                          <CheckSquare />
+                        </span>
+                        <TaskTitle
+                          title={task.description}
+                          completed={task.completed}
+                          taskUrl={task.urls}
+                        />
+                      </Card.Title>
+                    </Col>
+                    <Col xs={2} className="text-end">
+                      <Dropdown>
+                        <Dropdown.Toggle variant="success" data-testid={`completed-task-dropdown-menu-${task.id}`}>
+                          <ThreeDotsVertical />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item
+                            as="button"
+                            onClick={() => toggleTaskCompleted(task)}
+                            data-testid={`completed-task-dropdown-undone-item-${task.id}`}
+                          >
+                            {t('task_table_action_undone')}
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            as="button"
+                            onClick={() => confirmDelete({ type: 'task', id: task.id })}
+                            data-testid={`completed-task-dropdown-delete-item-${task.id}`}
+                          >
+                            {t('task_table_action_delete')}
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                  </Row>
+                </Card.Body>
+                <Card.Footer className="task-card-footer">
+                  <TaskTag
+                    tags={task.tags}
+                    lastUpdate={task.lastUpdate}
+                    taskOrNote="task"
+                  />
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
       <ModalMarkdown
         show={showMarkdownView}
         onHide={handleCloseModal}
         title={modalTitle}
         markdownText={modalContent}
       />
+
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton className="bg-danger-subtle">
+          <Modal.Title className="d-flex align-items-center gap-2">
+            <i className="bi bi-exclamation-triangle-fill text-danger"></i>
+            {t('delete_modal_title')}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {t('delete_modal_body')}
+        </Modal.Body>
+        <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-end">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}
+            className="task-note-btn"
+          >
+            {t('delete_modal_cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleConfirmDelete}
+            className="task-note-btn"
+          >
+            {t('delete_modal_confirm')}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }

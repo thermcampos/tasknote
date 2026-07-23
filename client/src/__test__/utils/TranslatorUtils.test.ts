@@ -6,7 +6,7 @@ const tasks: TaskResponse[] = [
   {
     id: 1,
     description: 'description',
-    done: false,
+    completed: false,
     highPriority: true,
     dueDate: '',
     dueDateFmt: '',

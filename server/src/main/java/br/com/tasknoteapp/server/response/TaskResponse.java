@@ -9,8 +9,8 @@ import java.util.List;
 /** This record represents a task and its urls object to be returned. */
 public record TaskResponse(
     Long id,
+    Boolean completed,
     String description,
-    Boolean done,
     Boolean highPriority,
     LocalDate dueDate,
     String dueDateFmt,
@@ -31,8 +31,8 @@ public record TaskResponse(
 
     return new TaskResponse(
         entity.getId(),
+        entity.getCompleted(),
         entity.getDescription(),
-        entity.getDone(),
         entity.getHighPriority(),
         entity.getDueDate(),
         dueDateFmt,

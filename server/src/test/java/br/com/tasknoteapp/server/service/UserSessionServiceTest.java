@@ -42,7 +42,7 @@ class UserSessionServiceTest {
     user.setEmail("user@domain.com");
 
     TaskResponse task =
-        new TaskResponse(1L, "Task 1", false, true, null, null, null, null, List.of());
+        new TaskResponse(1L, false, "Task 1", true, null, null, null, null, List.of());
     NoteResponse note =
         new NoteResponse(1L, "Note 1", "Description", null, null, null, false, null);
 

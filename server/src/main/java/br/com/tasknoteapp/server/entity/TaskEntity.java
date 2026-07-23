@@ -28,7 +28,7 @@ public class TaskEntity {
   @Column(length = 2000)
   private String description;
 
-  private Boolean done;
+  private Boolean completed;
 
   @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, updatable = false)
   @ManyToOne(fetch = FetchType.LAZY)
@@ -66,12 +66,12 @@ public class TaskEntity {
     this.description = description;
   }
 
-  public Boolean getDone() {
-    return done;
+  public Boolean getCompleted() {
+    return completed;
   }
 
-  public void setDone(Boolean done) {
-    this.done = done;
+  public void setCompleted(Boolean completed) {
+    this.completed = completed;
   }
 
   public UserEntity getUser() {
@@ -139,8 +139,8 @@ public class TaskEntity {
         + ", description='"
         + description
         + '\''
-        + ", done="
-        + done
+        + ", completed="
+        + completed
         + ", lastUpdate="
         + lastUpdate
         + ", dueDate="

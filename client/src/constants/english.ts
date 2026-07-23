@@ -76,6 +76,7 @@ const enTranslations = {
   home_card_task_pending: 'Pending tasks',
   home_card_task_empty: 'No pending tasks',
   home_card_task_done: 'done tasks!',
+  home_completed_tasks_title: 'Completed tasks',
   home_card_task_done_empty: 'No done tasks!',
   home_card_task_btn: 'Go to Tasks',
   home_card_note_title: 'Notes Summary',
@@ -105,6 +106,10 @@ const enTranslations = {
   task_table_action_edit: 'Edit',
   task_table_action_clone: 'Clone',
   task_table_action_delete: 'Delete',
+  delete_modal_title: 'Confirm deletion',
+  delete_modal_body: 'Are you sure you want to delete this item? This action cannot be undone.',
+  delete_modal_cancel: 'Cancel',
+  delete_modal_confirm: 'Delete',
 
   note_form_title: 'Add note',
   note_form_title_label: 'Title',

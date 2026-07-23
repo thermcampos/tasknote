@@ -33,7 +33,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     },
     server: {
       port: 5000,
-      allowedHosts: ['.ngrok-free.dev']
+      ...(process.env.NGROK ? { allowedHosts: ['.ngrok-free.dev'] } : {})
     },
     preview: {
       port: 5000

@@ -61,7 +61,7 @@ class HomeServiceTest {
         .thenReturn(List.of(tag1, tag2, tag3, tag4, tag5, tag6));
 
     TaskResponse task1 =
-        new TaskResponse(1L, "Task 1", false, false, null, null, null, List.of("tag1"), List.of());
+        new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of("tag1"), List.of());
     when(taskService.getTasksByFilter("all")).thenReturn(List.of(task1));
     when(noteService.getAllNotes()).thenReturn(List.of());
 
@@ -94,7 +94,7 @@ class HomeServiceTest {
     when(tagRepository.findAllByUser_idOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
 
     TaskResponse task1 =
-        new TaskResponse(1L, "Task 1", false, false, null, null, null, List.of(), List.of());
+        new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of(), List.of());
     when(taskService.getTasksByFilter("all")).thenReturn(List.of(task1));
     when(noteService.getAllNotes()).thenReturn(List.of());
 

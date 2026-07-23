@@ -76,6 +76,7 @@ const esTranslations = {
   home_card_task_pending: 'Tarea(s) pendiente(s)',
   home_card_task_empty: 'No tienes tareas pendientes',
   home_card_task_done: 'tarea(s) completada(s)',
+  home_completed_tasks_title: 'Tareas completadas',
   home_card_task_done_empty: 'No tareas completadas',
   home_card_task_btn: 'Ir a Tareas',
   home_card_note_title: 'Resumen de Notas',
@@ -105,6 +106,10 @@ const esTranslations = {
   task_table_action_edit: 'Editar',
   task_table_action_clone: 'Clonar',
   task_table_action_delete: 'Eliminar',
+  delete_modal_title: 'Confirmar eliminación',
+  delete_modal_body: '¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.',
+  delete_modal_cancel: 'Cancelar',
+  delete_modal_confirm: 'Eliminar',
 
   note_form_title: 'Añadir nota',
   note_form_title_label: 'Título',

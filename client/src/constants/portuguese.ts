@@ -76,6 +76,7 @@ const ptBrTranslations = {
   home_card_task_pending: 'Tarefa(s) pendente(s)',
   home_card_task_empty: 'Nenhuma tarefa pendente',
   home_card_task_done: 'tarefa(s) concluída(s)',
+  home_completed_tasks_title: 'Tarefas concluídas',
   home_card_task_done_empty: 'Nenhuma tarefa condluída',
   home_card_task_btn: 'Ir para Tarefas',
   home_card_note_title: 'Resumo de Notas',
@@ -105,6 +106,10 @@ const ptBrTranslations = {
   task_table_action_edit: 'Alterar',
   task_table_action_clone: 'Clonar',
   task_table_action_delete: 'Excluir',
+  delete_modal_title: 'Confirmar exclusão',
+  delete_modal_body: 'Tem certeza de que deseja excluir este item? Esta ação não pode ser desfeita.',
+  delete_modal_cancel: 'Cancelar',
+  delete_modal_confirm: 'Excluir',
 
   note_form_title: 'Adicionar nota',
   note_form_title_label: 'Título',

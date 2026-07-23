@@ -22,6 +22,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('../../api-service/api', () => ({
   default: {
     getJSON: vi.fn(),
+    patchJSON: vi.fn(),
     deleteNoContent: vi.fn()
   }
 }));
@@ -100,7 +101,7 @@ const mockTasks: TaskResponse[] = [
   {
     id: 1,
     description: 'Task 1',
-    done: false,
+    completed: false,
     urls: ['http://example.com'],
     tags: ['work'],
     lastUpdate: '2023-10-10',
@@ -111,7 +112,7 @@ const mockTasks: TaskResponse[] = [
   {
     id: 2,
     description: 'Task 2',
-    done: true,
+    completed: true,
     urls: [],
     tags: ['home'],
     lastUpdate: '2023-10-09',
@@ -355,8 +356,11 @@ describe('Home Component', () => {
       fireEvent.click(markAsDoneButton!);
     });
 
-    // Should call deleteNoContent API
-    expect(api.deleteNoContent).toHaveBeenCalledWith(expect.stringContaining('/1'));
+    // Should call patchJSON API with completed: true
+    expect(api.patchJSON).toHaveBeenCalledWith(
+      expect.stringContaining('/1'),
+      expect.objectContaining({ completed: true })
+    );
     
     // Should reload tasks
     expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('tasks'));
@@ -391,11 +395,17 @@ describe('Home Component', () => {
       fireEvent.click(deleteButton!);
     });
 
+    // Modal should appear; confirm deletion
+    const confirmButton = screen.getByText('delete_modal_confirm');
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
+
     // Should call deleteNoContent API
-    expect(api.deleteNoContent).toHaveBeenCalledWith(expect.stringContaining('/2'));
-    
+    expect(api.deleteNoContent).toHaveBeenCalledWith(expect.stringContaining('/1'));
+
     // Should reload notes
-    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('notes'));
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('notes'))
   });
 
   test('opens markdown modal when clicking on note tag', async () => {

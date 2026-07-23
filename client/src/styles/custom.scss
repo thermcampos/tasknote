@@ -401,6 +401,14 @@ p.search-result-item-title {
   margin-bottom: 1rem;
 }
 
+.task-completed {
+  opacity: 0.7;
+}
+
+.task-completed .card-title {
+  color: var(--bs-secondary-color);
+}
+
 .dropdown-toggle::after {
   display: none!important;
 }

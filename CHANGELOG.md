@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-07-23
+
+### Added
+- Section for completed tasks in the home page..
+- Icons in tasks and notes to differentiate them.
+- Modal confirming before delete tasks and notes.
+
+### Changed
+- Completed tasks are now kept in the database, unless deleted.
+- Buttons in home screen notes view to match the system design.
+- Add task form to be easier to see and better structured.
+- Delete my account buttons layout to match the system design.
+- Loaded tasks now has a light yellow styling.
+
+### Fixed
+- Dropped the untagged tag from loading in the add notes and tasks form.
+
 ## 2026-07-22
 
 ### Added

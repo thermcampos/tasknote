@@ -13,11 +13,11 @@ select 'cleaning', (select id from users where email='test@domain.com')
 where not exists (select 1 from tags where name = 'cleaning' and user_id = (select id from users where email='test@domain.com'));
 
 -- Create some tasks
-insert into tasks (description, done, user_id, last_update, due_date, high_priority)
+insert into tasks (description, completed, user_id, last_update, due_date, high_priority)
 select 'Refactor', false, (select id from users where email='test@domain.com'), current_timestamp, '2025-12-12', false
 where not exists (select 1 from tasks where description = 'Refactor' and user_id = (select id from users where email='test@domain.com'));
 
-insert into tasks (description, done, user_id, last_update, due_date, high_priority)
+insert into tasks (description, completed, user_id, last_update, due_date, high_priority)
 select 'Cleanup', false, (select id from users where email='test@domain.com'), current_timestamp, '2025-12-12', false
 where not exists (select 1 from tasks where description = 'Cleanup' and user_id = (select id from users where email='test@domain.com'));
 

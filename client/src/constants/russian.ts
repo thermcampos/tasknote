@@ -76,6 +76,7 @@ const ruTranslations = {
   home_card_task_pending: 'Незавершённые задачи',
   home_card_task_empty: 'Нет незавершённых задач',
   home_card_task_done: 'выполненные задачи!',
+  home_completed_tasks_title: 'Выполненные задачи',
   home_card_task_done_empty: 'Нет выполненных задач!',
   home_card_task_btn: 'Перейти к задачам',
   home_card_note_title: 'Обзор заметок',
@@ -105,6 +106,10 @@ const ruTranslations = {
   task_table_action_edit: 'Редактировать',
   task_table_action_clone: 'Клонировать',
   task_table_action_delete: 'Удалить',
+  delete_modal_title: 'Подтвердите удаление',
+  delete_modal_body: 'Вы уверены, что хотите удалить этот элемент? Это действие не может быть отменено.',
+  delete_modal_cancel: 'Отмена',
+  delete_modal_confirm: 'Удалить',
 
   note_form_title: 'Добавить примечание',
   note_form_title_label: 'Заголовок',

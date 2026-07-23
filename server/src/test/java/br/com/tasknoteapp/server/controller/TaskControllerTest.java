@@ -42,7 +42,7 @@ class TaskControllerTest {
   void getAllTasks_tasksFound_shouldSucceed() throws Exception {
     TaskResponse taskResponse =
         new TaskResponse(
-            1L, "Desc", false, true, null, null, "Moments ago", List.of("tag"), List.of("http://test.com"));
+            1L, false, "Desc", true, null, null, "Moments ago", List.of("tag"), List.of("http://test.com"));
     when(taskService.getAllTasks()).thenReturn(List.of(taskResponse));
 
     mockMvc
@@ -54,7 +54,7 @@ class TaskControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(taskResponse.id()))
         .andExpect(jsonPath("$[0].description").value(taskResponse.description()))
-        .andExpect(jsonPath("$[0].done", Matchers.is(false)))
+        .andExpect(jsonPath("$[0].completed", Matchers.is(false)))
         .andExpect(jsonPath("$[0].highPriority", Matchers.is(true)))
         .andExpect(jsonPath("$[0].dueDate", Matchers.nullValue()))
         .andExpect(jsonPath("$[0].dueDateFmt", Matchers.nullValue()))
@@ -101,8 +101,8 @@ class TaskControllerTest {
     TaskResponse taskResponse =
         new TaskResponse(
             taskId,
-            "Desc",
             false,
+            "Desc",
             true,
             null,
             null,
@@ -120,7 +120,7 @@ class TaskControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(taskResponse.id()))
         .andExpect(jsonPath("$.description").value(taskResponse.description()))
-        .andExpect(jsonPath("$.done", Matchers.is(false)))
+        .andExpect(jsonPath("$.completed", Matchers.is(false)))
         .andExpect(jsonPath("$.highPriority", Matchers.is(true)))
         .andExpect(jsonPath("$.dueDate", Matchers.nullValue()))
         .andExpect(jsonPath("$.dueDateFmt", Matchers.nullValue()))
@@ -167,13 +167,13 @@ class TaskControllerTest {
   void patchTask_happyPath_shouldSucceed() throws Exception {
     Long taskId = 111L;
     TaskPatchRequest patchRequest =
-        new TaskPatchRequest("Description patched", false, List.of(), null, true, List.of("tag"));
+        new TaskPatchRequest(false, "Description patched", List.of(), null, true, List.of("tag"));
 
     TaskResponse taskResponse =
         new TaskResponse(
             taskId,
-            "Description patched",
             false,
+            "Description patched",
             true,
             null,
             null,
@@ -186,7 +186,7 @@ class TaskControllerTest {
         """
         {
           "description": "Description patched",
-          "done": false,
+          "completed": false,
           "urls": [],
           "highPriority": true
         }
@@ -209,7 +209,7 @@ class TaskControllerTest {
   void patchTask_notFound_shouldFail() throws Exception {
     Long taskId = 118L;
     TaskPatchRequest patchRequest =
-        new TaskPatchRequest("Description patched", false, List.of(), null, true, List.of("tag"));
+        new TaskPatchRequest(false, "Description patched", List.of(), null, true, List.of("tag"));
 
     when(taskService.patchTask(taskId, patchRequest)).thenThrow(new TaskNotFoundException());
 
@@ -217,7 +217,7 @@ class TaskControllerTest {
         """
         {
           "description": "Description patched",
-          "done": false,
+          "completed": false,
           "urls": [],
           "highPriority": true,
           "tags": ["tag"]
@@ -244,7 +244,7 @@ class TaskControllerTest {
         """
         {
           "description": "Description patched",
-          "done": false,
+          "completed": false,
           "urls": [],
           "highPriority": true
         }
@@ -271,8 +271,8 @@ class TaskControllerTest {
     TaskResponse taskResponse =
         new TaskResponse(
             858L,
-            "Description patched",
             false,
+            "Description patched",
             true,
             null,
             null,

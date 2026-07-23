@@ -6,8 +6,8 @@ import java.util.List;
 
 /** This record represents a task patch payload. */
 public record TaskPatchRequest(
+    Boolean completed,
     @Size(max = 2000) String description,
-    Boolean done,
     List<
             @Size(max = 200)
             @Pattern(

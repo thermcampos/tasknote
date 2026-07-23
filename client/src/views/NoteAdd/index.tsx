@@ -62,7 +62,7 @@ function NoteAdd(): React.ReactNode {
   const loadTags = async (): Promise<void> => {
     try {
       const response: string[] = await api.getJSON(`${ApiConfig.homeUrl}/tasks/tags`);
-      setTags(response);
+      setTags(response.filter(tag => tag !== 'untagged'));
     }
     catch (e) {
       handleError(e);
@@ -399,24 +399,25 @@ function NoteAdd(): React.ReactNode {
                 onSubmit={handleSubmit}
                 autoComplete="off"
               >
-                {/* Note title */}
-                <FormInput
-                  labelText={t('note_form_title_label')}
-                  iconName="JournalCheck"
-                  required={true}
-                  type="text"
-                  name="note_title"
-                  placeholder={t('note_form_title_placeholder')}
-                  value={noteTitle}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setNoteTitle(e.target.value);
-                    hasUserEdited.current = true;
-                    saveDraft(e.target.value, noteContent, noteUrl, selectedTags);
-                  }}
-                />
-
                 <Row>
-                  <Col xs={12} xl={9}>
+                  <Col xs={12} md={6} xxl={6}>
+                    {/* Note title */}
+                    <FormInput
+                      labelText={t('note_form_title_label')}
+                      iconName="JournalCheck"
+                      required={true}
+                      type="text"
+                      name="note_title"
+                      placeholder={t('note_form_title_placeholder')}
+                      value={noteTitle}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setNoteTitle(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(e.target.value, noteContent, noteUrl, selectedTags);
+                      }}
+                    />
+                  </Col>
+                  <Col xs={12} md={6} xxl={6}>
                     {/* Note URL */}
                     <FormInput
                       labelText={t('task_form_url_label')}
@@ -433,11 +434,13 @@ function NoteAdd(): React.ReactNode {
                       }}
                     />
                   </Col>
-                  <Col xs={12} xl={3}>
+                </Row>
+                <Row>
+                  <Col xs={12}>
                     {/* Tag with suggestion dropdown */}
                     <Form.Group className="mb-3" ref={tagContainerRef} style={{ position: 'relative' }}>
                       <Form.Label>Tags</Form.Label>
-                      <InputGroup className="mb-3">
+                      <InputGroup>
                         <InputGroup.Text>
                           <Hash />
                         </InputGroup.Text>
@@ -460,13 +463,16 @@ function NoteAdd(): React.ReactNode {
                           autoComplete="off"
                         />
                       </InputGroup>
+                      <Form.Text className="text-muted">
+                        Type a tag and press Enter
+                      </Form.Text>
                       <div className="mb-2 d-flex flex-wrap gap-1">
                         {selectedTags.map(t => (
                           <Badge
                             key={t}
                             bg="warning"
                             text="dark"
-                            className="p-2"
+                            className="p-2 mt-3"
                             style={{ cursor: 'pointer' }}
                             onClick={() => removeTag(t)}
                           >
@@ -494,11 +500,14 @@ function NoteAdd(): React.ReactNode {
                               <ListGroup.Item
                                 key={t}
                                 action
+                                variant="warning"
+                                className="d-flex align-items-center gap-2"
                                 onMouseDown={(e: React.MouseEvent) => {
                                   e.preventDefault();
                                   addTag(t);
                                 }}
                               >
+                                <i className="bi bi-tag"></i>
                                 #
                                 {t}
                               </ListGroup.Item>
