@@ -52,6 +52,7 @@ function Home(): React.ReactNode {
   const [tasks, setTasks] = useState<TaskResponse[]>([]);
   const [completedTasks, setCompletedTasks] = useState<TaskResponse[]>([]);
   const [notes, setNotes] = useState<NoteResponse[]>([]);
+  const [archivedNotes, setArchivedNotes] = useState<NoteResponse[]>([]);
   const [savedNotes, setSavedNotes] = useState<NoteResponse[]>([]);
   const [savedTasks, setSavedTasks] = useState<TaskResponse[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
@@ -127,6 +128,27 @@ function Home(): React.ReactNode {
   };
 
   /**
+   * Filter notes into active and archived sets.
+   *
+   * @param {NoteResponse[]} allNotes The full list of notes to partition.
+   * @returns {{ active: NoteResponse[]; archived: NoteResponse[] }} Active and archived notes.
+   */
+  const partitionNotes = (allNotes: NoteResponse[]): { active: NoteResponse[]; archived: NoteResponse[] } => {
+    return allNotes.reduce<{ active: NoteResponse[]; archived: NoteResponse[] }>(
+      (acc, note) => {
+        if (note.archived) {
+          acc.archived.push(note);
+        }
+        else {
+          acc.active.push(note);
+        }
+        return acc;
+      },
+      { active: [], archived: [] }
+    );
+  };
+
+  /**
    * Opens the delete confirmation modal for a task or note.
    *
    * @param {object} target The target to delete with type and id.
@@ -153,6 +175,40 @@ function Home(): React.ReactNode {
 
     setShowDeleteModal(false);
     setDeleteTarget(null);
+  };
+
+  /**
+   * Archive a note, moving it to the archived notes section.
+   *
+   * @param {number} noteId The note ID to be archived.
+   */
+  const archiveNote = async (noteId: number): Promise<void> => {
+    try {
+      await api.putJSON(`${ApiConfig.notesUrl}/${noteId}/archive`, {});
+      await loadAllNotes();
+    }
+    catch (e) {
+      handleError(e);
+    }
+  };
+
+  /**
+   * Restore an archived note back to active notes.
+   *
+   * @param {number} noteId The note ID to be restored.
+   */
+  const restoreNote = async (noteId: number): Promise<void> => {
+    try {
+      await api.putJSON(`${ApiConfig.notesUrl}/${noteId}/restore`, {});
+      await loadAllNotes();
+    }
+    catch (e) {
+      handleError(e);
+    }
+  };
+
+  const handleArchiveNote = (noteId: number): void => {
+    void archiveNote(noteId);
   };
 
   /**
@@ -194,9 +250,11 @@ function Home(): React.ReactNode {
   const applyFilter = (text: string, radioFilter: string | undefined, allTasks: TaskResponse[], allNotes: NoteResponse[]): void => {
     const activeTasks = allTasks.filter((task: TaskResponse) => !task.completed);
     const doneTasks = allTasks.filter((task: TaskResponse) => task.completed);
+    const { active: activeNotes, archived: archivedNoteList } = partitionNotes(allNotes);
 
     if (!text && (!radioFilter || radioFilter === 'everything')) {
-      setNotes([...allNotes]);
+      setNotes([...activeNotes]);
+      setArchivedNotes([...archivedNoteList]);
       setTasks([...activeTasks]);
       setCompletedTasks([...doneTasks]);
       return;
@@ -206,9 +264,10 @@ function Home(): React.ReactNode {
 
     if (radioFilter && radioFilter === 'onlyTasks') {
       setNotes([]);
+      setArchivedNotes([]);
     }
     else {
-      let filteredNotes = allNotes.filter((note: NoteResponse) => {
+      let filteredNotes = activeNotes.filter((note: NoteResponse) => {
         const anyTitleMatch = note.title.toLowerCase().includes(text.toLowerCase());
         const anyContentMatch = note.description.toLowerCase().includes(text.toLowerCase());
         const anyUrlMatch = note.url?.includes(text.toLowerCase());
@@ -223,7 +282,23 @@ function Home(): React.ReactNode {
         filteredNotes = filteredNotes.filter((note: NoteResponse) => note.tags && note.tags.includes(tagToFilter));
       }
 
+      let filteredArchivedNotes = archivedNoteList.filter((note: NoteResponse) => {
+        const anyTitleMatch = note.title.toLowerCase().includes(text.toLowerCase());
+        const anyContentMatch = note.description.toLowerCase().includes(text.toLowerCase());
+        const anyUrlMatch = note.url?.includes(text.toLowerCase());
+        const anyTagMatch = note.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()));
+        return anyTitleMatch || anyContentMatch || anyUrlMatch || anyTagMatch;
+      });
+
+      if (tagToFilter === 'untagged') {
+        filteredArchivedNotes = filteredArchivedNotes.filter((note: NoteResponse) => !note.tags || note.tags.length === 0);
+      }
+      else if (tagToFilter) {
+        filteredArchivedNotes = filteredArchivedNotes.filter((note: NoteResponse) => note.tags && note.tags.includes(tagToFilter));
+      }
+
       setNotes([...filteredNotes]);
+      setArchivedNotes([...filteredArchivedNotes]);
     }
 
     if (radioFilter && radioFilter === 'onlyNotes') {
@@ -478,7 +553,9 @@ function Home(): React.ReactNode {
               }}
             />
 
-            <Dropdown onSelect={eventKey => eventKey && handleOptionChange(eventKey)}>
+            <Dropdown
+              onSelect={eventKey => eventKey && handleOptionChange(eventKey)}
+            >
               <Dropdown.Toggle
                 variant="success"
                 id="filter-dropdown"
@@ -501,7 +578,10 @@ function Home(): React.ReactNode {
                 </Badge>
               </Dropdown.Toggle>
 
-              <Dropdown.Menu className="shadow-lg border-0" style={{ minWidth: '200px' }}>
+              <Dropdown.Menu
+                className="shadow-lg border-0"
+                style={{ minWidth: '200px' }}
+              >
                 <Dropdown.Header className="text-muted small">
                   <i className="bi bi-funnel me-2"></i>
                   Filter Options
@@ -568,7 +648,10 @@ function Home(): React.ReactNode {
       <Row className="mt-3">
         {tasks.map((task: TaskResponse) => (
           <Col xs={12} key={task.id.toString()}>
-            <Card key={task.id.toString()} className={`task-card ${task.highPriority ? 'high-importance' : ''}`}>
+            <Card
+              key={task.id.toString()}
+              className={`task-card ${task.highPriority ? 'high-importance' : ''}`}
+            >
               <Card.Body>
                 <Row>
                   <Col xs={10}>
@@ -585,7 +668,10 @@ function Home(): React.ReactNode {
                   </Col>
                   <Col xs={2} className="text-end">
                     <Dropdown>
-                      <Dropdown.Toggle variant="success" data-testid={`task-dropdown-menu-${task.id}`}>
+                      <Dropdown.Toggle
+                        variant="success"
+                        data-testid={`task-dropdown-menu-${task.id}`}
+                      >
                         <ThreeDotsVertical />
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
@@ -601,11 +687,14 @@ function Home(): React.ReactNode {
                           onClick={() => toggleTaskCompleted(task)}
                           data-testid={`task-dropdown-done-item-${task.id}`}
                         >
-                          {task.completed ? t('task_table_action_undone') : t('task_table_action_done')}
+                          {task.completed
+                            ? t('task_table_action_undone')
+                            : t('task_table_action_done')}
                         </Dropdown.Item>
                         <Dropdown.Item
                           as="button"
-                          onClick={() => confirmDelete({ type: 'task', id: task.id })}
+                          onClick={() =>
+                            confirmDelete({ type: 'task', id: task.id })}
                           data-testid={`task-dropdown-delete-item-${task.id}`}
                         >
                           {t('task_table_action_delete')}
@@ -646,15 +735,15 @@ function Home(): React.ReactNode {
                       <span className="home-item-icon">
                         <JournalText />
                       </span>
-                      <NoteTitle
-                        title={note.title}
-                        noteUrl={note.url}
-                      />
+                      <NoteTitle title={note.title} noteUrl={note.url} />
                     </Card.Title>
                   </Col>
                   <Col xs={2} className="text-end">
                     <Dropdown>
-                      <Dropdown.Toggle variant="success" data-testid={`note-dropdown-menu-${note.id}`}>
+                      <Dropdown.Toggle
+                        variant="success"
+                        data-testid={`note-dropdown-menu-${note.id}`}
+                      >
                         <ThreeDotsVertical />
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
@@ -673,7 +762,9 @@ function Home(): React.ReactNode {
                           onClick={() => toggleShareNote(note)}
                           data-testid={`note-dropdown-share-item-${note.id}`}
                         >
-                          {note.shared ? t('note_action_unshare') : t('note_action_share')}
+                          {note.shared
+                            ? t('note_action_unshare')
+                            : t('note_action_share')}
                         </Dropdown.Item>
                         {note.shared && note.shareToken && (
                           <Dropdown.Item
@@ -686,10 +777,10 @@ function Home(): React.ReactNode {
                         )}
                         <Dropdown.Item
                           as="button"
-                          onClick={() => confirmDelete({ type: 'note', id: note.id })}
-                          data-testid={`note-dropdown-delete-item-${note.id}`}
+                          onClick={() => handleArchiveNote(note.id)}
+                          data-testid={`note-dropdown-archive-item-${note.id}`}
                         >
-                          {t('task_table_action_delete')}
+                          {t('note_action_archive')}
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
@@ -727,7 +818,9 @@ function Home(): React.ReactNode {
           </Col>
           {completedTasks.map((task: TaskResponse) => (
             <Col xs={12} key={`completed-${task.id.toString()}`}>
-              <Card className={`task-card task-completed ${task.highPriority ? 'high-importance' : ''}`}>
+              <Card
+                className={`task-card task-completed ${task.highPriority ? 'high-importance' : ''}`}
+              >
                 <Card.Body>
                   <Row>
                     <Col xs={10}>
@@ -744,7 +837,10 @@ function Home(): React.ReactNode {
                     </Col>
                     <Col xs={2} className="text-end">
                       <Dropdown>
-                        <Dropdown.Toggle variant="success" data-testid={`completed-task-dropdown-menu-${task.id}`}>
+                        <Dropdown.Toggle
+                          variant="success"
+                          data-testid={`completed-task-dropdown-menu-${task.id}`}
+                        >
                           <ThreeDotsVertical />
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
@@ -757,7 +853,8 @@ function Home(): React.ReactNode {
                           </Dropdown.Item>
                           <Dropdown.Item
                             as="button"
-                            onClick={() => confirmDelete({ type: 'task', id: task.id })}
+                            onClick={() =>
+                              confirmDelete({ type: 'task', id: task.id })}
                             data-testid={`completed-task-dropdown-delete-item-${task.id}`}
                           >
                             {t('task_table_action_delete')}
@@ -772,6 +869,81 @@ function Home(): React.ReactNode {
                     tags={task.tags}
                     lastUpdate={task.lastUpdate}
                     taskOrNote="task"
+                  />
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      {archivedNotes.length > 0 && (
+        <Row className="mt-4">
+          <Col xs={12}>
+            <h5 className="text-muted">{t('home_archived_notes_title')}</h5>
+          </Col>
+          {archivedNotes.map((note: NoteResponse) => (
+            <Col xs={12} key={`archived-${note.id.toString()}`}>
+              <Card className="task-card task-completed mb-3">
+                <Card.Body>
+                  <Row>
+                    <Col xs={10}>
+                      <Card.Title>
+                        <span className="home-item-icon">
+                          <JournalText />
+                        </span>
+                        <NoteTitle title={note.title} noteUrl={note.url} />
+                      </Card.Title>
+                    </Col>
+                    <Col xs={2} className="text-end">
+                      <Dropdown>
+                        <Dropdown.Toggle
+                          variant="success"
+                          data-testid={`archived-note-dropdown-menu-${note.id}`}
+                        >
+                          <ThreeDotsVertical />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item
+                            as="button"
+                            onClick={() => restoreNote(note.id)}
+                            data-testid={`archived-note-dropdown-restore-item-${note.id}`}
+                          >
+                            {t('note_action_restore')}
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            as="button"
+                            onClick={() =>
+                              confirmDelete({ type: 'note', id: note.id })}
+                            data-testid={`archived-note-dropdown-delete-item-${note.id}`}
+                          >
+                            {t('note_action_delete_permanently')}
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </Col>
+                  </Row>
+
+                  <span className="text-muted span-line-break font-size-14">
+                    {getFirstRows(note.description)}
+                  </span>
+                </Card.Body>
+                <Card.Footer className="task-card-footer">
+                  <TaskTag
+                    tags={note.tags}
+                    lastUpdate={note.lastUpdate}
+                    taskOrNote="note"
+                    onClick={(e: React.MouseEvent<Element, MouseEvent>) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setModalTitle(note.title);
+                      setModalContent(note.description);
+                      setShowMarkdownView(true);
+                      localStorage.setItem(
+                        OPEN_NOTE_ID_KEY,
+                        note.id.toString()
+                      );
+                    }}
                   />
                 </Card.Footer>
               </Card>
@@ -799,13 +971,13 @@ function Home(): React.ReactNode {
             {t('delete_modal_title')}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          {t('delete_modal_body')}
-        </Modal.Body>
+        <Modal.Body>{t('delete_modal_body')}</Modal.Body>
         <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-end">
           <Button
             variant="outline-secondary"
-            onClick={() => setShowDeleteModal(false)}
+            onClick={() => {
+              setShowDeleteModal(false);
+            }}
             className="task-note-btn"
           >
             {t('delete_modal_cancel')}
@@ -814,6 +986,7 @@ function Home(): React.ReactNode {
             variant="danger"
             onClick={handleConfirmDelete}
             className="task-note-btn"
+            data-testid="confirm-delete-button"
           >
             {t('delete_modal_confirm')}
           </Button>

@@ -77,6 +77,7 @@ const esTranslations = {
   home_card_task_empty: 'No tienes tareas pendientes',
   home_card_task_done: 'tarea(s) completada(s)',
   home_completed_tasks_title: 'Tareas completadas',
+  home_archived_notes_title: 'Notas archivadas',
   home_card_task_done_empty: 'No tareas completadas',
   home_card_task_btn: 'Ir a Tareas',
   home_card_note_title: 'Resumen de Notas',
@@ -122,6 +123,9 @@ const esTranslations = {
   note_action_share: 'Compartir',
   note_action_unshare: 'Dejar de compartir',
   note_action_copy_link: 'Copiar enlace',
+  note_action_archive: 'Archivar',
+  note_action_restore: 'Restaurar',
+  note_action_delete_permanently: 'Eliminar permanentemente',
 
   about_page_title_one: 'Acerca de',
   about_page_title_two: 'TaskNote App',

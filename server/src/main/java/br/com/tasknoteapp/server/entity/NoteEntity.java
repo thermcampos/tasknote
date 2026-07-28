@@ -49,6 +49,9 @@ public class NoteEntity {
   @Column(name = "share_token", length = 36)
   private String shareToken;
 
+  @Column(name = "archived", nullable = false)
+  private boolean archived = false;
+
   public Long getId() {
     return id;
   }
@@ -113,6 +116,14 @@ public class NoteEntity {
     this.shareToken = shareToken;
   }
 
+  public boolean isArchived() {
+    return archived;
+  }
+
+  public void setArchived(boolean archived) {
+    this.archived = archived;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -145,6 +156,8 @@ public class NoteEntity {
         + tags
         + ", lastUpdate="
         + lastUpdate
+        + ", archived="
+        + archived
         + '}';
   }
 }

@@ -7,6 +7,7 @@ type NoteResponse = {
   lastUpdate: string;
   shared: boolean;
   shareToken: string | null;
+  archived: boolean;
 };
 
 export type { NoteResponse };

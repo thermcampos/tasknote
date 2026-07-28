@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-07-28
+
+### Added
+- Option to archive notes.
+
+### Changed
+- Notes should be archived before deleting.
+
+```bash
+# Docker images
+docker pull rmcampos/tasknote-app:app-v2026.07.28.000
+docker pull rmcampos/tasknote-api:api-v2026.07.28.000
+```
+
 ## 2026-07-23
 
 ### Added
@@ -20,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add task form to be easier to see and better structured.
 - Delete my account buttons layout to match the system design.
 - Loaded tasks now has a light yellow styling.
+
+```bash
+# Docker images
+docker pull rmcampos/tasknote-app:app-v2026.07.23.190
+docker pull rmcampos/tasknote-api:api-v2026.07.23.189
+```
 
 ### Fixed
 - Dropped the untagged tag from loading in the add notes and tasks form.

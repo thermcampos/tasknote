@@ -44,7 +44,7 @@ class NoteControllerTest {
   void getAllNotes_notesFound_shouldSucceed() throws Exception {
     NoteUrlResponse noteUrl = new NoteUrlResponse(111L, "https://test.com");
     NoteResponse note =
-        new NoteResponse(111L, "title", "description", "https://test.com", null, List.of("tag"), false, null);
+        new NoteResponse(111L, "title", "description", "https://test.com", null, List.of("tag"), false, null, false);
 
     when(noteService.getAllNotes()).thenReturn(List.of(note));
 
@@ -109,7 +109,8 @@ class NoteControllerTest {
             null,
             List.of("tag"),
             false,
-            null);
+            null,
+            false);
 
     when(noteService.patchNote(noteId, patchRequest)).thenReturn(response);
 
@@ -201,7 +202,7 @@ class NoteControllerTest {
     NoteRequest request = new NoteRequest("Title", "Description", null, List.of("tag"));
 
     NoteResponse entity = new NoteResponse(1L, request.title(), request.description(),
-        null, null, List.of("tag"), false, null);
+        null, null, List.of("tag"), false, null, false);
 
     when(noteService.createNote(request)).thenReturn(entity);
 
@@ -331,7 +332,8 @@ class NoteControllerTest {
     final Long noteId = 1L;
     final String token = "test-token-uuid";
     NoteResponse response =
-        new NoteResponse(noteId, "title", "description", null, null, List.of("tag"), true, token);
+        new NoteResponse(
+            noteId, "title", "description", null, null, List.of("tag"), true, token, false);
 
     when(noteService.shareNote(noteId)).thenReturn(response);
 
@@ -366,7 +368,8 @@ class NoteControllerTest {
   void unshareNote_happyPath_shouldSucceed() throws Exception {
     final Long noteId = 1L;
     NoteResponse response =
-        new NoteResponse(noteId, "title", "description", null, null, List.of("tag"), false, null);
+        new NoteResponse(
+            noteId, "title", "description", null, null, List.of("tag"), false, null, false);
 
     when(noteService.unshareNote(noteId)).thenReturn(response);
 

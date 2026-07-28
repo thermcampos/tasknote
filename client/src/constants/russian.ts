@@ -77,6 +77,7 @@ const ruTranslations = {
   home_card_task_empty: 'Нет незавершённых задач',
   home_card_task_done: 'выполненные задачи!',
   home_completed_tasks_title: 'Выполненные задачи',
+  home_archived_notes_title: 'Архивированные заметки',
   home_card_task_done_empty: 'Нет выполненных задач!',
   home_card_task_btn: 'Перейти к задачам',
   home_card_note_title: 'Обзор заметок',
@@ -122,6 +123,9 @@ const ruTranslations = {
   note_action_share: 'Поделиться',
   note_action_unshare: 'Закрыть доступ',
   note_action_copy_link: 'Копировать ссылку',
+  note_action_archive: 'Архивировать',
+  note_action_restore: 'Восстановить',
+  note_action_delete_permanently: 'Удалить навсегда',
 
   about_page_title_one: 'около',
   about_page_title_two: 'TaskNote App',

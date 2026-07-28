@@ -44,7 +44,7 @@ class UserSessionServiceTest {
     TaskResponse task =
         new TaskResponse(1L, false, "Task 1", true, null, null, null, null, List.of());
     NoteResponse note =
-        new NoteResponse(1L, "Note 1", "Description", null, null, null, false, null);
+        new NoteResponse(1L, "Note 1", "Description", null, null, null, false, null, false);
 
     when(authService.getCurrentUser()).thenReturn(Optional.of(user));
     when(taskService.getAllTasks()).thenReturn(List.of(task));

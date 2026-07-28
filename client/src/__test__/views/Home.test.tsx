@@ -22,8 +22,11 @@ vi.mock('react-i18next', () => ({
 vi.mock('../../api-service/api', () => ({
   default: {
     getJSON: vi.fn(),
+    postJSON: vi.fn(),
     patchJSON: vi.fn(),
-    deleteNoContent: vi.fn()
+    putJSON: vi.fn(),
+    deleteNoContent: vi.fn(),
+    getJSONNoAuth: vi.fn()
   }
 }));
 
@@ -131,7 +134,8 @@ const mockNotes: NoteResponse[] = [
     lastUpdate: '2023-10-10',
     url: 'http://example.com',
     shared: false,
-    shareToken: null
+    shareToken: null,
+    archived: false
   },
   {
     id: 2,
@@ -141,7 +145,8 @@ const mockNotes: NoteResponse[] = [
     lastUpdate: '2023-10-09',
     url: null,
     shared: false,
-    shareToken: null
+    shareToken: null,
+    archived: false
   }
 ];
 
@@ -192,6 +197,7 @@ describe('Home Component', () => {
       return Promise.resolve([]);
     });
     (api.deleteNoContent as any).mockResolvedValue(undefined);
+    (api.putJSON as any).mockResolvedValue(undefined);
     
     // Mock window.innerWidth for the cleanText function
     Object.defineProperty(window, 'innerWidth', {
@@ -366,7 +372,9 @@ describe('Home Component', () => {
     expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('tasks'));
   });
 
-  test('deletes note', async () => {
+  test('archives note', async () => {
+    (api.putJSON as any).mockResolvedValue(undefined);
+
     await act(async () => {
       renderHome();
     });
@@ -379,33 +387,26 @@ describe('Home Component', () => {
     const noteDropdownToggles = screen.getAllByTestId('three-dots-icon');
     // Note dropdowns start after task dropdowns
     const firstNoteDropdown = noteDropdownToggles[mockTasks.length];
-    
+
     // Click the dropdown toggle
     await act(async () => {
       fireEvent.click(firstNoteDropdown);
     });
 
-    // Find and click the "Delete" option by testId
-    const deleteButtons = screen.getAllByRole('button');
-    const deleteButton = deleteButtons.find(
-      button => button.textContent === 'task_table_action_delete'
-    );
+    // Find and click the "Archive" option by testId
+    const archiveButton = screen.getByTestId('note-dropdown-archive-item-1');
 
     await act(async () => {
-      fireEvent.click(deleteButton!);
+      fireEvent.click(archiveButton);
     });
 
-    // Modal should appear; confirm deletion
-    const confirmButton = screen.getByText('delete_modal_confirm');
-    await act(async () => {
-      fireEvent.click(confirmButton);
+    // Should call archive API immediately
+    await waitFor(() => {
+      expect(api.putJSON).toHaveBeenCalledWith(expect.stringContaining('/notes/1/archive'), {});
     });
-
-    // Should call deleteNoContent API
-    expect(api.deleteNoContent).toHaveBeenCalledWith(expect.stringContaining('/1'));
 
     // Should reload notes
-    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('notes'))
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('notes'));
   });
 
   test('opens markdown modal when clicking on note tag', async () => {
@@ -492,7 +493,7 @@ describe('Home Component', () => {
     });
   });
 
-  test('keeps filter selection after deleting a note', async () => {
+  test('keeps filter selection after archiving a note', async () => {
     await act(async () => {
       renderHome();
     });
@@ -524,11 +525,11 @@ describe('Home Component', () => {
     });
 
     const deleteButtons = screen.getAllByRole('button');
-    const deleteButton = deleteButtons.find(
-      button => button.textContent === 'task_table_action_delete'
+    const archiveButton = deleteButtons.find(
+      button => button.textContent === 'note_action_archive'
     );
     await act(async () => {
-      fireEvent.click(deleteButton!);
+      fireEvent.click(archiveButton!);
     });
 
     // After reload, filter should still be applied - tasks should remain hidden

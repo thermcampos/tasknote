@@ -4,6 +4,7 @@ import br.com.tasknoteapp.server.entity.NoteEntity;
 import br.com.tasknoteapp.server.entity.NoteUrlEntity;
 import br.com.tasknoteapp.server.entity.TagEntity;
 import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
@@ -160,6 +161,10 @@ public class NoteService {
     }
 
     NoteEntity noteEntity = note.get();
+    if (noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
+
     if (!Objects.isNull(patch.title()) && !patch.title().isBlank()) {
       noteEntity.setTitle(patch.title().trim());
     }
@@ -208,6 +213,9 @@ public class NoteService {
     }
 
     NoteEntity noteEntity = note.get();
+    if (!noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
 
     noteUrlRepository.deleteByNote_id(noteId);
     logger.info("URL deleted from note ID {}", noteId);
@@ -255,6 +263,10 @@ public class NoteService {
 
     NoteEntity noteEntity = noteOpt.get();
 
+    if (noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
+
     if (!noteEntity.isShared()) {
       noteEntity.setShared(true);
       noteEntity.setShareToken(UUID.randomUUID().toString());
@@ -282,6 +294,11 @@ public class NoteService {
     }
 
     NoteEntity noteEntity = noteOpt.get();
+
+    if (noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
+
     noteEntity.setShared(false);
     noteEntity.setShareToken(null);
     noteRepository.save(noteEntity);
@@ -301,7 +318,7 @@ public class NoteService {
     logger.info("Fetching shared note with token {}", shareToken);
 
     Optional<NoteEntity> noteOpt = noteRepository.findByShareToken(shareToken);
-    if (noteOpt.isEmpty() || !noteOpt.get().isShared()) {
+    if (noteOpt.isEmpty() || !noteOpt.get().isShared() || noteOpt.get().isArchived()) {
       throw new NoteNotFoundException();
     }
 
@@ -350,6 +367,66 @@ public class NoteService {
         urls.stream().collect(Collectors.toMap(nu -> nu.getNote().getId(), NoteUrlEntity::getUrl));
 
     return notes.stream().map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.getId()))).toList();
+  }
+
+  /**
+   * Archive a note, disabling edits and revoking public sharing.
+   *
+   * @param noteId The note id from the database.
+   * @return {@link NoteResponse} containing the archived note.
+   */
+  @Transactional
+  public NoteResponse archiveNote(Long noteId) {
+    UserEntity user = getCurrentUser();
+    logger.info("Archiving note ID {} for user ID {}", noteId, user.getId());
+
+    Optional<NoteEntity> noteOpt = noteRepository.findByIdAndUser_id(noteId, user.getId());
+    if (noteOpt.isEmpty()) {
+      throw new NoteNotFoundException();
+    }
+
+    NoteEntity noteEntity = noteOpt.get();
+    if (noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
+
+    noteEntity.setArchived(true);
+    noteEntity.setShared(false);
+    noteEntity.setShareToken(null);
+    noteEntity.setLastUpdate(LocalDateTime.now());
+    noteRepository.save(noteEntity);
+    logger.info("Note ID {} archived", noteId);
+
+    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()));
+  }
+
+  /**
+   * Restore an archived note back to active state.
+   *
+   * @param noteId The note id from the database.
+   * @return {@link NoteResponse} containing the restored note.
+   */
+  @Transactional
+  public NoteResponse restoreNote(Long noteId) {
+    UserEntity user = getCurrentUser();
+    logger.info("Restoring note ID {} for user ID {}", noteId, user.getId());
+
+    Optional<NoteEntity> noteOpt = noteRepository.findByIdAndUser_id(noteId, user.getId());
+    if (noteOpt.isEmpty()) {
+      throw new NoteNotFoundException();
+    }
+
+    NoteEntity noteEntity = noteOpt.get();
+    if (!noteEntity.isArchived()) {
+      throw new NoteArchivedException();
+    }
+
+    noteEntity.setArchived(false);
+    noteEntity.setLastUpdate(LocalDateTime.now());
+    noteRepository.save(noteEntity);
+    logger.info("Note ID {} restored", noteId);
+
+    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()));
   }
 
   private NoteUrlEntity saveUrl(NoteEntity noteEntity, String url) {

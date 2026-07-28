@@ -14,7 +14,8 @@ public record NoteResponse(
     String lastUpdate,
     List<String> tags,
     boolean shared,
-    String shareToken) {
+    String shareToken,
+    boolean archived) {
 
   /**
    * Creates a NoteResponse given a NoteEntity and its Urals.
@@ -34,6 +35,7 @@ public record NoteResponse(
         timeAgoFmt,
         entity.getTags().stream().map(TagEntity::getName).toList(),
         entity.isShared(),
-        entity.getShareToken());
+        entity.getShareToken(),
+        entity.isArchived());
   }
 }

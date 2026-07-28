@@ -32,7 +32,8 @@ class PublicNoteControllerTest {
   void getSharedNote_happyPath_shouldSucceed() throws Exception {
     final String token = "test-share-token";
     NoteResponse response =
-        new NoteResponse(1L, "title", "description", null, null, List.of("tag"), true, token);
+        new NoteResponse(
+            1L, "title", "description", null, null, List.of("tag"), true, token, false);
 
     when(noteService.getSharedNote(token)).thenReturn(response);
 

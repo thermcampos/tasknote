@@ -230,7 +230,8 @@ function NoteAdd(): React.ReactNode {
       tags: finalTags,
       lastUpdate: '',
       shared: false,
-      shareToken: null
+      shareToken: null,
+      archived: false
     };
 
     const saved = action === 'add'

@@ -77,6 +77,7 @@ const enTranslations = {
   home_card_task_empty: 'No pending tasks',
   home_card_task_done: 'done tasks!',
   home_completed_tasks_title: 'Completed tasks',
+  home_archived_notes_title: 'Archived notes',
   home_card_task_done_empty: 'No done tasks!',
   home_card_task_btn: 'Go to Tasks',
   home_card_note_title: 'Notes Summary',
@@ -122,6 +123,9 @@ const enTranslations = {
   note_action_share: 'Share',
   note_action_unshare: 'Unshare',
   note_action_copy_link: 'Copy link',
+  note_action_archive: 'Archive',
+  note_action_restore: 'Restore',
+  note_action_delete_permanently: 'Delete permanently',
 
   about_page_title_one: 'About the',
   about_page_title_two: 'TaskNote App',

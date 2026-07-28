@@ -150,6 +150,7 @@ class NoteServiceTest {
 
   @Test
   void deleteNote() {
+    note.setArchived(true);
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
     when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))

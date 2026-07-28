@@ -155,7 +155,8 @@ describe('NoteAdd Component', () => {
         tags: [],
         lastUpdate: '',
         shared: false,
-        shareToken: null
+        shareToken: null,
+        archived: false
       }
       expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, newNote);
     });

@@ -115,4 +115,28 @@ public class NoteController {
   public ResponseEntity<NoteResponse> unshareNote(@PathVariable Long id) {
     return ResponseEntity.ok(noteService.unshareNote(id));
   }
+
+  /**
+   * Archive a note, disabling edits and revoking public sharing.
+   *
+   * @param id Note identification.
+   * @return NoteResponse with the archived note.
+   * @throws NoteNotFoundException when note not found.
+   */
+  @PutMapping("/{id}/archive")
+  public ResponseEntity<NoteResponse> archiveNote(@PathVariable Long id) {
+    return ResponseEntity.ok(noteService.archiveNote(id));
+  }
+
+  /**
+   * Restore an archived note back to active state.
+   *
+   * @param id Note identification.
+   * @return NoteResponse with the restored note.
+   * @throws NoteNotFoundException when note not found.
+   */
+  @PutMapping("/{id}/restore")
+  public ResponseEntity<NoteResponse> restoreNote(@PathVariable Long id) {
+    return ResponseEntity.ok(noteService.restoreNote(id));
+  }
 }
