@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ```bash
 # Docker images
-docker pull rmcampos/tasknote-app:app-v2026.07.28.000
-docker pull rmcampos/tasknote-api:api-v2026.07.28.000
+docker pull rmcampos/tasknote-app:app-v2026.07.28.195
+docker pull rmcampos/tasknote-api:api-v2026.07.28.194
 ```
 
 ## 2026-07-23
