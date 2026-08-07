@@ -7,11 +7,12 @@ services:
     user: ${UID:-1000}:${GID:-1000}
     ports: 
       - "5000:5000"
-    entrypoint: sh -c "npm i --no-update-notifier && npm start"
+    entrypoint: sh -c "npm i --no-update-notifier && export NGROK=1 && npm start"
     environment:
       VITE_BACKEND_SERVER: "/api"
       VITE_BUILD: nightly
       NGROK: 1
+      BACKEND_HOST: tasknote-api
     volumes: 
       - "./client:/app"
     working_dir: /app
@@ -92,4 +93,3 @@ services:
 
 networks:
   tasknote:
-    external: true

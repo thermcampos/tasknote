@@ -3,6 +3,16 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
+const proxyConfig = process.env.NGROK
+  ? {
+      '/api': {
+        target: `http://${process.env.BACKEND_HOST || 'localhost'}:8585`,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    }
+  : undefined;
+
 export default defineConfig(({ mode }: ConfigEnv) => {
   const config: UserConfig = {
     define: {},
@@ -33,7 +43,8 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     },
     server: {
       port: 5000,
-      ...(process.env.NGROK ? { allowedHosts: ['.ngrok-free.dev'] } : {})
+      ...(process.env.NGROK ? { allowedHosts: ['.ngrok-free.dev'] } : {}),
+      proxy: proxyConfig,
     },
     preview: {
       port: 5000
