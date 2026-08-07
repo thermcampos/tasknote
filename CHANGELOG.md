@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All deps to latest version in client for minor target.
 - Development files for ngrok locally.
 
+### Fixed
+- Buildx error in build phase in CI.
+
+### Removed
+- Lingering files from previous CI/CD workflows.
+
+```bash
+# Docker images
+docker pull rmcampos/tasknote-app:app-v2026.07.28.195
+docker pull rmcampos/tasknote-api:api-v2026.07.28.194
+```
+
 ---
 
 ## 2026-07-28
