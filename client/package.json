@@ -30,7 +30,7 @@
     "react-router-bootstrap": "^0.26.3",
     "remark-gfm": "^4.0.1",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5"
+    "vite": "^8.2.1"
   },
   "scripts": {
     "start": "vite --host",
@@ -75,20 +75,20 @@
     "@types/react": "^19.2.18",
     "@types/react-router-bootstrap": "^0.26.8",
     "@vitest/coverage-v8": "^4.1.10",
-    "cypress": "^15.19.0",
+    "cypress": "^15.20.0",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-jsdoc": "^63.2.2",
+    "eslint-plugin-jsdoc": "^63.3.3",
     "eslint-plugin-n": "^18.2.2",
     "eslint-plugin-promise": "^7.3.0",
     "eslint-plugin-react": "^7.37.5",
-    "globals": "^17.7.0",
+    "globals": "^17.9.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
-    "sass": "^1.101.7",
+    "sass": "^1.102.0",
     "source-map-support": "^0.5.21",
-    "typescript-eslint": "^8.65.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10"
   }
 }
