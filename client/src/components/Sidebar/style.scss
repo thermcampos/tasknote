@@ -96,3 +96,12 @@ a.active {
   border-left: #4CD964 0.3rem solid;
   background: #ced6da linear-gradient(270deg, rgba(53, 99, 233, 0.36) -416.06%, rgba(53, 99, 233, 0) 94.8%);
 }
+
+.footer-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}

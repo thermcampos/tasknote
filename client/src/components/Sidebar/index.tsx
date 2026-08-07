@@ -25,6 +25,7 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
   const [lastSeen, setLastSeen] = useState('');
   const { t } = useTranslation();
   const build = `Build: ${env.VITE_BUILD}`;
+  const changeLogUrl = 'https://lightroasted.vps-kinghost.net/rmcampos/tasknote/src/branch/main/CHANGELOG.md';
 
   // Note: when selected, change class to plus-jakarta-sans-thin and add background
 
@@ -119,7 +120,15 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
               <small>{t('sidebar_last_seen', { time: lastSeen })}</small>
             </div>
           )}
-          <small data-testid="footer-text">{build}</small>
+          <a
+            data-testid="footer-text"
+            href={changeLogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            <small>{build}</small>
+          </a>
         </div>
       </div>
 
