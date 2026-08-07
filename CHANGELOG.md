@@ -10,23 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2026-08-07
 
 ### Added
-- Link to the build number to point to the changelog file. (build xxx)
+- Link to the build number to point to the changelog file. (build 201)
 
 ### Changed
-- All deps to latest version in client for patch target.
-- All deps to latest version in client for minor target.
-- Development files for ngrok locally.
+- All deps to latest version in client for patch target. (build 201)
+- All deps to latest version in client for minor target. (build 201)
+- Development files for ngrok locally. (build 201)
 
 ### Fixed
-- Buildx error in build phase in CI.
+- Buildx error in build phase in CI. (build 201)
 
 ### Removed
-- Lingering files from previous CI/CD workflows.
+- Lingering files from previous CI/CD workflows. (build 201)
 
 ```bash
 # Docker images
-docker pull rmcampos/tasknote-app:app-v2026.07.28.195
-docker pull rmcampos/tasknote-api:api-v2026.07.28.194
+docker pull rmcampos/tasknote-app:app-v2026.08.07.201
 ```
 
 ---
