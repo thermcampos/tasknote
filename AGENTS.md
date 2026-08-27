@@ -42,3 +42,17 @@
 - Keep API contract compatibility with frontend `ApiConfig` paths; changing endpoint paths requires synchronized client updates.
 - When changing auth/session behavior, update both backend filters/controllers and frontend `AuthProvider` token lifecycle.
 - If you change CI/build/deploy commands, update both `README.md` and this `AGENTS.md` to keep workflows discoverable.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues in `thermcampos/tasknote`. Use the `gh` CLI for all operations. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The skills speak in terms of five canonical triage roles mapped to the label strings in this repo. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context repo: read `CONTEXT.md` at the repo root (when it exists) and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
