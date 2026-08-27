@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-08-27
+
+### Fixed
+- Small bug in the build number in dark mode not quite visible.
+
+```bash
+# Docker images
+- ghcr.io...
+```
+
+---
+
 ## 2026-08-07
 
 ### Added
