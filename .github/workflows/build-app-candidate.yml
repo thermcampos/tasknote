@@ -65,5 +65,5 @@ jobs:
         run: |
           echo "Pushed images:"
           echo "  ${{ env.DOCKER_IMAGE }}:latest"
-          echo "  ${{ env.DOCKER_IMAGE }:${{ steps.version.outputs.tag }}"
+          echo "  ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.tag }}"
 
