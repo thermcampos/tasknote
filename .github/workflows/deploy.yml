@@ -21,6 +21,7 @@ jobs:
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
     permissions:
       contents: read
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
