@@ -51,4 +51,4 @@ jobs:
       - name: Log pushed images
         run: |
           echo "Pushed images:"
-          echo "  rmcampos/tasknote-api:latest"
+          echo "  ${{ env.DOCKER_IMAGE }}:latest"
