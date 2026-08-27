@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v7.0.1
@@ -73,8 +73,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=rmcampos/tasknote-app:buildcache
-          cache-to: type=registry,ref=rmcampos/tasknote-app:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
           build-args: |
             VITE_BUILD=${{ steps.version.outputs.tag }}
 
