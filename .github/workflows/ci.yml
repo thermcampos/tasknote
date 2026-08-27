@@ -7,23 +7,23 @@ on:
 jobs:
   build-backend:
     name: Build Backend
-    runs-on: graalvm-25
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
+      - name: Set up Java
+        uses: actions/setup-java@v6.0.0
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/server/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+          cache-dependency-path: 'server/pom.xml'
 
       - name: Run Check Style
         working-directory: ./server
@@ -39,18 +39,18 @@ jobs:
 
   build-frontend:
     name: Build Frontend
-    runs-on: easynode-debian
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Cache npm dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('**/client/package-lock.json') }}
