@@ -97,12 +97,14 @@ a.active {
   background: #ced6da linear-gradient(270deg, rgba(53, 99, 233, 0.36) -416.06%, rgba(53, 99, 233, 0) 94.8%);
 }
 
-.footer-link,
-.footer-link:hover,
-.footer-link:focus,
-.footer-link:active,
-.footer-link:visited {
+.sidebar a.footer-link,
+.sidebar a.footer-link:hover,
+.sidebar a.footer-link:focus,
+.sidebar a.footer-link:active,
+.sidebar a.footer-link:visited {
   color: var(--bs-body-color);
   background-color: transparent;
+  padding: 0;
+  border-radius: 0;
   text-decoration: none;
 }

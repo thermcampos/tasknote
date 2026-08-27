@@ -65,3 +65,22 @@ describe('Sidebar Component', () => {
     expect(dashboardElement!.classList.contains('selected')).toBe(true);
   });
 });
+
+describe('Build link visibility', () => {
+  it('build link keeps footer-link class for theme-aware styling', () => {
+    const { getByTestId } = render(
+      <MemoryRouter>
+        <AuthContext.Provider value={authContextMock}>
+          <I18nextProvider i18n={i18n}>
+            <SidebarContext.Provider value={sidebarContextMock}>
+              <Sidebar isMobileOpen={false} setIsMobileOpen={vi.fn()} />
+            </SidebarContext.Provider>
+          </I18nextProvider>
+        </AuthContext.Provider>
+      </MemoryRouter>
+    );
+    const link = getByTestId('footer-text');
+    expect(link.classList.contains('footer-link')).toBe(true);
+    expect(link.getAttribute('href')).toContain('CHANGELOG.md');
+  });
+});
