@@ -8,24 +8,28 @@ on:
       - 'server/**'
       - '.github/workflows/cd-backend.yml'
 
+env:
+  REGISTRY: ghcr.io
+  DOCKER_IMAGE: "ghcr.io/thermcampos/tasknote/server"
+
 jobs:
   build:
-    runs-on: graalvm-25
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
+      - name: Set up Java
+        uses: actions/setup-java@v6.0.0
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/server/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          distribution: 'graalvm-community'
+          java-version: '25'
+          cache: 'maven'
+          cache-dependency-path: 'server/pom.xml'
 
       - name: Generate version tag
         id: version
@@ -39,29 +43,30 @@ jobs:
         working-directory: ./server
         run: |
           ./mvnw -Pnative -DskipTests spring-boot:build-image \
-            -Dspring-boot.build-image.imageName=rmcampos/tasknote-api:latest \
+            -Dspring-boot.build-image.imageName=${{ env.DOCKER_IMAGE }}:latest \
             -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.6.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: rmcampos/tasknote-api
+          images: ${{ env.DOCKER_IMAGE }}
           tags: |
             type=raw,value=${{ steps.version.outputs.tag }}
             type=raw,value=latest,enable={{ is_default_branch }}
 
       - name: Tag and push Docker image
         run: |
-          docker tag docker.io/rmcampos/tasknote-api:latest docker.io/rmcampos/tasknote-api:${{ steps.version.outputs.tag }}
-          docker push docker.io/rmcampos/tasknote-api:latest
-          docker push docker.io/rmcampos/tasknote-api:${{ steps.version.outputs.tag }}
+          docker tag ${{ env.DOCKER_IMAGE }}:latest ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.tag }}
+          docker push ${{ env.DOCKER_IMAGE }}:latest
+          docker push ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.tag }}
 
       - name: Output Docker image URLs
         run: |
@@ -71,14 +76,7 @@ jobs:
           echo "=========================================="
           echo ""
           echo "API Image:"
-          echo "  rmcampos/tasknote-api:${{ steps.version.outputs.tag }}"
-          echo "  rmcampos/tasknote-api:latest"
+          echo "  ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.tag }}"
+          echo "  ${{ env.DOCKER_IMAGE }}:latest"
           echo ""
           echo "=========================================="
-
-      - name: Create and push Git tag
-        run: |
-          git config user.name "gitea-actions[bot]"
-          git config user.email "gitea-actions[bot]@noreply.lightroasted.vps-kinghost.net"
-          git tag -a ${{ steps.version.outputs.tag }} -m "Release ${{ steps.version.outputs.tag }}"
-          git push origin ${{ steps.version.outputs.tag }}
