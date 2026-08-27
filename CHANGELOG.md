@@ -14,10 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Small bug in the build number in dark mode not quite visible.
+- Failing GHA workflows
 
 ```bash
 # Docker images
-- ghcr.io...
+- ghcr.io/thermcampos/tasknote/client:app-v2026.08.27.5
+- ghcr.io/thermcampos/tasknote/server:api-v2026.08.27.4
 ```
 
 ---
