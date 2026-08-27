@@ -24,14 +24,14 @@ on:
 jobs:
   terraform-plan:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: easynode-debian
+    runs-on: ubuntu-latest
     outputs:
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
     permissions:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
@@ -59,28 +59,14 @@ jobs:
 
       - name: Determine deployment values
         id: deploy-vars
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: thermcampos
         run: |
-          backend_image="${{ github.event.inputs.backend_image }}"
-          frontend_image="${{ github.event.inputs.frontend_image }}"
-
-          latest_backend_tag="$(git tag --list 'api-v*' | sort -V | tail -n1)"
-          echo "latest backend tag=$latest_backend_tag"
-
-          latest_frontend_tag="$(git tag --list 'app-v*' | sort -V | tail -n1)"
-          echo "latest frontend tag=$latest_frontend_tag"
-
-          if [ -z "$backend_image" ]; then
-            backend_image="docker.io/rmcampos/tasknote-api:$latest_backend_tag"
-          fi
-          if [ -z "$frontend_image" ]; then
-            frontend_image="docker.io/rmcampos/tasknote-app:$latest_frontend_tag"
-          fi
-
-          echo "Resolved backend_image=$backend_image"
-          echo "Resolved frontend_image=$frontend_image"
-
-          echo "backend_image=$backend_image" >> "$GITHUB_OUTPUT"
-          echo "frontend_image=$frontend_image" >> "$GITHUB_OUTPUT"
+          BACKEND_TAG=$(bash .github/scripts/get-latest-tag.sh tasknote/server)
+          FRONTEND_TAG=$(bash .github/scripts/get-latest-tag.sh tasknote/client)
+          echo "backend_tag=$BACKEND_TAG" >> "$GITHUB_OUTPUT"
+          echo "frontend_tag=$FRONTEND_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Terraform Fmt -check -diff
         working-directory: terraform
