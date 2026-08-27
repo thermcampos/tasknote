@@ -8,8 +8,8 @@ const proxyConfig = process.env.NGROK
       '/api': {
         target: `http://${process.env.BACKEND_HOST || 'localhost'}:8585`,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
+        rewrite: path => path.replace(/^\/api/, '')
+      }
     }
   : undefined;
 
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     server: {
       port: 5000,
       ...(process.env.NGROK ? { allowedHosts: ['.ngrok-free.dev'] } : {}),
-      proxy: proxyConfig,
+      proxy: proxyConfig
     },
     preview: {
       port: 5000
