@@ -370,7 +370,7 @@
 	<version>${springboot.version}</version>
         <configuration>
           <image>
-            <name>docker.io/rmcampos/tasknote-api:latest</name>
+            <name>ghcr.io/thermcampos/tasknote/server:latest</name>
             <buildpacks>
                 <buildpack>file://${project.basedir}/buildpacks/healthcheck</buildpack>
                 <buildpack>urn:cnb:builder:paketo-buildpacks/java-native-image</buildpack>
