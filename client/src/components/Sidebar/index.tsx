@@ -25,7 +25,7 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
   const [lastSeen, setLastSeen] = useState('');
   const { t } = useTranslation();
   const build = `Build: ${env.VITE_BUILD}`;
-  const changeLogUrl = 'https://lightroasted.vps-kinghost.net/rmcampos/tasknote/src/branch/main/CHANGELOG.md';
+  const changeLogUrl = 'https://github.com/thermcampos/tasknote/blob/main/CHANGELOG.md';
 
   // Note: when selected, change class to plus-jakarta-sans-thin and add background
 
