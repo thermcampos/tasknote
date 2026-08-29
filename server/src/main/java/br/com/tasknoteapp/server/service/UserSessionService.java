@@ -2,8 +2,8 @@ package br.com.tasknoteapp.server.service;
 
 import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
+import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
-import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.util.SecurityUtil;
@@ -26,18 +26,25 @@ public class UserSessionService {
 
   private final NoteService noteService;
 
+  private final TagRepository tagRepository;
+
   /**
    * Constructor for UserSessionService.
    *
    * @param authService the authentication service
    * @param taskService the task service
    * @param noteService the note service
+   * @param tagRepository the tag repository
    */
   public UserSessionService(
-      AuthService authService, TaskService taskService, NoteService noteService) {
+      AuthService authService,
+      TaskService taskService,
+      NoteService noteService,
+      TagRepository tagRepository) {
     this.authService = authService;
     this.taskService = taskService;
     this.noteService = noteService;
+    this.tagRepository = tagRepository;
   }
 
   /**
@@ -75,13 +82,9 @@ public class UserSessionService {
       }
     }
 
-    List<NoteResponse> notes = noteService.getAllNotes();
-    for (NoteResponse note : notes) {
-      Long noteId = note != null ? note.id() : null;
-      if (noteId != null) {
-        noteService.deleteNote(noteId);
-      }
-    }
+    noteService.deleteAllNotesForCurrentUser();
+
+    tagRepository.deleteAllForUser(userOptional.get().getId());
 
     UserResponse response = authService.deleteUserAccount();
     logger.info("User account deleted for user ID {}", userOptional.get().getId());
