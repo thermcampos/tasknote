@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
-import br.com.tasknoteapp.server.response.NoteResponse;
+import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import java.util.List;
@@ -26,12 +26,14 @@ class UserSessionServiceTest {
   @Mock private AuthService authService;
   @Mock private TaskService taskService;
   @Mock private NoteService noteService;
+  @Mock private TagRepository tagRepository;
 
   private UserSessionService userSessionService;
 
   @BeforeEach
   void setUp() {
-    userSessionService = new UserSessionService(authService, taskService, noteService);
+    userSessionService =
+        new UserSessionService(authService, taskService, noteService, tagRepository);
   }
 
   @Test
@@ -43,12 +45,9 @@ class UserSessionServiceTest {
 
     TaskResponse task =
         new TaskResponse(1L, false, "Task 1", true, null, null, null, null, List.of());
-    NoteResponse note =
-        new NoteResponse(1L, "Note 1", "Description", null, null, null, false, null, false);
 
     when(authService.getCurrentUser()).thenReturn(Optional.of(user));
     when(taskService.getAllTasks()).thenReturn(List.of(task));
-    when(noteService.getAllNotes()).thenReturn(List.of(note));
     when(authService.deleteUserAccount())
         .thenReturn(
             new UserResponse(
@@ -61,7 +60,8 @@ class UserSessionServiceTest {
     assert response.userId() == 1L;
     assert response.email().equals("user@domain.com");
     verify(taskService).deleteTask(task.id());
-    verify(noteService).deleteNote(note.id());
+    verify(noteService).deleteAllNotesForCurrentUser();
+    verify(tagRepository).deleteAllForUser(user.getId());
     verify(authService).deleteUserAccount();
   }
 
@@ -72,6 +72,6 @@ class UserSessionServiceTest {
 
     // Act & Assert
     assertThrows(UserNotFoundException.class, () -> userSessionService.deleteCurrentUserAccount());
-    verifyNoInteractions(taskService, noteService);
+    verifyNoInteractions(taskService, noteService, tagRepository);
   }
 }

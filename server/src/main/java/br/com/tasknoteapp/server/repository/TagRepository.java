@@ -24,4 +24,8 @@ public interface TagRepository extends JpaRepository<TagEntity, Long> {
       and not exists (select 1 from NoteEntity n where t member of n.tags)
       """)
   void deleteOrphanedTags(@Param("userId") Long userId);
+
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("delete from TagEntity t where t.user.id = :userId")
+  void deleteAllForUser(@Param("userId") Long userId);
 }

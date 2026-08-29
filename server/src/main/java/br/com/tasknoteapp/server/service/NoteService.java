@@ -197,6 +197,29 @@ public class NoteService {
   }
 
   /**
+   * Delete all notes and their URLs for the current user, regardless of archived state.
+   *
+   * <p>This is intended for account deletion, where the trash-can rule (only archived notes may be
+   * deleted) does not apply.
+   */
+  @Transactional
+  public void deleteAllNotesForCurrentUser() {
+    UserEntity user = getCurrentUser();
+
+    logger.info("Deleting all notes for user ID {}", user.getId());
+
+    List<NoteEntity> notes = noteRepository.findAllByUser_id(user.getId());
+    for (NoteEntity note : notes) {
+      noteUrlRepository.deleteByNote_id(note.getId());
+      noteRepository.delete(note);
+    }
+
+    tagRepository.deleteOrphanedTags(user.getId());
+
+    logger.info("All {} notes deleted for user ID {}", notes.size(), user.getId());
+  }
+
+  /**
    * Delete a note and all its URLs, if any, for the user.
    *
    * @param noteId The note id from the database.

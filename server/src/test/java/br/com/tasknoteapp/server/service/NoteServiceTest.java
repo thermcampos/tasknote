@@ -163,6 +163,28 @@ class NoteServiceTest {
   }
 
   @Test
+  void deleteAllNotesForCurrentUser() {
+    NoteEntity archivedNote = new NoteEntity();
+    archivedNote.setId(2L);
+    archivedNote.setTitle("Archived Note");
+    archivedNote.setDescription("Archived Description");
+    archivedNote.setUser(user);
+    archivedNote.setArchived(true);
+
+    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
+    when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(noteRepository.findAllByUser_id(user.getId())).thenReturn(List.of(note, archivedNote));
+
+    noteService.deleteAllNotesForCurrentUser();
+
+    verify(noteUrlRepository, times(1)).deleteByNote_id(note.getId());
+    verify(noteUrlRepository, times(1)).deleteByNote_id(archivedNote.getId());
+    verify(noteRepository, times(1)).delete(note);
+    verify(noteRepository, times(1)).delete(archivedNote);
+    verify(tagRepository, times(1)).deleteOrphanedTags(user.getId());
+  }
+
+  @Test
   void searchNotes() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
