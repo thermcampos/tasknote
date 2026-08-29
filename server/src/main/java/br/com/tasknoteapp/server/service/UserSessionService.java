@@ -7,6 +7,7 @@ import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.util.SecurityUtil;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -59,12 +60,14 @@ public class UserSessionService {
   /**
    * Delete the current user account content and data.
    *
-   * <p>Each downstream deletion runs in its own transaction. Callers must verify the password
-   * (via {@link AuthService#verifyCurrentPassword}) before invoking this method, so that a wrong
-   * password does not open a transaction whose rollback would wipe the recorded attempt.
+   * <p>Callers must verify the password (via {@link AuthService#verifyCurrentPassword}) before
+   * invoking this method, so that a wrong password does not open a transaction whose rollback
+   * would wipe the recorded attempt. This method runs in a transaction because some downstream
+   * deletions (tags, pwd-limit rows, the user row) are not transactional on their own.
    *
    * @return {@link UserResponse} with user data
    */
+  @Transactional
   public UserResponse deleteCurrentUserAccount() {
     Optional<UserEntity> userOptional = authService.getCurrentUser();
     if (userOptional.isEmpty()) {
