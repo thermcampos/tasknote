@@ -200,8 +200,8 @@ const ptBrTranslations = {
   account_privacy_delete_btn: 'Excluir minha conta',
   account_delete_title: 'Você está prestes a deletar sua conta!',
   account_delete_description: `Esta ação não pode ser desfeita. Se você realmente
-   quer deletar todos os seus dados, clique no botão abaixo. Caso contrário, feche
-   esta mensagem e seus dados estarão seguros.`,
+   quer deletar todos os seus dados, digite sua senha atual e clique no botão abaixo.
+   Caso contrário, feche esta mensagem e seus dados estarão seguros.`,
   account_delete_btn: 'Sim, deletar tudo',
 
   footer_my_account: 'Minha Conta ',

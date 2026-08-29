@@ -9,11 +9,15 @@ import br.com.tasknoteapp.server.entity.NoteUrlEntity;
 import br.com.tasknoteapp.server.entity.TagEntity;
 import br.com.tasknoteapp.server.entity.TaskEntity;
 import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
+import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
+import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.repository.TaskRepository;
+import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,11 +31,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
 class AccountDeletionIntTest {
+
+  private static final String RAW_PASSWORD = "a1b2c3d4f5g6";
 
   @Autowired private UserSessionService userSessionService;
 
@@ -47,13 +54,19 @@ class AccountDeletionIntTest {
 
   @Autowired private TagRepository tagRepository;
 
+  @Autowired private UserPwdLimitRepository userPwdLimitRepository;
+
+  @Autowired private PasswordEncoder passwordEncoder;
+
+  @Autowired private AuthService authService;
+
   private UserEntity user;
 
   @BeforeEach
   void setUp() {
     user = new UserEntity();
     user.setEmail("account-deletion@domain.com");
-    user.setPassword("a1b2c3d4f5g6");
+    user.setPassword(passwordEncoder.encode(RAW_PASSWORD));
     user.setAdmin(false);
     user.setCreatedAt(LocalDateTime.now());
     user.setLastPasswordChange(LocalDateTime.now());
@@ -115,6 +128,49 @@ class AccountDeletionIntTest {
     assertTrue(noteUrlRepository.findByNote_id(activeNoteId).isEmpty());
     assertTrue(taskRepository.findAllByUser_id(userId).isEmpty());
     assertTrue(tagRepository.findAllByUser_idOrderByNameAsc(userId).isEmpty());
+    assertTrue(
+        userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Delete account with wrong password should fail, keep data and record the attempt")
+  void deleteAccount_wrongPassword_shouldFailAndRecordAttempt() {
+    Long userId = user.getId();
+
+    assertThrows(
+        InvalidCredentialsException.class,
+        () -> {
+          authService.verifyCurrentPassword(user, "wrong-password");
+          userSessionService.deleteCurrentUserAccount();
+        });
+
+    assertTrue(userRepository.findById(userId).isPresent());
+
+    List<UserPwdLimitEntity> attempts =
+        userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId);
+    assertEquals(1, attempts.size());
+  }
+
+  @Test
+  @DisplayName("Delete account with three recent failed attempts should be rejected by rate limit")
+  void deleteAccount_maxAttempts_shouldFail() {
+    Long userId = user.getId();
+
+    for (int i = 0; i < 3; i++) {
+      UserPwdLimitEntity attempt = new UserPwdLimitEntity();
+      attempt.setWhenHappened(LocalDateTime.now().minusSeconds(30));
+      attempt.setUser(user);
+      userPwdLimitRepository.save(attempt);
+    }
+
+    assertThrows(
+        MaxLoginLimitAttemptException.class,
+        () -> {
+          authService.verifyCurrentPassword(user, RAW_PASSWORD);
+          userSessionService.deleteCurrentUserAccount();
+        });
+
+    assertTrue(userRepository.findById(userId).isPresent());
   }
 
   @Test

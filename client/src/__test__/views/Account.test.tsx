@@ -80,16 +80,78 @@ describe('Account Component', () => {
   })
 
   it('should call deleteAccount API and signOut when delete is confirmed', async () => {
-    const { getByText } = renderAccount();
+    const { getByText, getByTestId } = renderAccount();
     const deleteButton = getByText('account_privacy_delete_btn');
     fireEvent.click(deleteButton);
+
+    fireEvent.change(getByTestId('delete-account-password'), { target: { value: 'my-password' } });
     const confirmButton = getByText('account_delete_btn');
     fireEvent.click(confirmButton);
 
     await waitFor(() => {
-      expect(api.deleteNoContent).toHaveBeenCalledWith(ApiConfig.deleteAccountUrl);
+      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.deleteAccountUrl, { password: 'my-password' });
       expect(authContextMock.signOut).toHaveBeenCalled();
     });
+  });
+
+  it('should show inline error and keep dialog open when delete fails', async () => {
+    const mockPostJSON = vi.spyOn(api, 'postJSON').mockRejectedValue(new Error('Invalid credentials'));
+
+    const { getByText, getByTestId, queryByTestId } = renderAccount();
+    fireEvent.click(getByText('account_privacy_delete_btn'));
+
+    const passwordInput = getByTestId('delete-account-password') as HTMLInputElement;
+    fireEvent.change(passwordInput, { target: { value: 'wrong-password' } });
+    fireEvent.click(getByText('account_delete_btn'));
+
+    await waitFor(() => {
+      expect(getByTestId('delete-account-error')).toBeDefined();
+    });
+
+    expect(queryByTestId('delete-account-password')).toBeDefined();
+    expect(passwordInput.value).toBe('');
+    expect(authContextMock.signOut).not.toHaveBeenCalled();
+
+    mockPostJSON.mockRestore();
+  });
+
+  it('should clear password and error when the delete dialog is closed', async () => {
+    const mockPostJSON = vi.spyOn(api, 'postJSON').mockRejectedValue(new Error('Invalid credentials'));
+
+    const { getByText, getByTestId, queryByTestId, queryByText } = renderAccount();
+    fireEvent.click(getByText('account_privacy_delete_btn'));
+
+    fireEvent.change(getByTestId('delete-account-password'), { target: { value: 'wrong-password' } });
+    fireEvent.click(getByText('account_delete_btn'));
+
+    await waitFor(() => {
+      expect(getByTestId('delete-account-error')).toBeDefined();
+    });
+
+    const closeButton = document.querySelector('.alert .btn-close') as HTMLElement;
+    fireEvent.click(closeButton);
+
+    expect(queryByTestId('delete-account-password')).toBeNull();
+
+    fireEvent.click(getByText('account_privacy_delete_btn'));
+
+    const reopenedInput = getByTestId('delete-account-password') as HTMLInputElement;
+    expect(reopenedInput.value).toBe('');
+    expect(queryByTestId('delete-account-error')).toBeNull();
+    expect(queryByText('account_delete_title')).toBeDefined();
+
+    mockPostJSON.mockRestore();
+  });
+
+  it('should disable the confirm button when the password field is empty', () => {
+    const { getByText, getByTestId } = renderAccount();
+    fireEvent.click(getByText('account_privacy_delete_btn'));
+
+    const confirmButton = getByText('account_delete_btn') as HTMLButtonElement;
+    expect(confirmButton.disabled).toBe(true);
+
+    fireEvent.change(getByTestId('delete-account-password'), { target: { value: 'x' } });
+    expect(confirmButton.disabled).toBe(false);
   });
 
   it('should submit the form with correct patchPayload', async () => {

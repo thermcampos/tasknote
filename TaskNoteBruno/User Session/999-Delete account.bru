@@ -4,14 +4,20 @@ meta {
   seq: 2
 }
 
-delete {
+post {
   url: {{addr}}/rest/user-sessions/delete-account
-  body: none
+  body: json
   auth: none
 }
 
 headers {
   Authorization: Bearer {{authToken}}
+}
+
+body:json {
+  {
+    "password": "Teste@123.,"
+  }
 }
 
 tests {
