@@ -199,8 +199,8 @@ const esTranslations = {
   account_privacy_delete_btn: 'Borrar todos mis datos',
   account_delete_title: 'Estás a punto de eliminar tu cuenta!',
   account_delete_description: `Esta acción no se puede deshacer. Si realmente desea
-    eliminar todos sus datos, haga clic en el botón que aparece a continuación. Si
-    no es así, cierre este mensaje y sus datos estarán seguros.`,
+    eliminar todos sus datos, escriba su contraseña actual y haga clic en el botón que
+    aparece a continuación. Si no es así, cierre este mensaje y sus datos estarán seguros.`,
   account_delete_btn: 'Sí, borra todo',
 
   footer_my_account: 'Mi Cuenta ',

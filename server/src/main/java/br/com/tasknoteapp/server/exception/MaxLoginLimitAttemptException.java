@@ -4,6 +4,6 @@ package br.com.tasknoteapp.server.exception;
 public class MaxLoginLimitAttemptException extends BaseBadRequestException {
 
   public MaxLoginLimitAttemptException() {
-    super("login", "Max login attempt limit reached. Please wait 30 minutes");
+    super("login", "Max login attempt limit reached. Please wait 3 minutes");
   }
 }

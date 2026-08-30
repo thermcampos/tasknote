@@ -49,7 +49,7 @@ describe('Spanish Utils unit tests', () => {
     expect(translateServerResponse(keys[9], 'es')).toBe('¡Prohibido! Acceso denegado');
     expect(translateServerResponse(keys[10], 'es')).toBe('Si la dirección de correo electrónico ingresada está asociada a una cuenta, recibirá un enlace para restablecer su contraseña en breve.');
     expect(translateServerResponse(keys[11], 'es')).toBe('¡Error interno del servidor!');
-    expect(translateServerResponse(keys[12], 'es')).toBe('Has alcanzado el límite máximo de intentos de inicio de sesión. Por favor, espera 30 minutos');
+    expect(translateServerResponse(keys[12], 'es')).toBe('Has alcanzado el límite máximo de intentos de inicio de sesión. Por favor, espera 3 minutos');
     expect(translateServerResponse(keys[13], 'es')).toBe('Error de red al intentar obtener el recurso.');
     expect(translateServerResponse(keys[14], 'es')).toBe('Por favor, confirme su correo electrónico antes de continuar');
     expect(translateServerResponse(keys[15], 'es')).toBe('Por favor, completa todos los campos');

@@ -71,7 +71,9 @@ class UserSessionServiceTest {
     when(authService.getCurrentUser()).thenReturn(Optional.empty());
 
     // Act & Assert
-    assertThrows(UserNotFoundException.class, () -> userSessionService.deleteCurrentUserAccount());
+    assertThrows(
+        UserNotFoundException.class,
+        () -> userSessionService.deleteCurrentUserAccount());
     verifyNoInteractions(taskService, noteService, tagRepository);
   }
 }

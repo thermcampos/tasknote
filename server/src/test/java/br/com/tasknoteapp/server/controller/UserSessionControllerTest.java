@@ -2,14 +2,17 @@ package br.com.tasknoteapp.server.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
+import br.com.tasknoteapp.server.service.AuthService;
 import br.com.tasknoteapp.server.service.UserSessionService;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,8 @@ class UserSessionControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserSessionService userSessionService;
+
+  @MockitoBean private AuthService authService;
 
   @Test
   @DisplayName("Refresh happy path should succeed")
@@ -63,17 +68,36 @@ class UserSessionControllerTest {
   @DisplayName("Delete account happy path should succeed")
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void deleteAccount_happyPath_shouldSucceed() throws Exception {
+    UserEntity user = new UserEntity();
+    user.setId(1L);
     UserResponse response =
         new UserResponse(1L, "John", "email@test.com", false, null, null, null, null);
+    when(authService.getCurrentUser()).thenReturn(Optional.of(user));
     when(userSessionService.deleteCurrentUserAccount()).thenReturn(response);
 
     mockMvc
         .perform(
-            delete("/rest/user-sessions/delete-account")
+            post("/rest/user-sessions/delete-account")
                 .with(csrf().asHeader())
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\": \"abcde123456A@\"}")
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Delete account without password should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void deleteAccount_missingPassword_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            post("/rest/user-sessions/delete-account")
+                .with(csrf().asHeader())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest())
         .andReturn();
   }
 
@@ -82,9 +106,10 @@ class UserSessionControllerTest {
   void deleteAccount_unauthorized_shouldFail() throws Exception {
     mockMvc
         .perform(
-            delete("/rest/user-sessions/delete-account")
+            post("/rest/user-sessions/delete-account")
                 .with(csrf().asHeader())
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\": \"abcde123456A@\"}")
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized())
         .andReturn();

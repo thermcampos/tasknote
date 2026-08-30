@@ -27,6 +27,9 @@ function Account(): React.ReactNode {
   const [showAlert, setShowAlert] = useState<boolean>(false);
   const [validated, setValidated] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string>('');
+  const [deletePassword, setDeletePassword] = useState<string>('');
+  const [deleting, setDeleting] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userPassword, setUserPassword] = useState<string>('');
@@ -47,23 +50,45 @@ function Account(): React.ReactNode {
    * Deletes the user account
    */
   const deleteAccount = async (): Promise<void> => {
-    setShowAlert(false);
-    await api.deleteNoContent(ApiConfig.deleteAccountUrl);
-    signOut();
-    clearStorage();
+    setDeleteErrorMessage('');
+    setDeleting(true);
+    try {
+      await api.postJSON(ApiConfig.deleteAccountUrl, { password: deletePassword });
+      setShowAlert(false);
+      setDeletePassword('');
+      signOut();
+      clearStorage();
+    }
+    catch (e) {
+      setDeletePassword('');
+      handleError(e, setDeleteErrorMessage);
+    }
+    finally {
+      setDeleting(false);
+    }
   };
 
   /**
-   * Handles errors by setting the error message and form invalid state.
+   * Closes the delete confirmation, clearing any typed password and error.
+   */
+  const closeDeleteAlert = (): void => {
+    setShowAlert(false);
+    setDeletePassword('');
+    setDeleteErrorMessage('');
+  };
+
+  /**
+   * Handles errors by translating the server response into the given state setter.
    *
    * @param {unknown} e - The error to handle.
+   * @param {React.Dispatch<React.SetStateAction<string>>} setter - The state setter for the message.
    */
-  const handleError = (e: unknown): void => {
+  const handleError = (e: unknown, setter: React.Dispatch<React.SetStateAction<string>>): void => {
     if (typeof e === 'string') {
-      setErrorMessage(translateServerResponse(e, i18n.language));
+      setter(translateServerResponse(e, i18n.language));
     }
     else if (e instanceof Error) {
-      setErrorMessage(translateServerResponse(e.message, i18n.language));
+      setter(translateServerResponse(e.message, i18n.language));
     }
   };
 
@@ -78,7 +103,7 @@ function Account(): React.ReactNode {
       return await api.patchJSON(ApiConfig.userUrl, payload) as UserResponse;
     }
     catch (e) {
-      handleError(e);
+      handleError(e, setErrorMessage);
     }
   };
 
@@ -297,12 +322,36 @@ function Account(): React.ReactNode {
               </div>
 
               {showAlert && (
-                <Alert className="mt-3" variant="danger" onClose={() => setShowAlert(false)} dismissible>
+                <Alert className="mt-3" variant="danger" onClose={closeDeleteAlert} dismissible>
                   <Alert.Heading>{t('account_delete_title')}</Alert.Heading>
                   <p>{t('account_delete_description')}</p>
+
+                  {deleteErrorMessage && (
+                    <p className="mb-2 fw-bold" data-testid="delete-account-error">
+                      {deleteErrorMessage}
+                    </p>
+                  )}
+
+                  <FormInput
+                    labelText={t('login_password_label')}
+                    iconName="Lock"
+                    required
+                    type="password"
+                    name="deleteAccountPassword"
+                    value={deletePassword}
+                    placeholder={t('login_password_placeholder')}
+                    pwdShowText={t('password_show_txt')}
+                    pwdHideText={t('password_hide_txt')}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setDeletePassword(e.target.value);
+                    }}
+                    dataTestId="delete-account-password"
+                  />
+
                   <div className="d-grid">
                     <button
                       type="button"
+                      disabled={deleting || deletePassword.length === 0}
                       onClick={() => deleteAccount()}
                       className="home-new-item-danger task-note-btn"
                     >

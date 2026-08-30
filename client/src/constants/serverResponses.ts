@@ -11,7 +11,7 @@ export const serverResponses: Record<string, string> = {
   'Forbidden! Access denied!': 'FORBIDDEN',
   'If the email address you entered is associated with an account, you will receive a password reset link shortly.': 'RECOVER_PASSWORD',
   'Internal Server Error!': 'INTERNAL_ERROR',
-  'Max login attempt limit reached. Please wait 30 minutes': 'MAX_LOGIN_ATTEMPT',
+  'Max login attempt limit reached. Please wait 3 minutes': 'MAX_LOGIN_ATTEMPT',
   'NetworkError when attempting to fetch resource.': 'NETWORK_ERROR',
   'Please confirm your email before proceeding': 'CONFIRM_EMAIL_TO_GO_ON',
   'Please fill in all the fields': 'FILL_ALL_FIELDS',

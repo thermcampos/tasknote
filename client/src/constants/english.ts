@@ -199,8 +199,8 @@ const enTranslations = {
   account_privacy_delete_btn: 'Delete all my data',
   account_delete_title: 'You are about to delete your account!',
   account_delete_description: `This action cannot be undone. If you really want to
-    delete all your data, click the button below. If not, close this message and your
-    data will be safe.`,
+    delete all your data, type your current password and click the button below. If
+    not, close this message and your data will be safe.`,
   account_delete_btn: 'Yes, delete everything',
 
   footer_my_account: 'My Account ',

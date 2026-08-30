@@ -49,7 +49,7 @@ describe('Portuguese Utils unit tests', () => {
     expect(translateServerResponse(keys[9], 'pt_br')).toBe('Proibido! Acesso negado');
     expect(translateServerResponse(keys[10], 'pt_br')).toBe('Se o endereço de e-mail informado estiver associado a uma conta, você receberá um link para resetar a senha em breve.');
     expect(translateServerResponse(keys[11], 'pt_br')).toBe('Erro Interno do Servidor!');
-    expect(translateServerResponse(keys[12], 'pt_br')).toBe('Limite máximo de tentativas atingido. Por favor aguarde 30 minutos');
+    expect(translateServerResponse(keys[12], 'pt_br')).toBe('Limite máximo de tentativas atingido. Por favor aguarde 3 minutos');
     expect(translateServerResponse(keys[13], 'pt_br')).toBe('Erro de rede ao tentar obter recursos.');
     expect(translateServerResponse(keys[14], 'pt_br')).toBe('Por favor, confirme seu e-mail antes de continuar');
     expect(translateServerResponse(keys[15], 'pt_br')).toBe('Por favor, preencha todos os campos');

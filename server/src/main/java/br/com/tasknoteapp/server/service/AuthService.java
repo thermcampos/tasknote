@@ -297,6 +297,30 @@ public class AuthService {
   }
 
   /**
+   * Verify the given password against the current user, recording a failed attempt for rate
+   * limiting when it does not match.
+   *
+   * @param user The {@link UserEntity} to check the password against.
+   * @param password The plain text password to verify.
+   * @throws MaxLoginLimitAttemptException when too many failed attempts happened recently.
+   * @throws InvalidCredentialsException when the password does not match.
+   */
+  public void verifyCurrentPassword(UserEntity user, String password) {
+    checkLoginAttemptLimit(user.getId());
+
+    if (Objects.isNull(password) || !passwordEncoder.matches(password, user.getPassword())) {
+      logger.warn("Password verification failed for user {}", user.getId());
+
+      UserPwdLimitEntity pwdLimit = new UserPwdLimitEntity();
+      pwdLimit.setWhenHappened(LocalDateTime.now());
+      pwdLimit.setUser(user);
+      userPwdLimitRepository.save(pwdLimit);
+
+      throw new InvalidCredentialsException();
+    }
+  }
+
+  /**
    * Delete current user account.
    *
    * @return {@link UserResponse} with user data.

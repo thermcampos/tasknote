@@ -60,6 +60,11 @@ public class UserSessionService {
   /**
    * Delete the current user account content and data.
    *
+   * <p>Callers must verify the password (via {@link AuthService#verifyCurrentPassword}) before
+   * invoking this method, so that a wrong password does not open a transaction whose rollback
+   * would wipe the recorded attempt. This method runs in a transaction because some downstream
+   * deletions (tags, pwd-limit rows, the user row) are not transactional on their own.
+   *
    * @return {@link UserResponse} with user data
    */
   @Transactional
