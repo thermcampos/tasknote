@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-08-30
+
+### Changed
+- Added password confirmation before deleting account. Issue #66
+
+### Fixed
+- Account deletion not working. Issue #65
+
+```bash
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.08.30.6
+- ghcr.io/thermcampos/tasknote/server:api-v2026.08.30.6
+```
+
+---
+
 ## 2026-08-27
 
 ### Changed
