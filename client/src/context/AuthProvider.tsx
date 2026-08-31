@@ -91,16 +91,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
     try {
       const payload = { email, password };
       const registerResponse: SignInResponse = await api.postJSON(ApiConfig.signInUrl, payload);
-      const currentUser: UserResponse = {
-        userId: registerResponse.userId,
-        name: registerResponse.name,
-        email: registerResponse.email,
-        admin: registerResponse.admin,
-        createdAt: new Date(registerResponse.createdAt),
-        gravatarImageUrl: registerResponse.gravatarImageUrl,
-        lang: registerResponse.lang,
-        lastLogin: registerResponse.lastLogin
-      };
+      localStorage.setItem(API_TOKEN, registerResponse.token);
+      const currentUser: UserResponse = await api.getJSON(ApiConfig.currentUserUrl);
 
       setSigned(true);
       setUser(currentUser);

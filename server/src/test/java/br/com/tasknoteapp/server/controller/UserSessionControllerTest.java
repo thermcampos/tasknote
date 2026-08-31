@@ -71,7 +71,7 @@ class UserSessionControllerTest {
     UserEntity user = new UserEntity();
     user.setId(1L);
     UserResponse response =
-        new UserResponse(1L, "John", "email@test.com", false, null, null, null, null);
+        new UserResponse(1L, "John", "email@test.com", false, null, null, null, null, "light");
     when(authService.getCurrentUser()).thenReturn(Optional.of(user));
     when(userSessionService.deleteCurrentUserAccount()).thenReturn(response);
 

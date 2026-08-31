@@ -4,6 +4,7 @@ import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
 import br.com.tasknoteapp.server.exception.BadLanguageException;
 import br.com.tasknoteapp.server.exception.BadPasswordException;
+import br.com.tasknoteapp.server.exception.BadThemeException;
 import br.com.tasknoteapp.server.exception.BadUuidException;
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
 import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
@@ -379,6 +380,14 @@ public class AuthService {
     }
     if (!Objects.isNull(patchRequest.lang()) && !patchRequest.lang().isBlank()) {
       currentUser.setLang(patchRequest.lang());
+      shouldUpdate = true;
+    }
+    if (!Objects.isNull(patchRequest.theme()) && !patchRequest.theme().isBlank()) {
+      String[] validThemes = new String[] {"light", "dark"};
+      if (!Arrays.asList(validThemes).contains(patchRequest.theme())) {
+        throw new BadThemeException();
+      }
+      currentUser.setTheme(patchRequest.theme());
       shouldUpdate = true;
     }
 

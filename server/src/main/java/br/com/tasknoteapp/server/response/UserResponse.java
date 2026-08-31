@@ -12,7 +12,8 @@ public record UserResponse(
     LocalDateTime createdAt,
     LocalDateTime inactivatedAt,
     LocalDateTime lastLogin,
-    String gravatarImageUrl) {
+    String gravatarImageUrl,
+    String theme) {
 
   /**
    * Create a {@link UserResponse} instance from a {@link UserEntity}.
@@ -21,6 +22,7 @@ public record UserResponse(
    * @return UserResponse instance.
    */
   public static UserResponse fromEntity(UserEntity user, String gravatarUrl) {
+    String theme = user.getTheme() == null ? "light" : user.getTheme();
     return new UserResponse(
         user.getId(),
         user.getName(),
@@ -29,6 +31,7 @@ public record UserResponse(
         user.getCreatedAt(),
         user.getInactivatedAt(),
         user.getLastLogin(),
-        gravatarUrl);
+        gravatarUrl,
+        theme);
   }
 }

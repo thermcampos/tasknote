@@ -55,6 +55,9 @@ public class UserEntity implements UserDetails {
   @Column(name = "lang", length = 6)
   private String lang;
 
+  @Column(name = "theme", length = 10)
+  private String theme;
+
   @Column(name = "last_password_change", nullable = false)
   private LocalDateTime lastPasswordChange;
 
@@ -167,6 +170,14 @@ public class UserEntity implements UserDetails {
 
   public void setLang(String lang) {
     this.lang = lang;
+  }
+
+  public String getTheme() {
+    return theme;
+  }
+
+  public void setTheme(String theme) {
+    this.theme = theme;
   }
 
   public LocalDateTime getLastPasswordChange() {
