@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import br.com.tasknoteapp.server.entity.UserEntity;
 import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
 import br.com.tasknoteapp.server.exception.BadPasswordException;
+import br.com.tasknoteapp.server.exception.BadThemeException;
 import br.com.tasknoteapp.server.exception.BadUuidException;
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
 import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
@@ -427,7 +428,8 @@ class AuthServiceTest {
     when(passwordEncoder.matches(currentPassword, "hashedCurrentPassword")).thenReturn(true);
 
     UserPatchRequest patchRequest =
-        new UserPatchRequest("Kong", "newemail@domain.com", null, null, null, currentPassword);
+        new UserPatchRequest(
+            "Kong", "newemail@domain.com", null, null, null, null, currentPassword);
     UserResponse response = authService.patchUserInfo(patchRequest);
 
     Assertions.assertNotNull(response);
@@ -456,7 +458,7 @@ class AuthServiceTest {
     String newPassword = "TestHackedPw@difficult!#:)";
     UserPatchRequest patchRequest =
         new UserPatchRequest(
-            "Kong", "newemail@domain.com", newPassword, newPassword, "en", currentPassword);
+            "Kong", "newemail@domain.com", newPassword, newPassword, "en", null, currentPassword);
 
     when(authUtil.validatePassword(patchRequest.password())).thenReturn(Optional.empty());
 
@@ -465,6 +467,71 @@ class AuthServiceTest {
     Assertions.assertNotNull(response);
     Assertions.assertEquals("Kong", response.name());
     Assertions.assertEquals("newemail@domain.com", response.email());
+  }
+
+  @Test
+  @DisplayName("Patch user info patch user theme should succeed")
+  void patchUserInfo_theme_shouldSucceed() {
+    String email = "user@domain.com";
+    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
+
+    UserEntity existing = new UserEntity();
+    existing.setId(919L);
+    existing.setEmail(email);
+    existing.setAdmin(false);
+    when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
+    when(userRepository.save(any())).thenReturn(existing);
+
+    UserPatchRequest patchRequest =
+        new UserPatchRequest(null, null, null, null, null, "dark", null);
+    UserResponse response = authService.patchUserInfo(patchRequest);
+
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("dark", response.theme());
+    Assertions.assertEquals("dark", existing.getTheme());
+    verify(userRepository, times(1)).save(existing);
+  }
+
+  @Test
+  @DisplayName("Patch user info with invalid theme should fail")
+  void patchUserInfo_invalidTheme_shouldFail() {
+    String email = "user@domain.com";
+    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
+
+    UserEntity existing = new UserEntity();
+    existing.setId(919L);
+    existing.setEmail(email);
+    existing.setAdmin(false);
+    when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
+
+    UserPatchRequest patchRequest =
+        new UserPatchRequest(null, null, null, null, null, "blue", null);
+
+    Assertions.assertThrows(
+        BadThemeException.class, () -> authService.patchUserInfo(patchRequest));
+    verify(userRepository, times(0)).save(any());
+  }
+
+  @Test
+  @DisplayName("Patch user info with blank theme should ignore it")
+  void patchUserInfo_blankTheme_shouldBeIgnored() {
+    String email = "user@domain.com";
+    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
+
+    UserEntity existing = new UserEntity();
+    existing.setId(919L);
+    existing.setEmail(email);
+    existing.setAdmin(false);
+    when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
+
+    UserPatchRequest patchRequest =
+        new UserPatchRequest(null, null, null, null, null, " ", null);
+    UserResponse response = authService.patchUserInfo(patchRequest);
+
+    Assertions.assertNotNull(response);
+    Assertions.assertEquals("light", response.theme());
+    Assertions.assertNull(existing.getTheme());
+    verify(userRepository, times(0)).save(any());
   }
 
   @Test

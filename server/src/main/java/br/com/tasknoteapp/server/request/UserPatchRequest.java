@@ -7,5 +7,6 @@ public record UserPatchRequest(
     String password,
     String passwordAgain,
     String lang,
+    String theme,
     String currentPassword) {}
 

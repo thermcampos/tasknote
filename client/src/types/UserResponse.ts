@@ -7,4 +7,5 @@ export type UserResponse = {
   gravatarImageUrl: string;
   lang: string;
   lastLogin: string;
+  theme: string;
 };

@@ -1,3 +1,4 @@
 export const REDIRECT_PATH = 'TASKNOTE-REDIRECT';
 export const API_TOKEN = 'TASKNOTE-TOKEN';
 export const USER_DATA = 'TASKNOTE-USER';
+export const THEME_PENDING = 'TASKNOTE-THEME-PENDING';

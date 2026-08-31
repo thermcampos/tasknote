@@ -169,8 +169,25 @@ describe('AuthProvider', () => {
       token: 'dummy-token',
       gravatarImageUrl: 'http://dummyimage.com'
     };
+    const fakeCurrentUser = {
+      userId: '123',
+      name: 'Test User',
+      email: 'test@example.com',
+      admin: false,
+      createdAt: new Date().toISOString(),
+      gravatarImageUrl: 'http://dummyimage.com',
+      lang: 'en',
+      lastLogin: new Date().toISOString(),
+      theme: 'dark'
+    };
 
     vi.spyOn(api, 'postJSON').mockResolvedValue(fakeResponse);
+    const getJSONSpy = vi.spyOn(api, 'getJSON').mockImplementation(async(url: string) => {
+      if (url === ApiConfig.currentUserUrl) {
+        return fakeCurrentUser;
+      }
+      return undefined;
+    });
 
     const { getByTestId } = render(
       <AuthProvider>
@@ -184,9 +201,12 @@ describe('AuthProvider', () => {
       expect(getByTestId('signed').textContent).toBe('true')
     );
     expect(getByTestId('user').textContent).toBe('Test User');
+    // The current user should be fetched from /me after the token is stored.
+    expect(getJSONSpy).toHaveBeenCalledWith(ApiConfig.currentUserUrl);
     // LocalStorage should have API_TOKEN and USER_DATA set.
     expect(localStorage.getItem(API_TOKEN)).toBe('dummy-token');
     expect(localStorage.getItem(USER_DATA)).not.toBeNull();
+    expect(localStorage.getItem(USER_DATA)).toContain('"theme":"dark"');
   });
 
   
@@ -215,8 +235,25 @@ describe('AuthProvider', () => {
       token: 'dummy-token',
       gravatarImageUrl: 'http://dummyimage.com'
     };
+    const fakeCurrentUser = {
+      userId: '123',
+      name: 'Test User',
+      email: 'test@example.com',
+      admin: false,
+      createdAt: new Date().toISOString(),
+      gravatarImageUrl: 'http://dummyimage.com',
+      lang: 'en',
+      lastLogin: new Date().toISOString(),
+      theme: 'light'
+    };
 
     vi.spyOn(api, 'postJSON').mockResolvedValue(fakeResponse);
+    vi.spyOn(api, 'getJSON').mockImplementation(async(url: string) => {
+      if (url === ApiConfig.currentUserUrl) {
+        return fakeCurrentUser;
+      }
+      return undefined;
+    });
 
     const { getByTestId } = render(
       <AuthProvider>

@@ -51,7 +51,7 @@ class UserSessionServiceTest {
     when(authService.deleteUserAccount())
         .thenReturn(
             new UserResponse(
-                user.getId(), "user", user.getEmail(), false, null, null, null, null));
+                user.getId(), "user", user.getEmail(), false, null, null, null, null, "light"));
 
     // Act
     UserResponse response = userSessionService.deleteCurrentUserAccount();
