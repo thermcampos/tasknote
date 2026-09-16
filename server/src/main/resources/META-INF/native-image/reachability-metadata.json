@@ -192,6 +192,10 @@
             "javax.sql.DataSource",
             "br.com.tasknoteapp.server.service.AppVersionService"
           ]
+        },
+        {
+          "name": "health",
+          "parameterTypes": []
         }
       ]
     },
@@ -1832,6 +1836,12 @@
       "type": "java.io.Externalizable"
     },
     {
+      "type": "java.io.Flushable"
+    },
+    {
+      "type": "java.io.OutputStream"
+    },
+    {
       "type": "java.io.Serializable"
     },
     {
@@ -3131,9 +3141,6 @@
       "type": "org.flywaydb.core.internal.database.sqlite.SQLiteDatabaseType"
     },
     {
-      "type": "org.flywaydb.core.internal.jdbc.ErrorOverrideInitializerStub"
-    },
-    {
       "type": "org.flywaydb.core.internal.logging.slf4j.Slf4jLogCreator",
       "methods": [
         {
@@ -3146,7 +3153,22 @@
       "type": "org.flywaydb.core.internal.proprietaryStubs.AuthCommandExtensionStub"
     },
     {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.AwsSecretsManagerSupportStub"
+    },
+    {
       "type": "org.flywaydb.core.internal.proprietaryStubs.CheckCommandExtensionStub"
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.CherryPickConfigurationExtensionStub",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.CherryPickSupportStub"
     },
     {
       "type": "org.flywaydb.core.internal.proprietaryStubs.DeployCommandExtensionStub"
@@ -3158,7 +3180,28 @@
       "type": "org.flywaydb.core.internal.proprietaryStubs.DiffTextCommandExtensionStub"
     },
     {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.DryRunConfigurationExtensionStub",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.DryRunSupportStub"
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.ErrorOverrideInitializerStub"
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.ErrorOverridesSupportStub"
+    },
+    {
       "type": "org.flywaydb.core.internal.proprietaryStubs.GenerateCommandExtensionStub"
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.LicenseSupportStub"
     },
     {
       "type": "org.flywaydb.core.internal.proprietaryStubs.LicensingConfigurationExtensionStub"
@@ -3176,36 +3219,10 @@
       "type": "org.flywaydb.core.internal.proprietaryStubs.PrepareCommandExtensionStub"
     },
     {
-      "type": "org.flywaydb.core.internal.proprietaryStubs.UndoCommandExtensionStub"
+      "type": "org.flywaydb.core.internal.proprietaryStubs.ShouldExecuteEvaluatorStub"
     },
     {
-      "type": "org.flywaydb.core.internal.publishing.PublishingConfigurationExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        },
-        {
-          "name": "isCheckDriftOnMigrate",
-          "parameterTypes": []
-        },
-        {
-          "name": "isPublishResult",
-          "parameterTypes": []
-        },
-        {
-          "name": "setCheckDriftOnMigrate",
-          "parameterTypes": [
-            "boolean"
-          ]
-        },
-        {
-          "name": "setPublishResult",
-          "parameterTypes": [
-            "boolean"
-          ]
-        }
-      ]
+      "type": "org.flywaydb.core.internal.proprietaryStubs.UndoCommandExtensionStub"
     },
     {
       "type": "org.flywaydb.core.internal.resource.CoreResourceTypeProvider"
@@ -3221,6 +3238,9 @@
     },
     {
       "type": "org.flywaydb.database.cockroachdb.CockroachDBDatabaseType"
+    },
+    {
+      "type": "org.flywaydb.database.cockroachdb.authentication.CockroachDBExternalAuthSupportStub"
     },
     {
       "type": "org.flywaydb.database.oracle.OracleConfigurationExtension"
@@ -3259,6 +3279,9 @@
     },
     {
       "type": "org.flywaydb.database.postgresql.TransactionalModel"
+    },
+    {
+      "type": "org.flywaydb.database.postgresql.authentication.PostgreSQLExternalAuthSupportStub"
     },
     {
       "type": "org.flywaydb.database.sqlserver.SQLServerConfigurationExtension"

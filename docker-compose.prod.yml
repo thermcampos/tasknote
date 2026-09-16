@@ -41,7 +41,7 @@ services:
 
   tasknote-db:
     container_name: tasknote-db
-    image: postgres:16
+    image: postgres:15.8-bookworm
     environment:
       POSTGRES_DB: tasknote
       POSTGRES_USER: tasknoteuser

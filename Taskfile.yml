@@ -17,11 +17,11 @@ tasks:
 
   prod-up-api:
     desc: Speed up the tasknote-api prod-like image, building it if required
-    cmd: docker compose -f docker-compose.prod.yml up -d tasknote-api
+    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-api
 
   prod-up-db:
     desc: Start the database container
-    cmd: docker compose -f docker-compose.prod.yml up -d tasknote-db
+    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-db
 
   prod-up:
     desc: Speed up the prod-like images for both tasknote-api and tasknote-web, building them if required
@@ -45,7 +45,7 @@ tasks:
 
   dev-run-db:
     desc: Get the tasknote-db up and running locally inside docker ready for development
-    cmd: docker compose -f docker-compose.dev.yml up -d tasknote-db
+    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.dev.yml up -d tasknote-db
 
   dev-run:
     desc: Get both tasknote-web and tasknote-api up and running locally inside docker ready for development
@@ -58,3 +58,13 @@ tasks:
   dev-tier-down:
     desc: Stop and remove dev containers
     cmd: docker compose -f docker-compose.dev.yml down --remove-orphans
+
+  run-native-tracing:
+    desc: Buidl and run with native agent to trace reflections
+    cmds:
+      - |
+        cd server && \
+        ./mvnw clean package -DskipTests && \
+        doppler run --project tasknote --config dev -- java \
+          -agentlib:native-image-agent=config-output-dir=src/main/resources/META-INF/native-image \
+          -jar target/tasknote-api.jar

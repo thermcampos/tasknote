@@ -55,6 +55,7 @@
     <checkstyle.version>3.6.0</checkstyle.version>
     <springboot.version>4.1.1</springboot.version>
     <jjwt.version>0.12.6</jjwt.version>
+    <flyway.version>13.5.0</flyway.version>
   </properties>
 
   <!-- Profiles -->
@@ -118,10 +119,12 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
+      <version>${flyway.version}</version>
     </dependency>
 
     <!-- Testing -->
@@ -363,6 +366,11 @@
       <plugin>
         <groupId>org.graalvm.buildtools</groupId>
         <artifactId>native-maven-plugin</artifactId>
+        <configuration>
+          <metadataRepository>
+            <enabled>true</enabled>
+          </metadataRepository>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
