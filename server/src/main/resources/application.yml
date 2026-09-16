@@ -39,5 +39,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        bytecode:
+          provider: none
         default_schema: tasknote
     show-sql: false
