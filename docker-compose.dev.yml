@@ -32,10 +32,7 @@ services:
       POSTGRES_HOST: tasknote-db
       POSTGRES_USER: tasknoteuser
       POSTGRES_PASSWORD: default
-      POSTGRES_PORT: 5432
       CORS_ALLOWED_ORIGINS: http://localhost:5000, http://tasknote-web:5000
-      SERVER_SERVLET_CONTEXT_PATH: /
-      TARGET_ENV: development
       SECURITY_KEY: this-is-a-very-long-security-key-for-dev
       MAILGUN_APIKEY: invalid-api-key-only-placeholder
     ports:

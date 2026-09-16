@@ -21,14 +21,14 @@ server:
   error:
     include-message: never
   servlet:
-    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/server}
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/}
 spring:
   application:
     name: tasknote-api
   datasource:
     driver-class-name: org.postgresql.Driver
     password: ${POSTGRES_PASSWORD}
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5435}/${POSTGRES_DB:tasknote}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:tasknote}
     username: ${POSTGRES_USER:tasknoteuser}
   flyway:
     baseline-on-migrate: true
