@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.7</version>
+    <version>4.1.1</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   
@@ -49,12 +49,13 @@
     <jacoco.output.data>${project.build.directory}/coverage-reports</jacoco.output.data>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
-    <failsafe.version>3.5.6</failsafe.version>
-    <surefire.version>3.5.6</surefire.version>
+    <failsafe.version>3.6.0</failsafe.version>
+    <surefire.version>3.6.0</surefire.version>
     <jacoco.version>0.8.15</jacoco.version>
     <checkstyle.version>3.6.0</checkstyle.version>
-    <springboot.version>4.0.7</springboot.version>
+    <springboot.version>4.1.1</springboot.version>
     <jjwt.version>0.12.6</jjwt.version>
+    <flyway.version>13.5.0</flyway.version>
   </properties>
 
   <!-- Profiles -->
@@ -101,11 +102,17 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
 
+    <dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<scope>compile</scope>
+		</dependency>
+
     <!-- Database -->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
@@ -118,10 +125,12 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
+      <version>${flyway.version}</version>
     </dependency>
 
     <!-- Testing -->
@@ -168,24 +177,6 @@
 
   <build>
     <plugins> 
-      <plugin>
-        <groupId>org.hibernate.orm</groupId>
-        <artifactId>hibernate-maven-plugin</artifactId>
-        <version>${hibernate.version}</version>
-        <executions>
-          <execution>
-            <id>enhance</id>
-            <goals>
-              <goal>enhance</goal>
-            </goals>
-            <configuration>
-              <enableLazyInitialization>true</enableLazyInitialization>
-              <enableDirtyTracking>true</enableDirtyTracking>
-              <enableAssociationManagement>false</enableAssociationManagement>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -363,6 +354,11 @@
       <plugin>
         <groupId>org.graalvm.buildtools</groupId>
         <artifactId>native-maven-plugin</artifactId>
+        <configuration>
+          <metadataRepository>
+            <enabled>true</enabled>
+          </metadataRepository>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>

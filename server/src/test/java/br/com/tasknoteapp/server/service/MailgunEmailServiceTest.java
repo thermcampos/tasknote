@@ -6,7 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +53,7 @@ class MailgunEmailServiceTest {
 
   @Test
   void testSendResetPassword() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setResetToken("reset-token");
 
@@ -66,7 +66,7 @@ class MailgunEmailServiceTest {
 
   @Test
   void testSendPasswordResetConfirmation() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
 
     setupMockChain();
@@ -78,7 +78,7 @@ class MailgunEmailServiceTest {
 
   @Test
   void testSendNewUser() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setEmailUuid(java.util.UUID.randomUUID());
 
@@ -91,7 +91,7 @@ class MailgunEmailServiceTest {
 
   @Test
   void testSendEmailHandlesHttpClientErrorException() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setResetToken("reset-token");
 
@@ -106,7 +106,7 @@ class MailgunEmailServiceTest {
 
   @Test
   void testSendEmailChanged() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
 
     setupMockChain();

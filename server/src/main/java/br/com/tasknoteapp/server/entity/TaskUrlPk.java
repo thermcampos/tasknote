@@ -1,20 +1,20 @@
 package br.com.tasknoteapp.server.entity;
 
-import jakarta.persistence.Embeddable;
-
 /** This class represents a UrlTaskEntity primary key. */
-@Embeddable
-public class TaskUrlEntityPk {
+public class TaskUrlPk {
 
   private Long taskId;
-
   private String url;
 
-  public TaskUrlEntityPk() {}
+  public TaskUrlPk() {}
 
-  public TaskUrlEntityPk(Long taskId, String url) {
+  public TaskUrlPk(Long taskId, String url) {
     this.taskId = taskId;
     this.url = url;
+  }
+
+  public Long getTaskId() {
+    return taskId;
   }
 
   public String getUrl() {
@@ -25,7 +25,6 @@ public class TaskUrlEntityPk {
     this.url = url;
   }
 
-  // Equals using both fields
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -34,7 +33,7 @@ public class TaskUrlEntityPk {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    TaskUrlEntityPk that = (TaskUrlEntityPk) o;
+    TaskUrlPk that = (TaskUrlPk) o;
     return url.equals(that.url) && taskId.equals(that.taskId);
   }
 

@@ -1,7 +1,6 @@
 import { ConfigEnv, defineConfig, UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'url';
-import path from 'path';
 
 const proxyConfig = process.env.NGROK
   ? {
@@ -52,7 +51,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap')
+        '~bootstrap': fileURLToPath(new URL('./node_modules/bootstrap', import.meta.url))
       }
     }
   };

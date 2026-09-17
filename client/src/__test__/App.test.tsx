@@ -60,6 +60,7 @@ const renderApp = async (authValue: Partial<AuthContextData> = {}) => {
 beforeEach(() => {
   localStorage.clear();
   document.body.removeAttribute('data-bs-theme');
+  vi.mocked(api.getJSON).mockResolvedValue([]);
 });
 
 test('Renders the app', async () => {

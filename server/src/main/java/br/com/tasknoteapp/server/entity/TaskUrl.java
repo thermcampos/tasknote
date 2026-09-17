@@ -1,21 +1,21 @@
 package br.com.tasknoteapp.server.entity;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-
 /** This class represents a task url in the database. */
-@Entity
-@Table(name = "task_url")
-public class TaskUrlEntity {
+public class TaskUrl {
 
-  @EmbeddedId private TaskUrlEntityPk id;
+  private TaskUrlPk id;
 
-  public TaskUrlEntityPk getId() {
+  public TaskUrl() {}
+
+  public TaskUrl(TaskUrlPk id) {
+    this.id = id;
+  }
+
+  public TaskUrlPk getId() {
     return id;
   }
 
-  public void setId(TaskUrlEntityPk id) {
+  public void setId(TaskUrlPk id) {
     this.id = id;
   }
 
@@ -27,7 +27,7 @@ public class TaskUrlEntity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    TaskUrlEntity that = (TaskUrlEntity) o;
+    TaskUrl that = (TaskUrl) o;
     return id != null && id.equals(that.id);
   }
 

@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.com.tasknoteapp.server.entity.NoteEntity;
-import br.com.tasknoteapp.server.entity.NoteUrlEntity;
-import br.com.tasknoteapp.server.entity.TagEntity;
-import br.com.tasknoteapp.server.entity.TaskEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
-import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
+import br.com.tasknoteapp.server.entity.Note;
+import br.com.tasknoteapp.server.entity.NoteUrl;
+import br.com.tasknoteapp.server.entity.Task;
+import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.entity.UserPwdLimit;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
@@ -21,7 +20,6 @@ import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,11 +58,11 @@ class AccountDeletionIntTest {
 
   @Autowired private AuthService authService;
 
-  private UserEntity user;
+  private User user;
 
   @BeforeEach
   void setUp() {
-    user = new UserEntity();
+    user = new User();
     user.setEmail("account-deletion@domain.com");
     user.setPassword(passwordEncoder.encode(RAW_PASSWORD));
     user.setAdmin(false);
@@ -86,36 +84,31 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Delete account with mixed archived and non-archived notes should remove all data")
   void deleteAccount_mixedArchivedNotes_shouldRemoveAllUserData() {
-    TagEntity tag = tagRepository.save(new TagEntity("work", user));
-
-    NoteEntity activeNote = new NoteEntity();
+    Note activeNote = new Note();
     activeNote.setTitle("Active note");
     activeNote.setDescription("Not archived");
-    activeNote.setUser(user);
+    activeNote.setUserId(user.getId());
     activeNote.setLastUpdate(LocalDateTime.now());
-    activeNote.setTags(Set.of(tag));
     activeNote = noteRepository.save(activeNote);
 
-    NoteUrlEntity noteUrl = new NoteUrlEntity();
+    NoteUrl noteUrl = new NoteUrl();
     noteUrl.setUrl("http://example.com");
-    noteUrl.setNote(activeNote);
+    noteUrl.setNoteId(activeNote.getId());
     noteUrlRepository.save(noteUrl);
 
-    NoteEntity archivedNote = new NoteEntity();
+    Note archivedNote = new Note();
     archivedNote.setTitle("Archived note");
     archivedNote.setDescription("Archived");
-    archivedNote.setUser(user);
+    archivedNote.setUserId(user.getId());
     archivedNote.setLastUpdate(LocalDateTime.now());
     archivedNote.setArchived(true);
-    archivedNote.setTags(Set.of(tag));
     archivedNote = noteRepository.save(archivedNote);
 
-    TaskEntity task = new TaskEntity();
+    Task task = new Task();
     task.setDescription("A task");
     task.setCompleted(false);
-    task.setUser(user);
+    task.setUserId(user.getId());
     task.setLastUpdate(LocalDateTime.now());
-    task.setTags(Set.of(tag));
     taskRepository.save(task);
 
     Long userId = user.getId();
@@ -124,10 +117,10 @@ class AccountDeletionIntTest {
     userSessionService.deleteCurrentUserAccount();
 
     assertTrue(userRepository.findById(userId).isEmpty());
-    assertTrue(noteRepository.findAllByUser_id(userId).isEmpty());
-    assertTrue(noteUrlRepository.findByNote_id(activeNoteId).isEmpty());
-    assertTrue(taskRepository.findAllByUser_id(userId).isEmpty());
-    assertTrue(tagRepository.findAllByUser_idOrderByNameAsc(userId).isEmpty());
+    assertTrue(noteRepository.findAllByUserId(userId).isEmpty());
+    assertTrue(noteUrlRepository.findByNoteId(activeNoteId).isEmpty());
+    assertTrue(taskRepository.findAllByUserId(userId).isEmpty());
+    assertTrue(tagRepository.findAllByUserIdOrderByNameAsc(userId).isEmpty());
     assertTrue(
         userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId).isEmpty());
   }
@@ -146,7 +139,7 @@ class AccountDeletionIntTest {
 
     assertTrue(userRepository.findById(userId).isPresent());
 
-    List<UserPwdLimitEntity> attempts =
+    List<UserPwdLimit> attempts =
         userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId);
     assertEquals(1, attempts.size());
   }
@@ -157,9 +150,9 @@ class AccountDeletionIntTest {
     Long userId = user.getId();
 
     for (int i = 0; i < 3; i++) {
-      UserPwdLimitEntity attempt = new UserPwdLimitEntity();
+      UserPwdLimit attempt = new UserPwdLimit();
       attempt.setWhenHappened(LocalDateTime.now().minusSeconds(30));
-      attempt.setUser(user);
+      attempt.setUserId(user.getId());
       userPwdLimitRepository.save(attempt);
     }
 
@@ -176,10 +169,10 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Single-note delete should still reject non-archived notes")
   void deleteNote_nonArchived_shouldStillThrow() {
-    NoteEntity activeNote = new NoteEntity();
+    Note activeNote = new Note();
     activeNote.setTitle("Active note");
     activeNote.setDescription("Not archived");
-    activeNote.setUser(user);
+    activeNote.setUserId(user.getId());
     activeNote.setLastUpdate(LocalDateTime.now());
     activeNote = noteRepository.save(activeNote);
 
@@ -193,10 +186,10 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Single-note delete of archived note should still work")
   void deleteNote_archived_shouldSucceed() {
-    NoteEntity archivedNote = new NoteEntity();
+    Note archivedNote = new Note();
     archivedNote.setTitle("Archived note");
     archivedNote.setDescription("Archived");
-    archivedNote.setUser(user);
+    archivedNote.setUserId(user.getId());
     archivedNote.setLastUpdate(LocalDateTime.now());
     archivedNote.setArchived(true);
     archivedNote = noteRepository.save(archivedNote);
@@ -206,6 +199,6 @@ class AccountDeletionIntTest {
     noteService.deleteNote(noteId);
 
     assertTrue(noteRepository.findById(noteId).isEmpty());
-    assertEquals(0, noteRepository.findAllByUser_id(user.getId()).size());
+    assertEquals(0, noteRepository.findAllByUserId(user.getId()).size());
   }
 }

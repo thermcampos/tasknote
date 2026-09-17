@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.controller;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.request.DeleteAccountRequest;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
@@ -49,7 +49,7 @@ public class UserSessionController {
   @PostMapping("/delete-account")
   public ResponseEntity<UserResponse> deleteAccount(
       @RequestBody @Valid DeleteAccountRequest request) {
-    UserEntity user = authService.getCurrentUser().orElseThrow(UserNotFoundException::new);
+    User user = authService.getCurrentUser().orElseThrow(UserNotFoundException::new);
     authService.verifyCurrentPassword(user, request.password());
     UserResponse deleted = userSessionService.deleteCurrentUserAccount();
     return ResponseEntity.ok(deleted);

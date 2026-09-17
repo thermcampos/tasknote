@@ -4,7 +4,6 @@ import br.com.tasknoteapp.server.request.UserPatchRequest;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,16 +20,6 @@ public class UserController {
 
   public UserController(AuthService authService) {
     this.authService = authService;
-  }
-
-  /**
-   * Get all users.
-   *
-   * @return List of UserEntity with all found users.
-   */
-  @GetMapping
-  public List<UserResponse> getAllUsers() {
-    return authService.getAllUsers();
   }
 
   /**

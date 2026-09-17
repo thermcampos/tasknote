@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AppVersionService {
 
-  private static final Logger logger = LoggerFactory.getLogger(AppVersionService.class);
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final BuildProperties buildProperties;
 

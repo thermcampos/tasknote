@@ -1,7 +1,6 @@
 package br.com.tasknoteapp.server.service;
 
-import br.com.tasknoteapp.server.entity.TagEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
@@ -56,12 +55,12 @@ public class HomeService {
    * @return List of String with the tags.
    */
   public List<String> getTopTasksTag() {
-    UserEntity user = getCurrentUser();
+    User user = getCurrentUser();
     logger.info("Getting all tags for user ID {}", user.getId());
 
     List<String> tags =
-        tagRepository.findAllByUser_idOrderByNameAsc(user.getId()).stream()
-            .map(TagEntity::getName)
+        tagRepository.findAllByUserIdOrderByNameAsc(user.getId()).stream()
+            .map((t) -> t.getName())
             .toList();
 
     List<TaskResponse> tasks = taskService.getTasksByFilter("all");
@@ -82,7 +81,7 @@ public class HomeService {
     return tags;
   }
 
-  private UserEntity getCurrentUser() {
+  private User getCurrentUser() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
     return authService.findByEmail(email).orElseThrow();

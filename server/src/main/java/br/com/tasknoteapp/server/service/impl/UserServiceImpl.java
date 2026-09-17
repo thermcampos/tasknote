@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.service.impl;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.repository.UserRepository;
 import br.com.tasknoteapp.server.service.UserService;
 import br.com.tasknoteapp.server.util.SecurityUtil;
@@ -17,7 +17,7 @@ class UserServiceImpl implements UserService {
   public UserServiceImpl(UserRepository userRepository) {
     this.cachedUserDetailsService =
         email -> {
-          Optional<UserEntity> user = userRepository.findByEmail(email);
+          Optional<User> user = userRepository.findByEmail(email);
           if (user.isEmpty()) {
             throw new RuntimeException("User not found: " + SecurityUtil.redactEmail(email));
           }

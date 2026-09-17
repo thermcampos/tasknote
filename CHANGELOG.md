@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-16
+
+### Changed
+- Client deps bumped to latest version in minor and patch targets.
+- Server Spring Boot version bumped from 4.0.7 to 4.1.1
+
+---
+
 ## 2026-08-31
 
 ### Fixed

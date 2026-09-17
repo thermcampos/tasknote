@@ -1,7 +1,7 @@
 package br.com.tasknoteapp.server.repository;
 
-import br.com.tasknoteapp.server.entity.TaskEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.Task;
+import br.com.tasknoteapp.server.entity.User;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -33,7 +33,7 @@ class TaskRepositoryIntTest {
   @Order(1)
   @DisplayName("Find all tasks by user id")
   void findAllByUser_idIntTest() {
-    List<TaskEntity> entities = taskRepository.findAllByUser_id(getUserId());
+    List<Task> entities = taskRepository.findAllByUserId(getUserId());
 
     Assertions.assertFalse(entities.isEmpty());
     Assertions.assertEquals(2, entities.size());
@@ -45,7 +45,7 @@ class TaskRepositoryIntTest {
   @Order(2)
   @DisplayName("Find all tasks by search term")
   void findAllBySearchTerm_intTest() {
-    List<TaskEntity> entities = taskRepository.findAllBySearchTerm("refactor", getUserId());
+    List<Task> entities = taskRepository.findAllBySearchTerm("refactor", getUserId());
 
     Assertions.assertFalse(entities.isEmpty());
     Assertions.assertEquals(1, entities.size());
@@ -53,7 +53,7 @@ class TaskRepositoryIntTest {
   }
 
   private Long getUserId() {
-    Optional<UserEntity> user = userRepository.findByEmail("test@domain.com");
+    Optional<User> user = userRepository.findByEmail("test@domain.com");
     if (user.isPresent()) {
       return user.get().getId();
     }

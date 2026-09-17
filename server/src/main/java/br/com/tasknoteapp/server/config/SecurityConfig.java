@@ -53,6 +53,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/public/**")
                     .permitAll()
+                    .requestMatchers("/health")
+                    .permitAll()
                     .requestMatchers("/rest/**")
                     .authenticated()
                     .anyRequest()

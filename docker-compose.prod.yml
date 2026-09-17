@@ -6,7 +6,7 @@ services:
     depends_on:
       tasknote-api:
         condition: service_healthy
-    image: rmcampos/tasknote-app:latest
+    image: ghcr.io/thermcampos/tasknote/client:latest
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -24,14 +24,12 @@ services:
       POSTGRES_HOST: tasknote-db
       POSTGRES_USER: tasknoteuser
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: 5432
       CORS_ALLOWED_ORIGINS: http://tasknote-web:5000, http://localhost:5000
-      SERVER_SERVLET_CONTEXT_PATH: /
       TARGET_ENV: production
       SECURITY_KEY: ${SECURITY_KEY}
       MAILGUN_APIKEY: ${MAILGUN_APIKEY}
     ports: ["8585:8585"]
-    image: rmcampos/tasknote-api:latest
+    image: ghcr.io/thermcampos/tasknote/server:latest
     healthcheck:
       test: ["CMD", "/layers/local_healthcheck/healthcheck/bin/healthcheck"]
       interval: 10s
@@ -43,7 +41,7 @@ services:
 
   tasknote-db:
     container_name: tasknote-db
-    image: postgres:16
+    image: postgres:15.8-bookworm
     environment:
       POSTGRES_DB: tasknote
       POSTGRES_USER: tasknoteuser
@@ -59,4 +57,3 @@ services:
 
 networks:
   tasknote-network:
-    external: true
