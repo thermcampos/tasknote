@@ -1,7 +1,6 @@
 package br.com.tasknoteapp.server.repository;
 
 import br.com.tasknoteapp.server.entity.Task;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,16 +32,37 @@ public class TaskRepository {
   }
 
   private Task create(Task task) {
-    String sql = """
-      INSERT INTO tasknote.tasks (
-        user_id, description, completed, last_update, due_date, due_date_notify,
-        due_date_notify_sent, high_priority)
-      VALUES (
-        :userId, :description, :completed, :lastUpdate, :dueDate, :dueDateNotify,
-        :dueDateNotifySent, :highPriority)
-      RETURNING id, user_id, description, completed, last_update, due_date,
-        due_date_notify, due_date_notify_sent, high_priority
-    """;
+    String sql = 
+        """
+        INSERT INTO tasknote.tasks (
+          user_id,
+          description,
+          completed,
+          last_update,
+          due_date,
+          due_date_notify,
+          due_date_notify_sent,
+          high_priority
+        ) VALUES (
+          :userId,
+          :description,
+          :completed,
+          :lastUpdate,
+          :dueDate,
+          :dueDateNotify,
+          :dueDateNotifySent,
+          :highPriority
+        )
+        RETURNING id,
+          user_id,
+          description,
+          completed,
+          last_update,
+          due_date,
+          due_date_notify,
+          due_date_notify_sent,
+          high_priority
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("userId", task.getUserId())
@@ -58,21 +78,29 @@ public class TaskRepository {
   }
 
   private Task update(Task task) {
-    String sql = """
-      UPDATE tasknote.tasks
-      SET
-        user_id = :userId,
-        description = :description,
-        completed = :completed,
-        last_update = :lastUpdate,
-        due_date = :dueDate,
-        due_date_notify = :dueDateNotify,
-        due_date_notify_sent = :dueDateNotifySent,
-        high_priority = :highPriority
-      WHERE id = :id
-      RETURNING id, user_id, description, completed, last_update, due_date,
-        due_date_notify, due_date_notify_sent, high_priority
-    """;
+    String sql =
+        """
+        UPDATE tasknote.tasks
+        SET
+          user_id = :userId,
+          description = :description,
+          completed = :completed,
+          last_update = :lastUpdate,
+          due_date = :dueDate,
+          due_date_notify = :dueDateNotify,
+          due_date_notify_sent = :dueDateNotifySent,
+          high_priority = :highPriority
+        WHERE id = :id
+        RETURNING id,
+          user_id,
+          description,
+          completed,
+          last_update,
+          due_date,
+          due_date_notify,
+          due_date_notify_sent,
+          high_priority
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("userId", task.getUserId())
@@ -110,11 +138,20 @@ public class TaskRepository {
    * @return The list of Tasks found.
    */
   public List<Task> findAllByUserId(Long userId) {
-    String sql = """
-      SELECT id, user_id, description, completed, last_update, due_date, due_date_notify, due_date_notify_sent, high_priority
-      FROM tasknote.tasks
-      WHERE user_id = :userId
-    """;
+    String sql =
+        """
+        SELECT id,
+          user_id,
+          description,
+          completed,
+          last_update,
+          due_date,
+          due_date_notify,
+          due_date_notify_sent,
+          high_priority
+        FROM tasknote.tasks
+        WHERE user_id = :userId
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("userId", userId);
@@ -130,19 +167,28 @@ public class TaskRepository {
    * @return Optional of a Task instance.
    */
   public Optional<Task> findByIdAndUserId(Long id, Long userId) {
-    String sql = """
-      SELECT id, user_id, description, completed, last_update, due_date, due_date_notify, due_date_notify_sent, high_priority
-      FROM tasknote.tasks
-      WHERE user_id = :userId
-        AND id = :id
-    """;
+    String sql =
+        """
+        SELECT id,
+          user_id,
+          description,
+          completed,
+          last_update,
+          due_date,
+          due_date_notify,
+          due_date_notify_sent,
+          high_priority
+        FROM tasknote.tasks
+        WHERE user_id = :userId
+          AND id = :id
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("userId", userId)
         .addValue("id", id);
 
-    List<Task> tasks = jdbcTemplate.query(sql, params, new TaskRowMapper());
-    return tasks.stream().findFirst();
+    Task task = jdbcTemplate.query(sql, params, new TaskRowMapper());
+    return Optional.ofNullable(task);
   }
 
   /**
@@ -153,20 +199,21 @@ public class TaskRepository {
    * @return List of Tasks.
    */
   public List<Task> findAllBySearchTerm(String searchTerm, Long userId) {
-    String sql = """
-      SELECT DISTINCT t.*
-      FROM tasknote.tasks t
-      LEFT JOIN tasknote.task_url tu ON tu.task_id = t.id
-      LEFT JOIN tasknote.task_tags tt ON tt.task_id = t.id
-      LEFT JOIN tasknote.tags tg ON tg.id = tt.tag_id
-      WHERE (
-        UPPER(t.description) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
-        OR UPPER(tg.name) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
-        OR UPPER(tu.url) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
-        )
-        AND t.user_id = :userId
-        AND t.completed = false
-    """;
+    String sql =
+        """
+        SELECT DISTINCT t.*
+        FROM tasknote.tasks t
+        LEFT JOIN tasknote.task_url tu ON tu.task_id = t.id
+        LEFT JOIN tasknote.task_tags tt ON tt.task_id = t.id
+        LEFT JOIN tasknote.tags tg ON tg.id = tt.tag_id
+        WHERE (
+          UPPER(t.description) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+          OR UPPER(tg.name) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+          OR UPPER(tu.url) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+          )
+          AND t.user_id = :userId
+          AND t.completed = false
+        """;
     
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("userId", userId)
@@ -174,21 +221,22 @@ public class TaskRepository {
 
     return jdbcTemplate.query(sql, params, new TaskRowMapper());
   }
-}
 
-class TaskRowMapper implements org.springframework.jdbc.core.RowMapper<Task> {
-  @Override
-  public Task mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
-    return new Task(
-        rs.getLong("id"),
-        rs.getLong("user_id"),
-        rs.getString("description"),
-        rs.getBoolean("completed"),
-        rs.getObject("last_update", LocalDateTime.class),
-        rs.getObject("due_date", LocalDate.class),
-        rs.getBoolean("due_date_notify"),
-        rs.getBoolean("due_date_notify_sent"),
-        rs.getBoolean("high_priority")
-    );
+  class TaskRowMapper implements org.springframework.jdbc.core.RowMapper<Task> {
+    @Override
+    public Task mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
+      return new Task(
+          rs.getLong("id"),
+          rs.getLong("user_id"),
+          rs.getString("description"),
+          rs.getBoolean("completed"),
+          rs.getObject("last_update", LocalDateTime.class),
+          rs.getObject("due_date", LocalDate.class),
+          rs.getBoolean("due_date_notify"),
+          rs.getBoolean("due_date_notify_sent"),
+          rs.getBoolean("high_priority")
+      );
+    }
   }
 }
+

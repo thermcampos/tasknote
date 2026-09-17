@@ -25,10 +25,11 @@ public class TaskUrlRepository {
    * @return Number of created records.
    */
   public int saveAll(List<TaskUrl> taskUrls) {
-    String sql = """
-      INSERT INTO tasknote.task_url (task_id, url)
-      VALUES (:taskId, :url)
-    """;
+    String sql =
+        """
+        INSERT INTO tasknote.task_url (task_id, url)
+        VALUES (:taskId, :url)
+        """;
 
     MapSqlParameterSource[] params = taskUrls.stream()
         .map(taskUrl -> new MapSqlParameterSource()
@@ -46,10 +47,11 @@ public class TaskUrlRepository {
    * @return Number of deleted records.
    */
   public int deleteAllById_taskId(Long taskId) {
-    String sql = """
-      DELETE FROM tasknote.task_url
-      WHERE task_id = :taskId
-    """;
+    String sql =
+        """
+        DELETE FROM tasknote.task_url
+        WHERE task_id = :taskId
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("taskId", taskId);
@@ -64,23 +66,25 @@ public class TaskUrlRepository {
    * @return List of TaskUrl found.
    */
   public List<TaskUrl> findAllById_taskId(Long taskId) {
-    String sql = """
-      SELECT task_id, url
-      FROM tasknote.task_url
-      WHERE task_id = :taskId
-    """;
+    String sql =
+        """
+        SELECT task_id, url
+        FROM tasknote.task_url
+        WHERE task_id = :taskId
+        """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("taskId", taskId);
 
     return jdbcTemplate.query(sql, params, new TaskUrlRowMapper());
   }
-}
 
-class TaskUrlRowMapper implements org.springframework.jdbc.core.RowMapper<TaskUrl> {
-  @Override
-  public TaskUrl mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
-    TaskUrlPk pk = new TaskUrlPk(rs.getLong("task_id"), rs.getString("url"));
-    return new TaskUrl(pk);
+  class TaskUrlRowMapper implements org.springframework.jdbc.core.RowMapper<TaskUrl> {
+    @Override
+    public TaskUrl mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
+      TaskUrlPk pk = new TaskUrlPk(rs.getLong("task_id"), rs.getString("url"));
+      return new TaskUrl(pk);
+    }
   }
 }
+
