@@ -5,7 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.TaskResponse;
@@ -39,7 +39,7 @@ class UserSessionServiceTest {
   @Test
   void deleteCurrentUserAccount_happyPath_shouldSucceed() {
     // Arrange
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(1L);
     user.setEmail("user@domain.com");
 

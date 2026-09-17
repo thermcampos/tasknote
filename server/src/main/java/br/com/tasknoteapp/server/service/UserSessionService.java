@@ -1,18 +1,18 @@
 package br.com.tasknoteapp.server.service;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.util.SecurityUtil;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** This class contains methods to handle user session and account deletion. */
 @Service
@@ -67,9 +67,9 @@ public class UserSessionService {
    *
    * @return {@link UserResponse} with user data
    */
-  @Transactional
+  @Transactional 
   public UserResponse deleteCurrentUserAccount() {
-    Optional<UserEntity> userOptional = authService.getCurrentUser();
+    Optional<User> userOptional = authService.getCurrentUser();
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
     }

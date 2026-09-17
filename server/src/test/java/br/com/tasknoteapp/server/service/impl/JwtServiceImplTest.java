@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.time.LocalDateTime;
@@ -47,7 +47,7 @@ class JwtServiceImplTest {
 
   @Test
   void generateToken_shouldCreateValidToken() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(true);
@@ -74,7 +74,7 @@ class JwtServiceImplTest {
 
   @Test
   void getEmailFromToken_shouldReturnCorrectEmail() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);
@@ -88,7 +88,7 @@ class JwtServiceImplTest {
 
   @Test
   void extractExpiration_shouldReturnCorrectExpirationDate() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);
@@ -104,7 +104,7 @@ class JwtServiceImplTest {
 
   @Test
   void isTokenExpired_shouldReturnFalseForValidToken() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);
@@ -134,7 +134,7 @@ class JwtServiceImplTest {
 
   @Test
   void validateTokenAndUser_shouldReturnTrueForValidTokenAndMatchingUser() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);
@@ -149,7 +149,7 @@ class JwtServiceImplTest {
 
   @Test
   void validateTokenAndUser_shouldReturnFalseForValidTokenButDifferentUser() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);
@@ -167,7 +167,7 @@ class JwtServiceImplTest {
   @Test
   void validateTokenAndUser_shouldReturnFalseIfTokenIssuedBeforeLastPasswordChange()
       throws InterruptedException {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(testUserId);
     user.setEmail(testEmail);
     user.setAdmin(false);

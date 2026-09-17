@@ -1,7 +1,7 @@
 package br.com.tasknoteapp.server.response;
 
-import br.com.tasknoteapp.server.entity.NoteEntity;
-import br.com.tasknoteapp.server.entity.TagEntity;
+import br.com.tasknoteapp.server.entity.Note;
+import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.util.TimeAgoUtil;
 import java.util.List;
 
@@ -18,13 +18,13 @@ public record NoteResponse(
     boolean archived) {
 
   /**
-   * Creates a NoteResponse given a NoteEntity and its Urals.
+   * Creates a NoteResponse given a Note and its Urals.
    *
-   * @param entity The NoteEntity source data.
+   * @param entity The Note source data.
    * @param url The URL associated with the note.
    * @return NoteResponse instance with all note data and URLs, if any.
    */
-  public static NoteResponse fromEntity(NoteEntity entity, String url) {
+  public static NoteResponse fromEntity(Note entity, String url, List<Tag> tags) {
     String timeAgoFmt = TimeAgoUtil.format(entity.getLastUpdate());
 
     return new NoteResponse(
@@ -33,7 +33,7 @@ public record NoteResponse(
         entity.getDescription(),
         url,
         timeAgoFmt,
-        entity.getTags().stream().map(TagEntity::getName).toList(),
+        tags.stream().map((t) -> t.getName()).toList(),
         entity.isShared(),
         entity.getShareToken(),
         entity.isArchived());

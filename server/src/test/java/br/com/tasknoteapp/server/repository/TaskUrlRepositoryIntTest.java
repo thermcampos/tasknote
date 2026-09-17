@@ -1,8 +1,8 @@
 package br.com.tasknoteapp.server.repository;
 
-import br.com.tasknoteapp.server.entity.TaskEntity;
-import br.com.tasknoteapp.server.entity.TaskUrlEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.Task;
+import br.com.tasknoteapp.server.entity.TaskUrl;
+import br.com.tasknoteapp.server.entity.User;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -30,14 +30,14 @@ class TaskUrlRepositoryIntTest {
   @Test
   @DisplayName("Delete all task url by task id")
   void deleteAllById_taskIdIntTest() {
-    Optional<UserEntity> user = userRepository.findByEmail(USER_EMAIL);
+    Optional<User> user = userRepository.findByEmail(USER_EMAIL);
     Assertions.assertFalse(user.isEmpty());
 
     Long userId = user.get().getId();
-    List<TaskEntity> tasks = taskRepository.findAllByUser_id(userId);
+    List<Task> tasks = taskRepository.findAllByUserId(userId);
     Assertions.assertFalse(tasks.isEmpty());
 
-    Optional<TaskEntity> debianTask =
+    Optional<Task> debianTask =
         tasks.stream().filter(t -> t.getDescription().equals("Install Debian")).findFirst();
     Assertions.assertFalse(debianTask.isEmpty());
 
@@ -45,7 +45,7 @@ class TaskUrlRepositoryIntTest {
 
     taskUrlRepository.deleteAllById_taskId(taskId);
 
-    List<TaskUrlEntity> taskUrls = taskUrlRepository.findAllById_taskId(taskId);
+    List<TaskUrl> taskUrls = taskUrlRepository.findAllById_taskId(taskId);
     Assertions.assertTrue(taskUrls.isEmpty());
   }
 }

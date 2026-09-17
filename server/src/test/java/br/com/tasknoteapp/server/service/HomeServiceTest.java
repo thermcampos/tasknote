@@ -2,8 +2,8 @@ package br.com.tasknoteapp.server.service;
 
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.TagEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.Tag;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
@@ -37,8 +37,8 @@ class HomeServiceTest {
     homeService = new HomeService(taskService, noteService, tagRepository, authService, authUtil);
   }
 
-  private UserEntity mockUser() {
-    UserEntity user = new UserEntity();
+  private User mockUser() {
+    User user = new User();
     user.setId(1L);
     user.setEmail("user@test.com");
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of("user@test.com"));
@@ -49,15 +49,15 @@ class HomeServiceTest {
   @Test
   @DisplayName("Get tasks tags should return all tags ordered alphabetically")
   void getTopTasksTag_shouldReturnAllTagsAlphabetically() {
-    UserEntity user = mockUser();
-    TagEntity tag1 = new TagEntity("tag1", user);
-    TagEntity tag2 = new TagEntity("tag2", user);
-    TagEntity tag3 = new TagEntity("tag3", user);
-    TagEntity tag4 = new TagEntity("tag4", user);
-    TagEntity tag5 = new TagEntity("tag5", user);
-    TagEntity tag6 = new TagEntity("tag6", user);
+    User user = mockUser();
+    Tag tag1 = new Tag("tag1", user.getId());
+    Tag tag2 = new Tag("tag2", user.getId());
+    Tag tag3 = new Tag("tag3", user.getId());
+    Tag tag4 = new Tag("tag4", user.getId());
+    Tag tag5 = new Tag("tag5", user.getId());
+    Tag tag6 = new Tag("tag6", user.getId());
 
-    when(tagRepository.findAllByUser_idOrderByNameAsc(user.getId()))
+    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId()))
         .thenReturn(List.of(tag1, tag2, tag3, tag4, tag5, tag6));
 
     TaskResponse task1 =
@@ -75,8 +75,8 @@ class HomeServiceTest {
   @Test
   @DisplayName("Get top tasks tag with no tags should return empty list")
   void getTopTasksTag_noTags_shouldReturnEmptyList() {
-    UserEntity user = mockUser();
-    when(tagRepository.findAllByUser_idOrderByNameAsc(user.getId())).thenReturn(List.of());
+    User user = mockUser();
+    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of());
     when(taskService.getTasksByFilter("all")).thenReturn(List.of());
     when(noteService.getAllNotes()).thenReturn(List.of());
 
@@ -89,9 +89,9 @@ class HomeServiceTest {
   @Test
   @DisplayName("Get top tasks tag with untagged tasks/notes should include 'untagged'")
   void getTopTasksTag_withUntagged_shouldIncludeUntagged() {
-    UserEntity user = mockUser();
-    TagEntity tag1 = new TagEntity("tag1", user);
-    when(tagRepository.findAllByUser_idOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
+    User user = mockUser();
+    Tag tag1 = new Tag("tag1", user.getId());
+    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
 
     TaskResponse task1 =
         new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of(), List.of());

@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
@@ -68,7 +68,7 @@ class UserSessionControllerTest {
   @DisplayName("Delete account happy path should succeed")
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void deleteAccount_happyPath_shouldSucceed() throws Exception {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setId(1L);
     UserResponse response =
         new UserResponse(1L, "John", "email@test.com", false, null, null, null, null, "light");

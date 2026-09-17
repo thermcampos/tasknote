@@ -1,31 +1,21 @@
 package br.com.tasknoteapp.server.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /** This class represents a User Password Limit in the database. */
-@Entity
-@Table(name = "user_pwd_limits")
-public class UserPwdLimitEntity {
+public class UserPwdLimit {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @Column(name = "when_happened", nullable = false)
   private LocalDateTime whenHappened;
+  private Long userId;
 
-  @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, updatable = false)
-  @ManyToOne(fetch = FetchType.LAZY)
-  private UserEntity user;
+  public UserPwdLimit() {}
+
+  public UserPwdLimit(Long id, LocalDateTime whenHappened, Long userId) {
+    this.id = id;
+    this.whenHappened = whenHappened;
+    this.userId = userId;
+  }
 
   public Long getId() {
     return id;
@@ -43,12 +33,12 @@ public class UserPwdLimitEntity {
     this.whenHappened = whenHappened;
   }
 
-  public UserEntity getUser() {
-    return user;
+  public Long getUserId() {
+    return userId;
   }
 
-  public void setUser(UserEntity user) {
-    this.user = user;
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   @Override
@@ -59,7 +49,7 @@ public class UserPwdLimitEntity {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    UserPwdLimitEntity that = (UserPwdLimitEntity) o;
+    UserPwdLimit that = (UserPwdLimit) o;
     return id != null && id.equals(that.id);
   }
 
@@ -75,8 +65,8 @@ public class UserPwdLimitEntity {
         + id
         + ", whenHappened="
         + whenHappened
-        + ", user="
-        + (user != null ? user.getId() : null)
+        + ", userId="
+        + userId
         + '}';
   }
 }

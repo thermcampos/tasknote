@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
-import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
+import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.entity.UserPwdLimit;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
@@ -46,7 +46,7 @@ class AccountDeletionAttemptSurvivesIntTest {
 
   @Autowired private TransactionTemplate transactionTemplate;
 
-  private UserEntity user;
+  private User user;
 
   @BeforeEach
   void setUp() {
@@ -57,10 +57,10 @@ class AccountDeletionAttemptSurvivesIntTest {
                 .ifPresent(
                     u -> {
                       userPwdLimitRepository.deleteAllForUser(u.getId());
-                      userRepository.deleteById(u.getId());
+                      userRepository.delete(u);
                     }));
 
-    user = new UserEntity();
+    user = new User();
     user.setEmail(EMAIL);
     user.setPassword(passwordEncoder.encode(RAW_PASSWORD));
     user.setAdmin(false);
@@ -84,7 +84,7 @@ class AccountDeletionAttemptSurvivesIntTest {
                 .ifPresent(
                     u -> {
                       userPwdLimitRepository.deleteAllForUser(u.getId());
-                      userRepository.deleteById(u.getId());
+                      userRepository.delete(u);
                     }));
   }
 
@@ -102,7 +102,7 @@ class AccountDeletionAttemptSurvivesIntTest {
 
     assertTrue(userRepository.findById(userId).isPresent());
 
-    List<UserPwdLimitEntity> attempts =
+    List<UserPwdLimit> attempts =
         userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId);
     assertEquals(1, attempts.size());
   }

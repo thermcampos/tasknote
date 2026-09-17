@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.service.impl;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -27,8 +27,6 @@ class JwtServiceImpl implements JwtService {
 
   private static final long SECOND = 1000;
   private static final long MINUTE = SECOND * 60;
-  private static final long HOUR = MINUTE * 60;
-  private static final long DAY = HOUR * 24;
   private static final long EXPIRATION_TIME = MINUTE * 30;
   private final SecretKey key;
 
@@ -60,7 +58,7 @@ class JwtServiceImpl implements JwtService {
   }
 
   @Override
-  public String generateToken(UserEntity user) {
+  public String generateToken(User user) {
     Map<String, Object> claims = new HashMap<>();
     claims.put("userId", user.getId());
     claims.put("email", user.getEmail());
@@ -101,7 +99,7 @@ class JwtServiceImpl implements JwtService {
     final String email = user.getUsername();
     boolean basicValid = !isTokenExpired(token) && email.equals(getEmailFromToken(token));
 
-    if (basicValid && user instanceof UserEntity userEntity) {
+    if (basicValid && user instanceof User userEntity) {
       LocalDateTime iat = extractIssuedAt(token);
       if (iat != null && userEntity.getLastPasswordChange() != null) {
         // Token must be issued after or at the same time as last password change

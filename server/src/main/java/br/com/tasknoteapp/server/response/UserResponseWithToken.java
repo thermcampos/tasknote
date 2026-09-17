@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.response;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import java.time.LocalDateTime;
 
 /** This record represents a User Response object. */
@@ -17,14 +17,14 @@ public record UserResponseWithToken(
     String lang) {
 
   /**
-   * Create a {@link UserResponseWithToken} instance from a {@link UserEntity}.
+   * Create a {@link UserResponseWithToken} instance from a {@link User}.
    *
    * @param user The user entity instance with user info to be used as source.
    * @param token The token created upon registration or login.
    * @return UserResponse instance.
    */
   public static UserResponseWithToken fromEntity(
-      UserEntity user, String token, String gravatarUrl) {
+      User user, String token, String gravatarUrl) {
     return new UserResponseWithToken(
         user.getId(),
         user.getName(),
