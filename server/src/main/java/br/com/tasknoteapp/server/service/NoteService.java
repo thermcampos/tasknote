@@ -3,6 +3,7 @@ package br.com.tasknoteapp.server.service;
 import br.com.tasknoteapp.server.entity.Note;
 import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
+import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
@@ -14,6 +15,7 @@ import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +82,7 @@ public class NoteService {
     List<Note> notes = noteRepository.findAllByUserId(user.getId());
     logger.info("{} notes found!", notes.size());
 
-    return getNotesUrl(notes);
+    return buildNoteResponse(notes, user.getId());
   }
 
   /**
@@ -94,18 +96,19 @@ public class NoteService {
     User user = getCurrentUser();
     logger.info("Get note ID {} to user ID {}", noteId, user.getId());
 
-    Optional<Note> note = noteRepository.findById(noteId);
+    Optional<Note> note = noteRepository.findByIdAndUserId(noteId, user.getId());
     if (note.isEmpty()) {
       throw new NoteNotFoundException();
     }
 
-    if (!note.get().userId().equals(user.getId())) {
-      throw new NoteNotFoundException();
+    logger.info("Note found! ID {}", noteId);
+
+    List<NoteResponse> responseList = buildNoteResponse(List.of(note.get()), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in getNoteById");
     }
 
-    logger.info("Note found! ID {}", noteId);
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(note.get(), getNoteUrl(noteId), tags);
+    return responseList.getFirst();
   }
 
   /**
@@ -140,19 +143,20 @@ public class NoteService {
           created.id(), tagSet.size());
     }
 
-    String savedUrl = null;
     if (!Objects.isNull(noteRequest.url()) && !noteRequest.url().isEmpty()) {
-      NoteUrl noteUrl = saveUrl(created, noteRequest.url());
-      savedUrl = noteUrl.url();
+      saveUrl(created, noteRequest.url());
     }
 
-    int cleanedUp = tagRepository.deleteOrphanedTags(user.getId());
-    logger.info("Deleted {} orphaned tags", cleanedUp);
+    tagRepository.deleteOrphanedTags(user.getId());
 
     logger.info("Finished note creation!");
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), created.id());
-    logger.info("Found {} tags for the newly created tag", tags);
-    return NoteResponse.fromEntity(created, savedUrl, tags);
+
+    List<NoteResponse> responseList = buildNoteResponse(List.of(created), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in createNote");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -218,8 +222,12 @@ public class NoteService {
 
     logger.info("Note patched! ID {}", patchedNote.id());
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(patchedNote, getNoteUrl(patchedNote.id()), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(patchedNote), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in patchNote");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -292,7 +300,8 @@ public class NoteService {
     List<Note> notes =
         noteRepository.findAllBySearchTerm(user.getId(), searchTerm.toUpperCase());
     logger.info("{} tasks found!", notes.size());
-    return getNotesUrl(notes);
+    
+    return buildNoteResponse(notes, user.getId());
   }
 
   /**
@@ -332,11 +341,15 @@ public class NoteService {
         UUID.randomUUID().toString(),
         Boolean.FALSE
     );
-    noteRepository.save(noteToShare);
+    Note sharedNote = noteRepository.save(noteToShare);
     logger.info("Note ID {} shared with token {}", noteId, noteToShare.shareToken());
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(noteToShare, getNoteUrl(noteId), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(sharedNote), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in shareNote");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -372,11 +385,15 @@ public class NoteService {
         Boolean.FALSE
     );
 
-    noteRepository.save(noteToUnShare);
+    Note unsharedNote = noteRepository.save(noteToUnShare);
     logger.info("Note ID {} unshared", noteId);
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(noteToUnShare, getNoteUrl(noteId), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(unsharedNote), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in unshareNote");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -394,9 +411,13 @@ public class NoteService {
       throw new NoteNotFoundException();
     }
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(
-        noteOpt.get().userId(), noteOpt.get().id());
-    return NoteResponse.fromEntity(noteOpt.get(), getNoteUrl(noteOpt.get().id()), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(noteOpt.get()),
+        noteOpt.get().userId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in shareNote");
+    }
+
+    return responseList.getFirst();
   }
 
   private Set<Tag> getOrCreateTags(List<String> tagNames, User user, Long noteId) {
@@ -434,24 +455,24 @@ public class NoteService {
     return noteUrl.isPresent() ? noteUrl.get().url() : null;
   }
 
-  private List<NoteResponse> getNotesUrl(List<Note> notes) {
-    List<Long> noteIds = notes.stream().map((n) -> n.id()).toList();
-    if (noteIds.isEmpty()) {
-      // TODO: review empty tag list
-      return notes.stream().map(n -> NoteResponse.fromEntity(n, null, List.of())).toList();
-    }
-    List<NoteUrl> urls = noteUrlRepository.findAllByNoteIdList(noteIds);
-    Map<Long, String> noteUrls = new HashMap<>();
-    for (NoteUrl nu : urls) {
-      noteUrls.put(nu.noteId(), nu.url());
-    }
+  // private List<NoteResponse> getNotesUrl(List<Note> notes) {
+  //   List<Long> noteIds = notes.stream().map((n) -> n.id()).toList();
+  //   if (noteIds.isEmpty()) {
+  //     // TODO: review empty tag list
+  //     return notes.stream().map(n -> NoteResponse.fromEntity(n, null, List.of())).toList();
+  //   }
+  //   List<NoteUrl> urls = noteUrlRepository.findAllByNoteIdList(noteIds);
+  //   Map<Long, String> noteUrls = new HashMap<>();
+  //   for (NoteUrl nu : urls) {
+  //     noteUrls.put(nu.noteId(), nu.url());
+  //   }
 
-    // TODO: review empty tag list
-    return notes
-        .stream()
-        .map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.id()), List.of()))
-        .toList();
-  }
+  //   // TODO: review empty tag list
+  //   return notes
+  //       .stream()
+  //       .map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.id()), List.of()))
+  //       .toList();
+  // }
 
   /**
    * Archive a note, disabling edits and revoking public sharing.
@@ -485,11 +506,15 @@ public class NoteService {
         Boolean.TRUE
     );
 
-    noteRepository.save(noteToArchive);
+    Note archivedNote = noteRepository.save(noteToArchive);
     logger.info("Note ID {} archived", noteId);
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(noteId, noteId);
-    return NoteResponse.fromEntity(noteToArchive, getNoteUrl(noteId), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(archivedNote), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in archiveNote");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -524,11 +549,39 @@ public class NoteService {
         Boolean.FALSE
     );
 
-    noteRepository.save(noteToRestore);
+    Note restoredNote = noteRepository.save(noteToRestore);
     logger.info("Note ID {} restored", noteId);
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteId), tags);
+    List<NoteResponse> responseList = buildNoteResponse(List.of(restoredNote), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during NoteResponse build in restoreNote");
+    }
+
+    return responseList.getFirst();
+  }
+
+  private List<NoteResponse> buildNoteResponse(List<Note> noteList, Long userId) {
+    if (noteList.isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> allNotesIds = noteList.stream().map((t) -> t.id()).toList();
+    List<TaskNoteTag> notesTags = tagRepository.findAllByUserIdAndTaskIdInList(userId, allNotesIds);
+    Map<Long, List<Tag>> tagMap = new HashMap<>();
+    for (TaskNoteTag noteTag : notesTags) {
+      tagMap.putIfAbsent(noteTag.taskNoteId(), new ArrayList<>());
+      tagMap.get(noteTag.taskNoteId())
+          .add(new Tag(noteTag.tagId(), noteTag.name(), noteTag.userId()));
+    }
+
+    List<NoteResponse> responseList = new ArrayList<>();
+    for (Note n : noteList) {
+      List<Tag> tagsFromMap = tagMap.getOrDefault(n.id(), new ArrayList<>());
+      NoteResponse tr = NoteResponse.fromEntity(n, getNoteUrl(n.id()), tagsFromMap);
+      responseList.add(tr);
+    }
+
+    return responseList;
   }
 
   private NoteUrl saveUrl(Note noteEntity, String url) {

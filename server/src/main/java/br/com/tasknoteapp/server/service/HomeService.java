@@ -5,8 +5,10 @@ import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,8 +22,6 @@ public class HomeService {
   private final TaskService taskService;
 
   private final NoteService noteService;
-
-  private final TagRepository tagRepository;
 
   private final AuthService authService;
 
@@ -44,7 +44,6 @@ public class HomeService {
       AuthUtil authUtil) {
     this.taskService = taskService;
     this.noteService = noteService;
-    this.tagRepository = tagRepository;
     this.authService = authService;
     this.authUtil = authUtil;
   }
@@ -58,23 +57,25 @@ public class HomeService {
     User user = getCurrentUser();
     logger.info("Getting all tags for user ID {}", user.getId());
 
-    List<String> tags =
-        tagRepository.findAllByUserIdOrderByNameAsc(user.getId()).stream()
-            .map((t) -> t.name())
-            .toList();
-
     List<TaskResponse> tasks = taskService.getTasksByFilter("all");
     List<NoteResponse> notes = noteService.getAllNotes();
+
+    Set<String> tagSet = new HashSet<>();
+    tasks.stream().map((t) -> tagSet.addAll(t.tags()));
+    notes.stream().map((n) -> tagSet.addAll(n.tags()));
 
     boolean hasUntagged =
         tasks.stream().anyMatch(task -> task.tags().isEmpty())
             || notes.stream().anyMatch(note -> note.tags().isEmpty());
 
     if (hasUntagged) {
-      tags = new java.util.ArrayList<>(tags);
-      tags.add("untagged");
-      tags = tags.stream().sorted().toList();
+      tagSet.add("untagged");
     }
+
+    List<String> tags = tagSet
+        .stream()
+        .sorted()
+        .toList();
 
     logger.info("Found {} tags", tags.size());
 

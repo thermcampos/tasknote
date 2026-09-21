@@ -1,6 +1,7 @@
 package br.com.tasknoteapp.server.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -137,7 +138,7 @@ class AccountDeletionIntTest {
     assertTrue(noteRepository.findAllByUserId(userId).isEmpty());
     assertTrue(noteUrlRepository.findByNoteId(activeNoteId).isEmpty());
     assertTrue(taskRepository.findAllByUserId(userId).isEmpty());
-    assertTrue(tagRepository.findAllByUserIdOrderByNameAsc(userId).isEmpty());
+    assertFalse(tagRepository.userHasAnyTags(userId));
     assertTrue(
         userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId).isEmpty());
   }

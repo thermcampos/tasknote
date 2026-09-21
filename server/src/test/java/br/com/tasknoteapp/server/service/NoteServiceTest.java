@@ -91,19 +91,19 @@ class NoteServiceTest {
   void getNoteById() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findById(note.id())).thenReturn(Optional.of(note));
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId())).thenReturn(Optional.of(note));
 
     NoteResponse noteResponse = noteService.getNoteById(note.id());
 
     assertEquals("Test Note", noteResponse.title());
-    verify(noteRepository, times(1)).findById(note.id());
+    verify(noteRepository, times(1)).findByIdAndUserId(note.id(), user.getId());
   }
 
   @Test
   void getNoteById_NotFound() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findById(note.id())).thenReturn(Optional.empty());
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId())).thenReturn(Optional.empty());
     Long noteId = note.id();
 
     assertThrows(NoteNotFoundException.class, () -> noteService.getNoteById(noteId));

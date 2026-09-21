@@ -82,31 +82,6 @@ public class TagRepository {
   }
 
   /**
-   * Find all Tags given a User ID and a Note ID.
-   * 
-   * @param userId The User ID to search by.
-   * @param noteId The Note ID to search by.
-   * @return List of Tags found.
-   */
-  public List<Tag> findAllByUserIdAndNoteId(Long userId, Long noteId) {
-    String sql =
-        """
-        SELECT ta.id, ta.name, ta.user_id
-        FROM tasknote.tags ta
-        JOIN tasknote.note_tags nt ON nt.tag_id = ta.id
-        JOIN tasknote.notes t ON t.id = nt.note_id
-        WHERE ta.user_id = :userId
-          AND t.id = :noteId
-        """;
-
-    MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("userId", userId)
-        .addValue("noteId", noteId);
-
-    return jdbcTemplate.query(sql, params, new TagRowMapper());
-  }
-
-  /**
    * Find all Tags given a User ID and a Task ID.
    * 
    * @param userId The User ID to search by.
@@ -129,6 +104,37 @@ public class TagRepository {
         .addValue("taskId", taskId);
 
     return jdbcTemplate.query(sql, params, new TagRowMapper());
+  }
+
+  /**
+   * Query all notes and tasks tags relationship looking for tags.
+   *
+   * @param userId The User ID to fetch by.
+   * @return true if user has any tags, false otherwise.
+   */
+  public boolean userHasAnyTags(Long userId) {
+    String sql =
+        """
+        SELECT DISTINCT ta.id, ta.name, ta.user_id, tt.tag_id AS taskNoteId
+        FROM tasknote.tags ta
+        JOIN tasknote.task_tags tt ON tt.tag_id = ta.id
+        JOIN tasknote.note_tags nt ON nt.tag_id = ta.id
+        WHERE ta.user_id = :userId
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("userId", userId);
+
+    List<TaskNoteTag> allTags = jdbcTemplate.query(sql, params, (ResultSet rs, int rowNum) -> {
+      return new TaskNoteTag(
+          rs.getLong("id"),
+          rs.getString("name"),
+          rs.getLong("user_id"),
+          rs.getLong("taskNoteId")
+      );
+    });
+
+    return !allTags.isEmpty();
   }
 
   /**
@@ -166,7 +172,7 @@ public class TagRepository {
    * Find all Tags given a User ID and a list of Task IDs.
    *
    * @param userId The User ID to find by.
-   * @param taskIdList The List of Task ID.
+   * @param noteIdList The List of Task ID.
    * @return List of found tags.
    */
   public List<TaskNoteTag> findAllByUserIdAndNoteIdInList(Long userId, List<Long> noteIdList) {
