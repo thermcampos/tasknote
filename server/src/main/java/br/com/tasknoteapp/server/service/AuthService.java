@@ -234,9 +234,7 @@ public class AuthService {
           "BadCredentialsException when logging in user {}: {}", user.getId(), e.getMessage());
 
       // store attempt
-      UserPwdLimit pwdLimit = new UserPwdLimit();
-      pwdLimit.setWhenHappened(LocalDateTime.now());
-      pwdLimit.setUserId(user.getId());
+      UserPwdLimit pwdLimit = new UserPwdLimit(null, LocalDateTime.now(), user.getId());
       userPwdLimitRepository.save(pwdLimit);
 
       return null;
@@ -276,9 +274,7 @@ public class AuthService {
     if (Objects.isNull(password) || !passwordEncoder.matches(password, user.getPassword())) {
       logger.warn("Password verification failed for user {}", user.getId());
 
-      UserPwdLimit pwdLimit = new UserPwdLimit();
-      pwdLimit.setWhenHappened(LocalDateTime.now());
-      pwdLimit.setUserId(user.getId());
+      UserPwdLimit pwdLimit = new UserPwdLimit(null, LocalDateTime.now(), user.getId());
       userPwdLimitRepository.save(pwdLimit);
 
       throw new InvalidCredentialsException();
@@ -575,8 +571,8 @@ public class AuthService {
     // if it's more than 3 times in the last 10 minutes, raise timer of 3 hours.
     if (userPwdList.size() >= 3) {
       UserPwdLimit oldest = userPwdList.getLast();
-      logger.warn("Oldest failed attempt: {}", oldest.getWhenHappened());
-      Duration duration = Duration.between(oldest.getWhenHappened(), LocalDateTime.now());
+      logger.warn("Oldest failed attempt: {}", oldest.whenHappened());
+      Duration duration = Duration.between(oldest.whenHappened(), LocalDateTime.now());
       if (duration.toMinutes() <= 3L) {
         logger.warn("Account locked, minutes remaining: {}", 3L - duration.toMinutes());
         throw new MaxLoginLimitAttemptException();

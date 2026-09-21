@@ -99,7 +99,7 @@ public class NoteService {
       throw new NoteNotFoundException();
     }
 
-    if (!note.get().getUserId().equals(user.getId())) {
+    if (!note.get().userId().equals(user.getId())) {
       throw new NoteNotFoundException();
     }
 
@@ -120,33 +120,37 @@ public class NoteService {
 
     logger.info("Creating note to user ID {}", user.getId());
 
-    Note note = new Note();
-    note.setTitle(noteRequest.title());
-    note.setDescription(noteRequest.description());
-    note.setLastUpdate(LocalDateTime.now());
-    note.setUserId(user.getId());
-    note.setShared(Boolean.FALSE);
-    note.setArchived(Boolean.FALSE);
+    Note note = new Note(
+        null,
+        user.getId(),
+        noteRequest.description(),
+        noteRequest.title(),
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
     Note created = noteRepository.save(note);
 
-    logger.info("Note created! ID {}", created.getId());
+    logger.info("Note created! ID {}", created.id());
 
     if (!Objects.isNull(noteRequest.tags())) {
-      Set<Tag> tagSet = getOrCreateTags(noteRequest.tags(), user, created.getId());
-      logger.info("Get or create tags for note id {}, set returned {} items", created.getId(), tagSet.size());
+      Set<Tag> tagSet = getOrCreateTags(noteRequest.tags(), user, created.id());
+      logger.info("Get or create tags for note id {}, set returned {} items",
+          created.id(), tagSet.size());
     }
 
     String savedUrl = null;
     if (!Objects.isNull(noteRequest.url()) && !noteRequest.url().isEmpty()) {
       NoteUrl noteUrl = saveUrl(created, noteRequest.url());
-      savedUrl = noteUrl.getUrl();
+      savedUrl = noteUrl.url();
     }
 
     int cleanedUp = tagRepository.deleteOrphanedTags(user.getId());
     logger.info("Deleted {} orphaned tags", cleanedUp);
 
     logger.info("Finished note creation!");
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), created.getId());
+    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), created.id());
     logger.info("Found {} tags for the newly created tag", tags);
     return NoteResponse.fromEntity(created, savedUrl, tags);
   }
@@ -170,21 +174,23 @@ public class NoteService {
     }
 
     Note noteEntity = note.get();
-    if (noteEntity.isArchived()) {
+    if (noteEntity.archived()) {
       throw new NoteArchivedException();
     }
 
+    String title = noteEntity.title();
     if (!Objects.isNull(patch.title()) && !patch.title().isBlank()) {
-      noteEntity.setTitle(patch.title().trim());
+      title = patch.title().trim();
     }
+    String description = noteEntity.description();
     if (!Objects.isNull(patch.description()) && !patch.description().isBlank()) {
-      noteEntity.setDescription(patch.description());
+      description = patch.description();
     }
     if (!Objects.isNull(patch.tags())) {
       Set<Tag> tagSet = getOrCreateTags(patch.tags(), user, noteId);
-      logger.info("Get or create tags for note id {}, set returned {} items", noteId, tagSet.size());
+      logger.info("Get or create tags for note id {}, set returned {} items",
+          noteId, tagSet.size());
     }
-    noteEntity.setLastUpdate(LocalDateTime.now());
 
     noteUrlRepository.deleteByNoteId(noteId);
     logger.info("URL deleted from note ID {} during patch", noteId);
@@ -195,14 +201,25 @@ public class NoteService {
       logger.info("No URLs to patch for note ID {}", noteId);
     }
 
-    Note patchedNote = noteRepository.save(noteEntity);
+    Note noteToPatch = new Note(
+        noteId,
+        user.getId(),
+        description,
+        title,
+        LocalDateTime.now(),
+        noteEntity.shared(),
+        noteEntity.shareToken(),
+        Boolean.FALSE
+    );
+
+    Note patchedNote = noteRepository.save(noteToPatch);
 
     tagRepository.deleteOrphanedTags(user.getId());
 
-    logger.info("Note patched! ID {}", patchedNote.getId());
+    logger.info("Note patched! ID {}", patchedNote.id());
 
     List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(patchedNote, getNoteUrl(patchedNote.getId()), tags);
+    return NoteResponse.fromEntity(patchedNote, getNoteUrl(patchedNote.id()), tags);
   }
 
   /**
@@ -219,7 +236,7 @@ public class NoteService {
 
     List<Note> notes = noteRepository.findAllByUserId(user.getId());
     for (Note note : notes) {
-      noteUrlRepository.deleteByNoteId(note.getId());
+      noteUrlRepository.deleteByNoteId(note.id());
       noteRepository.delete(note);
     }
 
@@ -245,7 +262,8 @@ public class NoteService {
     }
 
     Note noteEntity = note.get();
-    if (!noteEntity.isArchived()) {
+    if (!noteEntity.archived()) {
+      // FIXME create a not archived exception
       throw new NoteArchivedException();
     }
 
@@ -295,19 +313,30 @@ public class NoteService {
 
     Note noteEntity = noteOpt.get();
 
-    if (noteEntity.isArchived()) {
+    if (noteEntity.archived()) {
       throw new NoteArchivedException();
     }
 
-    if (!noteEntity.isShared()) {
-      noteEntity.setShared(true);
-      noteEntity.setShareToken(UUID.randomUUID().toString());
-      noteRepository.save(noteEntity);
-      logger.info("Note ID {} shared with token {}", noteId, noteEntity.getShareToken());
+    if (Boolean.TRUE.equals(noteEntity.shared())) {
+      // throw new NoteAlreadySharedException
+      throw new RuntimeException("Note " + noteId + " already shared!");
     }
 
+    Note noteToShare = new Note(
+        noteId,
+        user.getId(),
+        noteEntity.description(),
+        noteEntity.title(),
+        LocalDateTime.now(),
+        Boolean.TRUE,
+        UUID.randomUUID().toString(),
+        Boolean.FALSE
+    );
+    noteRepository.save(noteToShare);
+    logger.info("Note ID {} shared with token {}", noteId, noteToShare.shareToken());
+
     List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
-    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()), tags);
+    return NoteResponse.fromEntity(noteToShare, getNoteUrl(noteId), tags);
   }
 
   /**
@@ -328,17 +357,26 @@ public class NoteService {
 
     Note noteEntity = noteOpt.get();
 
-    if (noteEntity.isArchived()) {
+    if (noteEntity.archived()) {
       throw new NoteArchivedException();
     }
 
-    noteEntity.setShared(false);
-    noteEntity.setShareToken(null);
-    noteRepository.save(noteEntity);
+    Note noteToUnShare = new Note(
+        noteId,
+        user.getId(),
+        noteEntity.description(),
+        noteEntity.title(),
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
+
+    noteRepository.save(noteToUnShare);
     logger.info("Note ID {} unshared", noteId);
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(noteOpt.get().getUserId(), noteOpt.get().getId());
-    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()), tags);
+    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
+    return NoteResponse.fromEntity(noteToUnShare, getNoteUrl(noteId), tags);
   }
 
   /**
@@ -352,12 +390,13 @@ public class NoteService {
     logger.info("Fetching shared note with token {}", shareToken);
 
     Optional<Note> noteOpt = noteRepository.findByShareToken(shareToken);
-    if (noteOpt.isEmpty() || !noteOpt.get().isShared() || noteOpt.get().isArchived()) {
+    if (noteOpt.isEmpty() || !noteOpt.get().shared() || noteOpt.get().archived()) {
       throw new NoteNotFoundException();
     }
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(noteOpt.get().getUserId(), noteOpt.get().getId());
-    return NoteResponse.fromEntity(noteOpt.get(), getNoteUrl(noteOpt.get().getId()), tags);
+    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(
+        noteOpt.get().userId(), noteOpt.get().id());
+    return NoteResponse.fromEntity(noteOpt.get(), getNoteUrl(noteOpt.get().id()), tags);
   }
 
   private Set<Tag> getOrCreateTags(List<String> tagNames, User user, Long noteId) {
@@ -376,7 +415,8 @@ public class NoteService {
     for (String name : normalizedNames) {
       Tag tag = tagRepository
               .findByUserIdAndName(user.getId(), name)
-              .orElseGet(() -> tagRepository.save(new Tag(name, user.getId()), "notes", noteId));
+              .orElseGet(() -> tagRepository.save(
+                new Tag(null, name, user.getId()), "notes", noteId));
       tags.add(tag);
     }
     logger.info("getOrCreateTags - tags completed {}", tags);
@@ -391,24 +431,26 @@ public class NoteService {
 
   private String getNoteUrl(Long noteId) {
     Optional<NoteUrl> noteUrl = noteUrlRepository.findByNoteId(noteId);
-    return noteUrl.isPresent() ? noteUrl.get().getUrl() : null;
+    return noteUrl.isPresent() ? noteUrl.get().url() : null;
   }
 
   private List<NoteResponse> getNotesUrl(List<Note> notes) {
-    List<Long> noteIds = notes.stream().map((n) -> n.getId()).toList();
+    List<Long> noteIds = notes.stream().map((n) -> n.id()).toList();
     if (noteIds.isEmpty()) {
       // TODO: review empty tag list
       return notes.stream().map(n -> NoteResponse.fromEntity(n, null, List.of())).toList();
     }
     List<NoteUrl> urls = noteUrlRepository.findAllByNoteIdList(noteIds);
-    //Map<Long, String> noteUrls = urls.stream().collect(Collectors.toMap(nu -> nu.getNote().getId(), nu -> nu.getUrl()));
     Map<Long, String> noteUrls = new HashMap<>();
     for (NoteUrl nu : urls) {
-      noteUrls.put(nu.getNoteId(), nu.getUrl());
+      noteUrls.put(nu.noteId(), nu.url());
     }
 
     // TODO: review empty tag list
-    return notes.stream().map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.getId()), List.of())).toList();
+    return notes
+        .stream()
+        .map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.id()), List.of()))
+        .toList();
   }
 
   /**
@@ -428,19 +470,26 @@ public class NoteService {
     }
 
     Note noteEntity = noteOpt.get();
-    if (noteEntity.isArchived()) {
+    if (noteEntity.archived()) {
       throw new NoteArchivedException();
     }
 
-    noteEntity.setArchived(true);
-    noteEntity.setShared(false);
-    noteEntity.setShareToken(null);
-    noteEntity.setLastUpdate(LocalDateTime.now());
-    noteRepository.save(noteEntity);
+    Note noteToArchive = new Note(
+        noteId,
+        user.getId(),
+        noteEntity.description(),
+        noteEntity.title(),
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.TRUE
+    );
+
+    noteRepository.save(noteToArchive);
     logger.info("Note ID {} archived", noteId);
 
     List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(noteId, noteId);
-    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()), tags);
+    return NoteResponse.fromEntity(noteToArchive, getNoteUrl(noteId), tags);
   }
 
   /**
@@ -460,27 +509,32 @@ public class NoteService {
     }
 
     Note noteEntity = noteOpt.get();
-    if (!noteEntity.isArchived()) {
+    if (!noteEntity.archived()) {
       throw new NoteArchivedException();
     }
 
-    noteEntity.setArchived(false);
-    noteEntity.setLastUpdate(LocalDateTime.now());
-    noteRepository.save(noteEntity);
+    Note noteToRestore = new Note(
+        noteId,
+        user.getId(),
+        noteEntity.description(),
+        noteEntity.title(),
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
+
+    noteRepository.save(noteToRestore);
     logger.info("Note ID {} restored", noteId);
 
-    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(noteId, noteId);
-    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteEntity.getId()), tags);
+    List<Tag> tags = tagRepository.findAllByUserIdAndNoteId(user.getId(), noteId);
+    return NoteResponse.fromEntity(noteEntity, getNoteUrl(noteId), tags);
   }
 
   private NoteUrl saveUrl(Note noteEntity, String url) {
-    NoteUrl noteUrl = new NoteUrl();
-    noteUrl.setUrl(url);
-    noteUrl.setNoteId(noteEntity.getId());
-
+    NoteUrl noteUrl = new NoteUrl(null, noteEntity.id(), url);
     NoteUrl savedUrl = noteUrlRepository.save(noteUrl);
-    logger.info("URL saved to note ID {}", noteEntity.getId());
-
+    logger.info("URL saved to note ID {}", noteEntity.id());
     return savedUrl;
   }
 }

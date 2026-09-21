@@ -33,8 +33,8 @@ public class TaskUrlRepository {
 
     MapSqlParameterSource[] params = taskUrls.stream()
         .map(taskUrl -> new MapSqlParameterSource()
-            .addValue("taskId", taskUrl.getId().getTaskId())
-            .addValue("url", taskUrl.getId().getUrl()))
+            .addValue("taskId", taskUrl.id().taskId())
+            .addValue("url", taskUrl.id().url()))
         .toArray(MapSqlParameterSource[]::new);
 
     return Arrays.stream(jdbcTemplate.batchUpdate(sql, params)).sum();

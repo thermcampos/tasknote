@@ -24,7 +24,7 @@ public class NoteRepository {
    * @return the saved note with its generated ID.
    */
   public Note save(Note note) {
-    return note.getId() == null
+    return note.id() == null
         ? create(note)
         : update(note);
   }
@@ -53,13 +53,13 @@ public class NoteRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("userId", note.getUserId())
-        .addValue("description", note.getDescription())
-        .addValue("title", note.getTitle())
-        .addValue("lastUpdate", note.getLastUpdate())
-        .addValue("shared", note.isShared())
-        .addValue("shareToken", note.getShareToken())
-        .addValue("archived", note.isArchived());
+        .addValue("userId", note.userId())
+        .addValue("description", note.description())
+        .addValue("title", note.title())
+        .addValue("lastUpdate", note.lastUpdate())
+        .addValue("shared", note.shared())
+        .addValue("shareToken", note.shareToken())
+        .addValue("archived", note.archived());
 
     return jdbcTemplate.queryForObject(sql, params, new NoteRowMapper());
   }
@@ -80,14 +80,14 @@ public class NoteRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("description", note.getDescription())
-        .addValue("title", note.getTitle())
-        .addValue("lastUpdate", note.getLastUpdate())
-        .addValue("shared", note.isShared())
-        .addValue("shareToken", note.getShareToken())
-        .addValue("archived", note.isArchived())
-        .addValue("id", note.getId())
-        .addValue("userId", note.getUserId());
+        .addValue("description", note.description())
+        .addValue("title", note.title())
+        .addValue("lastUpdate", note.lastUpdate())
+        .addValue("shared", note.shared())
+        .addValue("shareToken", note.shareToken())
+        .addValue("archived", note.archived())
+        .addValue("id", note.id())
+        .addValue("userId", note.userId());
 
     return jdbcTemplate.queryForObject(sql, params, new NoteRowMapper());
   }
@@ -102,7 +102,7 @@ public class NoteRepository {
     String sql = "DELETE FROM tasknote.notes WHERE id = :id";
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("id", note.getId());
+        .addValue("id", note.id());
 
     return jdbcTemplate.update(sql, params);
   }

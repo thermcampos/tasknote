@@ -24,7 +24,7 @@ public class UserPwdLimitRepository {
    * @return The created or updated UserPwdLimit instance.
    */
   public UserPwdLimit save(UserPwdLimit userPwdLimit) {
-    return userPwdLimit.getId() == null
+    return userPwdLimit.id() == null
         ? create(userPwdLimit)
         : update(userPwdLimit);
   }
@@ -38,8 +38,8 @@ public class UserPwdLimitRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("userId", userPwdLimit.getUserId())
-        .addValue("whenHappened", userPwdLimit.getWhenHappened());
+        .addValue("userId", userPwdLimit.userId())
+        .addValue("whenHappened", userPwdLimit.whenHappened());
 
     return jdbcTemplate.queryForObject(sql, params, new UserPwdLimitRowMapper());
   }
@@ -54,8 +54,8 @@ public class UserPwdLimitRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("whenHappened", userPwdLimit.getWhenHappened())
-        .addValue("id", userPwdLimit.getId());
+        .addValue("whenHappened", userPwdLimit.whenHappened())
+        .addValue("id", userPwdLimit.id());
 
     return jdbcTemplate.queryForObject(sql, params, new UserPwdLimitRowMapper());
   }

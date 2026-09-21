@@ -37,8 +37,8 @@ class TaskRepositoryIntTest {
 
     Assertions.assertFalse(entities.isEmpty());
     Assertions.assertEquals(2, entities.size());
-    Assertions.assertEquals("Refactor", entities.get(0).getDescription());
-    Assertions.assertEquals("Cleanup", entities.get(1).getDescription());
+    Assertions.assertEquals("Refactor", entities.get(0).description());
+    Assertions.assertEquals("Cleanup", entities.get(1).description());
   }
 
   @Test
@@ -49,7 +49,7 @@ class TaskRepositoryIntTest {
 
     Assertions.assertFalse(entities.isEmpty());
     Assertions.assertEquals(1, entities.size());
-    Assertions.assertEquals("Refactor", entities.get(0).getDescription());
+    Assertions.assertEquals("Refactor", entities.get(0).description());
   }
 
   private Long getUserId() {

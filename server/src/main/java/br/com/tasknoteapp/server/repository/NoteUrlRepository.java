@@ -24,7 +24,7 @@ public class NoteUrlRepository {
    * @return Created or Updated note url instance.
    */
   public NoteUrl save(NoteUrl noteUrl) {
-    return noteUrl.getId() == null
+    return noteUrl.id() == null
         ? create(noteUrl)
         : update(noteUrl);
   }
@@ -38,8 +38,8 @@ public class NoteUrlRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("noteId", noteUrl.getNoteId())
-        .addValue("url", noteUrl.getUrl());
+        .addValue("noteId", noteUrl.noteId())
+        .addValue("url", noteUrl.url());
 
     return jdbcTemplate.queryForObject(sql, params, new NoteUrlRowMapper());
   }
@@ -55,9 +55,9 @@ public class NoteUrlRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("id", noteUrl.getId())
-        .addValue("noteId", noteUrl.getNoteId())
-        .addValue("url", noteUrl.getUrl());
+        .addValue("id", noteUrl.id())
+        .addValue("noteId", noteUrl.noteId())
+        .addValue("url", noteUrl.url());
 
     return jdbcTemplate.queryForObject(sql, params, new NoteUrlRowMapper());
   }

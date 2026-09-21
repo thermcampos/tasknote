@@ -84,35 +84,52 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Delete account with mixed archived and non-archived notes should remove all data")
   void deleteAccount_mixedArchivedNotes_shouldRemoveAllUserData() {
-    Note activeNote = new Note();
-    activeNote.setTitle("Active note");
-    activeNote.setDescription("Not archived");
-    activeNote.setUserId(user.getId());
-    activeNote.setLastUpdate(LocalDateTime.now());
+    Note activeNote = new Note(
+        null,
+        user.getId(),
+        "Not archived",
+        "Active note",
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
     activeNote = noteRepository.save(activeNote);
 
-    NoteUrl noteUrl = new NoteUrl();
-    noteUrl.setUrl("http://example.com");
-    noteUrl.setNoteId(activeNote.getId());
+    NoteUrl noteUrl = new NoteUrl(
+        null,
+        activeNote.id(),
+        "http://example.com"
+    );
     noteUrlRepository.save(noteUrl);
 
-    Note archivedNote = new Note();
-    archivedNote.setTitle("Archived note");
-    archivedNote.setDescription("Archived");
-    archivedNote.setUserId(user.getId());
-    archivedNote.setLastUpdate(LocalDateTime.now());
-    archivedNote.setArchived(true);
+    Note archivedNote = new Note(
+        null,
+        user.getId(),
+        "Archived",
+        "Archived note",
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.TRUE
+    );
     archivedNote = noteRepository.save(archivedNote);
 
-    Task task = new Task();
-    task.setDescription("A task");
-    task.setCompleted(false);
-    task.setUserId(user.getId());
-    task.setLastUpdate(LocalDateTime.now());
+    Task task = new Task(
+        null,
+        user.getId(),
+        "A task",
+        Boolean.FALSE,
+        LocalDateTime.now(),
+        null,
+        Boolean.FALSE,
+        Boolean.FALSE,
+        Boolean.FALSE
+    );
     taskRepository.save(task);
 
     Long userId = user.getId();
-    final Long activeNoteId = activeNote.getId();
+    final Long activeNoteId = activeNote.id();
 
     userSessionService.deleteCurrentUserAccount();
 
@@ -150,9 +167,11 @@ class AccountDeletionIntTest {
     Long userId = user.getId();
 
     for (int i = 0; i < 3; i++) {
-      UserPwdLimit attempt = new UserPwdLimit();
-      attempt.setWhenHappened(LocalDateTime.now().minusSeconds(30));
-      attempt.setUserId(user.getId());
+      UserPwdLimit attempt = new UserPwdLimit(
+          null,
+          LocalDateTime.now().minusSeconds(30),
+          user.getId()
+      );
       userPwdLimitRepository.save(attempt);
     }
 
@@ -169,14 +188,19 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Single-note delete should still reject non-archived notes")
   void deleteNote_nonArchived_shouldStillThrow() {
-    Note activeNote = new Note();
-    activeNote.setTitle("Active note");
-    activeNote.setDescription("Not archived");
-    activeNote.setUserId(user.getId());
-    activeNote.setLastUpdate(LocalDateTime.now());
+    Note activeNote = new Note(
+        null,
+        user.getId(),
+        "Not archived",
+        "Active note",
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
     activeNote = noteRepository.save(activeNote);
 
-    Long noteId = activeNote.getId();
+    Long noteId = activeNote.id();
 
     assertThrows(NoteArchivedException.class, () -> noteService.deleteNote(noteId));
 
@@ -186,15 +210,19 @@ class AccountDeletionIntTest {
   @Test
   @DisplayName("Single-note delete of archived note should still work")
   void deleteNote_archived_shouldSucceed() {
-    Note archivedNote = new Note();
-    archivedNote.setTitle("Archived note");
-    archivedNote.setDescription("Archived");
-    archivedNote.setUserId(user.getId());
-    archivedNote.setLastUpdate(LocalDateTime.now());
-    archivedNote.setArchived(true);
+    Note archivedNote = new Note(
+        null,
+        user.getId(),
+        "Archived",
+        "Archived note",
+        LocalDateTime.now(),
+        Boolean.FALSE,
+        null,
+        Boolean.TRUE
+    );
     archivedNote = noteRepository.save(archivedNote);
 
-    Long noteId = archivedNote.getId();
+    Long noteId = archivedNote.id();
 
     noteService.deleteNote(noteId);
 

@@ -26,7 +26,7 @@ public class TaskRepository {
    * @return The new task instance.
    */
   public Task save(Task task) {
-    return task.getId() == null
+    return task.id() == null
         ? create(task)
         : update(task);
   }
@@ -65,14 +65,14 @@ public class TaskRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("userId", task.getUserId())
-        .addValue("description", task.getDescription())
-        .addValue("completed", task.isCompleted())
-        .addValue("lastUpdate", task.getLastUpdate())
-        .addValue("dueDate", task.getDueDate())
-        .addValue("dueDateNotify", task.isDueDateNotify())
-        .addValue("dueDateNotifySent", task.isDueDateNotifySent())
-        .addValue("highPriority", task.isHighPriority());
+        .addValue("userId", task.userId())
+        .addValue("description", task.description())
+        .addValue("completed", task.completed())
+        .addValue("lastUpdate", task.lastUpdate())
+        .addValue("dueDate", task.dueDate())
+        .addValue("dueDateNotify", task.dueDateNotify())
+        .addValue("dueDateNotifySent", task.dueDateNotifySent())
+        .addValue("highPriority", task.highPriority());
 
     return jdbcTemplate.queryForObject(sql, params, new TaskRowMapper());
   }
@@ -103,15 +103,15 @@ public class TaskRepository {
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("userId", task.getUserId())
-        .addValue("description", task.getDescription())
-        .addValue("completed", task.isCompleted())
-        .addValue("lastUpdate", task.getLastUpdate())
-        .addValue("dueDate", task.getDueDate())
-        .addValue("dueDateNotify", task.isDueDateNotify())
-        .addValue("dueDateNotifySent", task.isDueDateNotifySent())
-        .addValue("highPriority", task.isHighPriority())
-        .addValue("id", task.getId());
+        .addValue("userId", task.userId())
+        .addValue("description", task.description())
+        .addValue("completed", task.completed())
+        .addValue("lastUpdate", task.lastUpdate())
+        .addValue("dueDate", task.dueDate())
+        .addValue("dueDateNotify", task.dueDateNotify())
+        .addValue("dueDateNotifySent", task.dueDateNotifySent())
+        .addValue("highPriority", task.highPriority())
+        .addValue("id", task.id());
 
     return jdbcTemplate.queryForObject(sql, params, new TaskRowMapper());
   }
@@ -126,7 +126,7 @@ public class TaskRepository {
     String sql = "DELETE FROM tasknote.tasks WHERE id = :id";
 
     MapSqlParameterSource params = new MapSqlParameterSource()
-        .addValue("id", task.getId());
+        .addValue("id", task.id());
 
     return jdbcTemplate.update(sql, params);
   }
@@ -187,7 +187,7 @@ public class TaskRepository {
         .addValue("userId", userId)
         .addValue("id", id);
 
-    Task task = jdbcTemplate.query(sql, params, new TaskRowMapper());
+    Task task = jdbcTemplate.queryForObject(sql, params, new TaskRowMapper());
     return Optional.ofNullable(task);
   }
 

@@ -262,12 +262,21 @@ class AuthServiceTest {
     existing.setEmailConfirmedAt(LocalDateTime.now());
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(existing));
 
-    UserPwdLimit limit1 = new UserPwdLimit();
-    limit1.setWhenHappened(LocalDateTime.now().minusSeconds(30));
-    UserPwdLimit limit2 = new UserPwdLimit();
-    limit2.setWhenHappened(LocalDateTime.now().minusMinutes(1));
-    UserPwdLimit limit3 = new UserPwdLimit();
-    limit3.setWhenHappened(LocalDateTime.now().minusMinutes(2));
+    UserPwdLimit limit1 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusSeconds(30),
+        null
+    );
+    UserPwdLimit limit2 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusMinutes(1),
+        null
+    );
+    UserPwdLimit limit3 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusMinutes(2),
+        null
+    );
     when(userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(existing.getId()))
         .thenReturn(List.of(limit1, limit2, limit3));
 

@@ -2,6 +2,7 @@ package br.com.tasknoteapp.server.service;
 
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.Task;
+import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
 import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
@@ -17,8 +18,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -79,11 +82,7 @@ public class TaskService {
     List<Task> tasks = taskRepository.findAllByUserId(user.getId());
     logger.info("{} tasks found in getAllTasks!", tasks.size());
 
-    List<Tag> allTags = tagRepository.findAllByUserIdOrderByNameAsc(user.getId());
-
-    return tasks.stream()
-        .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), allTags))
-        .toList();
+    return buildTaskResponse(tasks, user.getId());
   }
 
   /**
@@ -102,10 +101,14 @@ public class TaskService {
       throw new TaskNotFoundException();
     }
 
-    List<Tag> allTags = tagRepository.findAllByUserIdOrderByNameAsc(user.getId());
-
     logger.info("Task found! ID {}", taskId);
-    return TaskResponse.fromEntity(task.get(), getAllTasksUrls(taskId), allTags);
+
+    List<TaskResponse> responseList = buildTaskResponse(List.of(task.get()), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during TaskResponse build in getTaskById");
+    }
+
+    return responseList.getFirst();
   }
 
   /**
@@ -119,20 +122,29 @@ public class TaskService {
 
     logger.info("Creating task to user ID {}", user.getId());
 
-    Task task = new Task();
-    task.setDescription(taskRequest.description());
-    task.setCompleted(false);
-    task.setUserId(user.getId());
-    task.setLastUpdate(LocalDateTime.now());
+    LocalDate dueDate = null;
     if (!Objects.isNull(taskRequest.dueDate()) && !taskRequest.dueDate().isBlank()) {
-      task.setDueDate(LocalDate.parse(taskRequest.dueDate()));
+      dueDate = LocalDate.parse(taskRequest.dueDate());
     }
-    task.setHighPriority(taskRequest.highPriority());
+
+    Task task = new Task(
+          null,
+          user.getId(),
+          taskRequest.description(),
+          Boolean.FALSE,
+          LocalDateTime.now(),
+          dueDate,
+          Boolean.FALSE,
+          Boolean.FALSE,
+          taskRequest.highPriority()
+    );
     
     Task created = taskRepository.save(task);
 
+    logger.info("Task created! ID {}", created.id());
+
     if (!Objects.isNull(taskRequest.tags())) {
-      getOrCreateTags(taskRequest.tags(), user, created.getId());
+      getOrCreateTags(taskRequest.tags(), user, created.id());
     }
 
     if (!Objects.isNull(taskRequest.urls()) && !taskRequest.urls().isEmpty()) {
@@ -141,21 +153,23 @@ public class TaskService {
 
     tagRepository.deleteOrphanedTags(user.getId());
 
-    List<Tag> allTags = tagRepository.findAllByUserIdOrderByNameAsc(user.getId());
+    List<TaskResponse> responseList = buildTaskResponse(List.of(created), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during TaskResponse build in createTask");
+    }
 
-    logger.info("Task created! ID {}", created.getId());
-    return TaskResponse.fromEntity(created, getAllTasksUrls(created.getId()), allTags);
+    return responseList.getFirst();
   }
 
   /**
    * Patch a task for the current user.
    *
    * @param taskId The task id from the database.
-   * @param patch An instance of {@link TaskPatchRequest} with the content to be patched.
+   * @param patchRequest An instance of {@link TaskPatchRequest} with the content to be patched.
    * @return {@link TaskResponse} with the updated content.
    */
   @Transactional
-  public TaskResponse patchTask(Long taskId, TaskPatchRequest patch) {
+  public TaskResponse patchTask(Long taskId, TaskPatchRequest patchRequest) {
     User user = getCurrentUser();
 
     logger.info("Patching task ID {} to user ID {}", taskId, user.getId());
@@ -166,35 +180,51 @@ public class TaskService {
     }
 
     Task taskEntity = task.get();
-    if (!Objects.isNull(patch.description()) && !patch.description().isBlank()) {
-      taskEntity.setDescription(patch.description().trim());
-    }
-    if (!Objects.isNull(patch.completed())) {
-      taskEntity.setCompleted(patch.completed());
-    }
 
-    patchDueDate(taskEntity, patch);
-
-    if (!Objects.isNull(patch.highPriority())) {
-      taskEntity.setHighPriority(patch.highPriority());
+    var description = taskEntity.description();
+    if (!Objects.isNull(patchRequest.description()) && !patchRequest.description().isBlank()) {
+      description = patchRequest.description().trim();
+    }
+    var completed = taskEntity.completed();
+    if (!Objects.isNull(patchRequest.completed())) {
+      completed = patchRequest.completed();
     }
 
-    taskEntity.setLastUpdate(LocalDateTime.now());
+    var highPriority = taskEntity.highPriority();
+    if (!Objects.isNull(patchRequest.highPriority())) {
+      highPriority = patchRequest.highPriority();
+    }
 
-    patchTaskUrl(taskEntity, patch);
+    Task taskToPatch = new Task(
+        taskId,
+        user.getId(),
+        description,
+        completed,
+        LocalDateTime.now(),
+        resolvtDueDate(taskEntity, patchRequest),
+        Boolean.FALSE,
+        Boolean.FALSE,
+        highPriority
+    );
 
-    Task patchedTask = taskRepository.save(taskEntity);
+    Task patchedTask = taskRepository.save(taskToPatch);
 
-    if (!Objects.isNull(patch.tags())) {
-      getOrCreateTags(patch.tags(), user, taskId);
+    logger.info("Task patched! ID {}", taskId);
+
+    patchTaskUrl(patchedTask, patchRequest);
+
+    if (!Objects.isNull(patchRequest.tags())) {
+      getOrCreateTags(patchRequest.tags(), user, taskId);
     }
 
     tagRepository.deleteOrphanedTags(user.getId());
 
-    logger.info("Task patched! ID {}", patchedTask.getId());
+    List<TaskResponse> responseList = buildTaskResponse(List.of(patchedTask), user.getId());
+    if (responseList.isEmpty()) {
+      throw new RuntimeException("Issues during TaskResponse build in patchTask");
+    }
 
-    List<Tag> tagList = tagRepository.findAllByUserIdAndNoteId(user.getId(), patchedTask.getId());
-    return TaskResponse.fromEntity(patchedTask, getAllTasksUrls(taskId), tagList);
+    return responseList.getFirst();
   }
 
   /**
@@ -215,7 +245,7 @@ public class TaskService {
 
     Task taskEntity = task.get();
 
-    List<TaskUrl> urlsToDelete = taskUrlRepository.findAllById_taskId(taskEntity.getId());
+    List<TaskUrl> urlsToDelete = taskUrlRepository.findAllById_taskId(taskEntity.id());
     if (!urlsToDelete.isEmpty()) {
       taskUrlRepository.deleteAllById_taskId(taskId);
       logger.info("Deleted {} URLs from task ID {} in deleteTask", urlsToDelete.size(), taskId);
@@ -250,10 +280,7 @@ public class TaskService {
         taskRepository.findAllBySearchTerm(searchTerm.toUpperCase(), user.getId());
     logger.info("{} tasks found!", tasks.size());
 
-    // TODO: review empty tag list
-    return tasks.stream()
-        .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), List.of()))
-        .toList();
+    return buildTaskResponse(tasks, user.getId());
   }
 
   /**
@@ -266,36 +293,57 @@ public class TaskService {
   public List<TaskResponse> getTasksByFilter(String filter) {
     User user = getCurrentUser();
 
+    logger.info("getTasksByFilter started - filter=[{}]", filter);
+
     List<Task> allTasks =
         taskRepository.findAllByUserId(user.getId()).stream()
-            .filter(t -> t.isCompleted().equals(Boolean.FALSE))
+            .filter(t -> t.completed().equals(Boolean.FALSE))
             .toList();
-    if (allTasks.isEmpty()) {
+    
+    List<TaskResponse> responseList = buildTaskResponse(allTasks, user.getId());
+
+    return switch (filter) {
+      case "all" -> responseList;
+      case "high" ->
+          responseList
+              .stream()
+              .filter(((tr) -> tr.highPriority().equals(Boolean.TRUE)))
+              .toList();
+      case "untagged" ->
+          responseList
+              .stream()
+              .filter((tr) -> tr.tags().isEmpty())
+              .toList();
+      default ->
+          responseList
+              .stream()
+              .filter((tr) -> tr.tags().stream().anyMatch((tag) -> tag.equals(filter)))
+              .toList();
+    };
+  }
+
+  private List<TaskResponse> buildTaskResponse(List<Task> taskList, Long userId) {
+    if (taskList.isEmpty()) {
       return List.of();
     }
 
-    // TODO: review empty tag list
-    return switch (filter) {
-      case "all" ->
-          allTasks.stream()
-              .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), List.of()))
-              .toList();
-      case "high" ->
-          allTasks.stream()
-              .filter(((t) -> t.isHighPriority().equals(Boolean.TRUE)))
-              .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), List.of()))
-              .toList();
-      case "untagged" ->
-          allTasks.stream()
-              //.filter(t -> t.getTags().isEmpty())
-              .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), List.of()))
-              .toList();
-      default ->
-          allTasks.stream()
-              //.filter(t -> t.getTags().stream().anyMatch(tag -> tag.getName().equals(filter)))
-              .map((Task tr) -> TaskResponse.fromEntity(tr, getAllTasksUrls(tr.getId()), List.of()))
-              .toList();
-    };
+    List<Long> allTaskIds = taskList.stream().map((t) -> t.id()).toList();
+    List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(userId, allTaskIds);
+    Map<Long, List<Tag>> tagMap = new HashMap<>();
+    for (TaskNoteTag taskTag : taskTags) {
+      tagMap.putIfAbsent(taskTag.taskNoteId(), new ArrayList<>());
+      tagMap.get(taskTag.taskNoteId())
+          .add(new Tag(taskTag.tagId(), taskTag.name(), taskTag.userId()));
+    }
+
+    List<TaskResponse> responseList = new ArrayList<>();
+    for (Task t : taskList) {
+      List<Tag> tagsFromMap = tagMap.getOrDefault(t.id(), new ArrayList<>());
+      TaskResponse tr = TaskResponse.fromEntity(t, getAllTasksUrls(t.id()), tagsFromMap);
+      responseList.add(tr);
+    }
+
+    return responseList;
   }
 
   private Set<Tag> getOrCreateTags(List<String> tagNames, User user, Long taskId) {
@@ -309,14 +357,20 @@ public class TaskService {
             .map(name -> name.trim().toLowerCase())
             .collect(Collectors.toSet());
 
+    logger.info("Handling {} tags: {}", normalizedNames.size(), normalizedNames);
+
     Set<Tag> tags = new HashSet<>();
     for (String name : normalizedNames) {
       Tag tag =
           tagRepository
               .findByUserIdAndName(user.getId(), name)
-              .orElseGet(() -> tagRepository.save(new Tag(name, user.getId()), "tasks", taskId));
+              .orElseGet(() -> tagRepository.save(
+                new Tag(null, name, user.getId()), "tasks", taskId));
       tags.add(tag);
     }
+
+    logger.debug("getOrCreateTags completed with tags {}", tags);
+
     return tags;
   }
 
@@ -328,35 +382,35 @@ public class TaskService {
 
   private List<String> getAllTasksUrls(Long taskId) {
     List<TaskUrl> urls = taskUrlRepository.findAllById_taskId(taskId);
-    return urls.stream().map(TaskUrl::getId).map(TaskUrlPk::getUrl).toList();
+    return urls.stream().map((tu) -> tu.id()).map((pk) -> pk.url()).toList();
   }
 
   private void saveUrls(Task taskEntity, List<String> urls) {
     List<TaskUrl> tasksUrl = new ArrayList<>();
     for (String url : urls) {
-      TaskUrl taskUrl = new TaskUrl();
-      TaskUrlPk pk = new TaskUrlPk(taskEntity.getId(), url);
-      taskUrl.setId(pk);
+      TaskUrlPk pk = new TaskUrlPk(taskEntity.id(), url);
+      TaskUrl taskUrl = new TaskUrl(pk);
       tasksUrl.add(taskUrl);
     }
 
     taskUrlRepository.saveAll(tasksUrl);
-    logger.info("Added {} URLs from task ID {}", tasksUrl.size(), taskEntity.getId());
+    logger.info("Added {} URLs from task ID {}", tasksUrl.size(), taskEntity.id());
   }
 
-  private void patchDueDate(Task taskEntity, TaskPatchRequest patch) {
-    taskEntity.setDueDate(null);
+  private LocalDate resolvtDueDate(Task taskEntity, TaskPatchRequest patch) {
+    LocalDate dueDate = null;
     if (!Objects.isNull(patch.dueDate()) && !patch.dueDate().isBlank()) {
       try {
-        taskEntity.setDueDate(LocalDate.parse(patch.dueDate()));
+        dueDate = LocalDate.parse(patch.dueDate());
       } catch (DateTimeParseException e) {
         logger.error("Unable to parse the provided date: {}: {}", patch.dueDate(), e.getMessage());
       }
     }
+    return dueDate;
   }
 
   private void patchTaskUrl(Task taskEntity, TaskPatchRequest patch) {
-    Long taskId = taskEntity.getId();
+    Long taskId = taskEntity.id();
     List<TaskUrl> urlsToDelete = taskUrlRepository.findAllById_taskId(taskId);
     if (!urlsToDelete.isEmpty()) {
       taskUrlRepository.deleteAllById_taskId(taskId);
@@ -367,7 +421,7 @@ public class TaskService {
 
     if (!Objects.isNull(patch.urls())) {
       List<String> urlListToAdd =
-          patch.urls().stream().filter(u -> !u.isBlank()).map(String::trim).toList();
+          patch.urls().stream().filter(u -> !u.isBlank()).map((u) -> u.trim()).toList();
       saveUrls(taskEntity, urlListToAdd);
     } else {
       logger.info("No URLs to add for task ID {}", taskId);

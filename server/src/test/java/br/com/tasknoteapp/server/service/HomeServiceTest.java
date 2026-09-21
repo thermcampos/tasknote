@@ -50,15 +50,15 @@ class HomeServiceTest {
   @DisplayName("Get tasks tags should return all tags ordered alphabetically")
   void getTopTasksTag_shouldReturnAllTagsAlphabetically() {
     User user = mockUser();
-    Tag tag1 = new Tag("tag1", user.getId());
-    Tag tag2 = new Tag("tag2", user.getId());
-    Tag tag3 = new Tag("tag3", user.getId());
-    Tag tag4 = new Tag("tag4", user.getId());
-    Tag tag5 = new Tag("tag5", user.getId());
-    Tag tag6 = new Tag("tag6", user.getId());
+    Tag tag1 = new Tag(null, "tag1", user.getId());
+    Tag tag2 = new Tag(null, "tag2", user.getId());
+    Tag tag3 = new Tag(null, "tag3", user.getId());
+    Tag tag4 = new Tag(null, "tag4", user.getId());
+    Tag tag5 = new Tag(null, "tag5", user.getId());
+    Tag tag6 = new Tag(null, "tag6", user.getId());
 
-    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId()))
-        .thenReturn(List.of(tag1, tag2, tag3, tag4, tag5, tag6));
+    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId()))
+    //    .thenReturn(List.of(tag1, tag2, tag3, tag4, tag5, tag6));
 
     TaskResponse task1 =
         new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of("tag1"), List.of());
@@ -76,7 +76,7 @@ class HomeServiceTest {
   @DisplayName("Get top tasks tag with no tags should return empty list")
   void getTopTasksTag_noTags_shouldReturnEmptyList() {
     User user = mockUser();
-    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of());
+    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of());
     when(taskService.getTasksByFilter("all")).thenReturn(List.of());
     when(noteService.getAllNotes()).thenReturn(List.of());
 
@@ -90,8 +90,8 @@ class HomeServiceTest {
   @DisplayName("Get top tasks tag with untagged tasks/notes should include 'untagged'")
   void getTopTasksTag_withUntagged_shouldIncludeUntagged() {
     User user = mockUser();
-    Tag tag1 = new Tag("tag1", user.getId());
-    when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
+    Tag tag1 = new Tag(null, "tag1", user.getId());
+    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
 
     TaskResponse task1 =
         new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of(), List.of());

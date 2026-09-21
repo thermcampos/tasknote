@@ -26,18 +26,18 @@ public record TaskResponse(
    * @return TaskResponse instance with all task data and URLs, if any.
    */
   public static TaskResponse fromEntity(Task entity, List<String> urls, List<Tag> tags) {
-    String timeAgoFmt = TimeAgoUtil.format(entity.getLastUpdate());
-    String dueDateFmt = TimeAgoUtil.formatDueDate(entity.getDueDate());
+    String timeAgoFmt = TimeAgoUtil.format(entity.lastUpdate());
+    String dueDateFmt = TimeAgoUtil.formatDueDate(entity.dueDate());
 
     return new TaskResponse(
-        entity.getId(),
-        entity.isCompleted(),
-        entity.getDescription(),
-        entity.isHighPriority(),
-        entity.getDueDate(),
+        entity.id(),
+        entity.completed(),
+        entity.description(),
+        entity.highPriority(),
+        entity.dueDate(),
         dueDateFmt,
         timeAgoFmt,
-        tags.stream().map((t) -> t.getName()).toList(),
+        tags.stream().map((t) -> t.name()).toList(),
         urls);
   }
 }

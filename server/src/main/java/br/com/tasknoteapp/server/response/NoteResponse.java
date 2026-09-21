@@ -25,17 +25,17 @@ public record NoteResponse(
    * @return NoteResponse instance with all note data and URLs, if any.
    */
   public static NoteResponse fromEntity(Note entity, String url, List<Tag> tags) {
-    String timeAgoFmt = TimeAgoUtil.format(entity.getLastUpdate());
+    String timeAgoFmt = TimeAgoUtil.format(entity.lastUpdate());
 
     return new NoteResponse(
-        entity.getId(),
-        entity.getTitle(),
-        entity.getDescription(),
+        entity.id(),
+        entity.title(),
+        entity.description(),
         url,
         timeAgoFmt,
-        tags.stream().map((t) -> t.getName()).toList(),
-        entity.isShared(),
-        entity.getShareToken(),
-        entity.isArchived());
+        tags.stream().map((t) -> t.name()).toList(),
+        entity.shared(),
+        entity.shareToken(),
+        entity.archived());
   }
 }

@@ -60,7 +60,7 @@ public class HomeService {
 
     List<String> tags =
         tagRepository.findAllByUserIdOrderByNameAsc(user.getId()).stream()
-            .map((t) -> t.getName())
+            .map((t) -> t.name())
             .toList();
 
     List<TaskResponse> tasks = taskService.getTasksByFilter("all");

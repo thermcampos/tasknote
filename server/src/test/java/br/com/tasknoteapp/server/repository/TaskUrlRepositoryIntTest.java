@@ -38,10 +38,10 @@ class TaskUrlRepositoryIntTest {
     Assertions.assertFalse(tasks.isEmpty());
 
     Optional<Task> debianTask =
-        tasks.stream().filter(t -> t.getDescription().equals("Install Debian")).findFirst();
+        tasks.stream().filter(t -> t.description().equals("Install Debian")).findFirst();
     Assertions.assertFalse(debianTask.isEmpty());
 
-    Long taskId = debianTask.get().getId();
+    Long taskId = debianTask.get().id();
 
     taskUrlRepository.deleteAllById_taskId(taskId);
 
