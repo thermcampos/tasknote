@@ -151,7 +151,7 @@ public class TagRepository {
         FROM tasknote.tags ta
         JOIN tasknote.task_tags tt ON tt.tag_id = ta.id
         WHERE ta.user_id = :userId
-          AND tt.task_id IN :taskIdList
+          AND tt.task_id IN (:taskIdList)
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
@@ -182,7 +182,7 @@ public class TagRepository {
         FROM tasknote.tags ta
         JOIN tasknote.note_tags nt ON nt.tag_id = ta.id
         WHERE ta.user_id = :userId
-          AND nt.note_id IN :noteIdList
+          AND nt.note_id IN (:noteIdList)
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()

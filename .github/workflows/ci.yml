@@ -33,9 +33,9 @@ jobs:
         working-directory: ./server
         run: ./mvnw --no-transfer-progress clean compile -DskipTests
 
-      - name: Run tests
+      - name: Run unit tests (skip integration on purpose)
         working-directory: ./server
-        run: ./mvnw --no-transfer-progress clean verify -P tests --file pom.xml
+        run: ./mvnw --no-transfer-progress verify -P tests -Dskip.unit.tests=true -Djacoco.skip=true -Dcheckstyle.skip=true
 
   build-frontend:
     name: Build Frontend

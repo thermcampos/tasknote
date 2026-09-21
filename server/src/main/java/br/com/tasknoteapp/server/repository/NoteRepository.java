@@ -124,8 +124,7 @@ public class NoteRepository {
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("id", id);
 
-    Note note = jdbcTemplate.queryForObject(sql, params, new NoteRowMapper());
-    return Optional.ofNullable(note);
+    return jdbcTemplate.query(sql, params, new NoteRowMapper()).stream().findFirst();
   }
 
   /**
@@ -165,8 +164,7 @@ public class NoteRepository {
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("shareToken", shareToken);
 
-    Note note = jdbcTemplate.queryForObject(sql, params, new NoteRowMapper());
-    return Optional.ofNullable(note);
+    return jdbcTemplate.query(sql, params, new NoteRowMapper()).stream().findFirst();
   }
 
   /**
@@ -188,8 +186,7 @@ public class NoteRepository {
         .addValue("id", id)
         .addValue("userId", userId);
 
-    Note note = jdbcTemplate.queryForObject(sql, params, new NoteRowMapper());
-    return Optional.ofNullable(note);
+    return jdbcTemplate.query(sql, params, new NoteRowMapper()).stream().findFirst();
   }
 
   /**

@@ -59,6 +59,18 @@ tasks:
     desc: Stop and remove dev containers
     cmd: docker compose -f docker-compose.dev.yml down --remove-orphans
 
+  test-api:
+    desc: Run all backend checks (checkstyle, build, unit and integration tests). Integration tests run on Testcontainers PostgreSQL, so Docker is required
+    cmd: bash tools/check-backend.sh
+
+  test-api-unit:
+    desc: Run backend unit tests only (no Docker required)
+    cmd: cd server && ./mvnw --no-transfer-progress test -P tests -Dskip.integration.tests=true
+
+  test-api-it:
+    desc: Run backend integration tests only (Testcontainers PostgreSQL, Docker required)
+    cmd: cd server && ./mvnw --no-transfer-progress verify -P tests -Dskip.unit.tests=true -Djacoco.skip=true -Dcheckstyle.skip=true
+
   run-native-tracing:
     desc: Buidl and run with native agent to trace reflections
     cmds:

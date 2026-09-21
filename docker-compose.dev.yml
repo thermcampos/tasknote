@@ -61,8 +61,6 @@ services:
     depends_on:
       tasknote-db:
         condition: service_healthy
-      tasknote-api:
-        condition: service_healthy
 
   tasknote-db:
     container_name: tasknote-db

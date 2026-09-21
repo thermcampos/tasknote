@@ -187,8 +187,7 @@ public class TaskRepository {
         .addValue("userId", userId)
         .addValue("id", id);
 
-    Task task = jdbcTemplate.queryForObject(sql, params, new TaskRowMapper());
-    return Optional.ofNullable(task);
+    return jdbcTemplate.query(sql, params, new TaskRowMapper()).stream().findFirst();
   }
 
   /**
