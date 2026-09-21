@@ -82,6 +82,49 @@ public class TagRepository {
   }
 
   /**
+   * Update the relationship for a tag and a task.
+   *
+   * @param tag The Tag instance to be updated.
+   * @param taskId The Task ID to be updated.
+   */
+  public void updateTagForTask(Tag tag, Long taskId) {
+    String sql =
+        """
+        INSERT INTO tasknote.task_tags (task_id, tag_id)
+        VALUES (:taskId, :tagId)
+        ON CONFLICT DO NOTHING;
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("taskId", taskId)
+        .addValue("tagId", tag.id());
+
+    jdbcTemplate.update(sql, params);
+  }
+
+  /**
+   * Delete the tag x task relashionship for a tag ID lists.
+   *
+   * @param tagId Tag ID
+   * @param taskId Task ID
+   * @return Number of affected rows.
+   */
+  public int deleteTagFromTask(List<Long> tagIds, Long taskId) {
+    String sql =
+        """
+        DELETE FROM tasknote.task_tags
+        WHERE task_id = :taskId
+          AND tag_id IN (:tagIds)
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("taskId", taskId)
+        .addValue("tagIds", tagIds);
+
+    return jdbcTemplate.update(sql, params);
+  }
+
+  /**
    * Find all Tags given a User ID and a Task ID.
    * 
    * @param userId The User ID to search by.
@@ -147,7 +190,7 @@ public class TagRepository {
   public List<TaskNoteTag> findAllByUserIdAndTaskIdInList(Long userId, List<Long> taskIdList) {
     String sql =
         """
-        SELECT DISTINCT ta.id, ta.name, ta.user_id, tt.tag_id AS taskNoteId
+        SELECT DISTINCT ta.id, ta.name, ta.user_id, tt.task_id AS taskNoteId
         FROM tasknote.tags ta
         JOIN tasknote.task_tags tt ON tt.tag_id = ta.id
         WHERE ta.user_id = :userId

@@ -247,9 +247,16 @@
           "parameterTypes": []
         },
         {
-          "name": "postTasks",
+          "name": "getTaskById",
           "parameterTypes": [
-            "br.com.tasknoteapp.server.request.TaskRequest"
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "patchTask",
+          "parameterTypes": [
+            "java.lang.Long",
+            "br.com.tasknoteapp.server.request.TaskPatchRequest"
           ]
         }
       ]
@@ -371,12 +378,6 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
-        },
-        {
-          "name": "findAllByNoteIdList",
-          "parameterTypes": [
-            "java.util.List"
-          ]
         }
       ]
     },
@@ -407,9 +408,17 @@
           ]
         },
         {
-          "name": "findAllByUserIdOrderByNameAsc",
+          "name": "deleteTagFromTask",
           "parameterTypes": [
+            "java.util.List",
             "java.lang.Long"
+          ]
+        },
+        {
+          "name": "findAllByUserIdAndTaskIdInList",
+          "parameterTypes": [
+            "java.lang.Long",
+            "java.util.List"
           ]
         },
         {
@@ -424,6 +433,13 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.String",
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "updateTagForTask",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.Long"
           ]
         }
@@ -456,6 +472,13 @@
           ]
         },
         {
+          "name": "findByIdAndUserId",
+          "parameterTypes": [
+            "java.lang.Long",
+            "java.lang.Long"
+          ]
+        },
+        {
           "name": "save",
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Task"
@@ -481,6 +504,12 @@
           "name": "<init>",
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+          ]
+        },
+        {
+          "name": "deleteAllById_taskId",
+          "parameterTypes": [
+            "java.lang.Long"
           ]
         },
         {
@@ -559,7 +588,7 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.request.TaskRequest",
+      "type": "br.com.tasknoteapp.server.request.TaskPatchRequest",
       "fields": [
         {
           "name": "description"
@@ -572,6 +601,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
+            "java.lang.Boolean",
             "java.lang.String",
             "java.util.List",
             "java.lang.String",
@@ -582,45 +612,7 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.response.NoteResponse",
-      "methods": [
-        {
-          "name": "archived",
-          "parameterTypes": []
-        },
-        {
-          "name": "description",
-          "parameterTypes": []
-        },
-        {
-          "name": "id",
-          "parameterTypes": []
-        },
-        {
-          "name": "lastUpdate",
-          "parameterTypes": []
-        },
-        {
-          "name": "shareToken",
-          "parameterTypes": []
-        },
-        {
-          "name": "shared",
-          "parameterTypes": []
-        },
-        {
-          "name": "tags",
-          "parameterTypes": []
-        },
-        {
-          "name": "title",
-          "parameterTypes": []
-        },
-        {
-          "name": "url",
-          "parameterTypes": []
-        }
-      ]
+      "type": "br.com.tasknoteapp.server.response.NoteResponse"
     },
     {
       "type": "br.com.tasknoteapp.server.response.TaskResponse",
@@ -790,19 +782,26 @@
           ]
         },
         {
-          "name": "createTask",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.request.TaskRequest"
-          ]
-        },
-        {
           "name": "getAllTasks",
           "parameterTypes": []
+        },
+        {
+          "name": "getTaskById",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
         },
         {
           "name": "getTasksByFilter",
           "parameterTypes": [
             "java.lang.String"
+          ]
+        },
+        {
+          "name": "patchTask",
+          "parameterTypes": [
+            "java.lang.Long",
+            "br.com.tasknoteapp.server.request.TaskPatchRequest"
           ]
         }
       ]
@@ -1301,38 +1300,10 @@
       "type": "jakarta.validation.constraints.NotBlank"
     },
     {
-      "type": "jakarta.validation.constraints.NotEmpty",
-      "methods": [
-        {
-          "name": "groups",
-          "parameterTypes": []
-        },
-        {
-          "name": "message",
-          "parameterTypes": []
-        },
-        {
-          "name": "payload",
-          "parameterTypes": []
-        }
-      ]
+      "type": "jakarta.validation.constraints.NotEmpty"
     },
     {
-      "type": "jakarta.validation.constraints.NotNull",
-      "methods": [
-        {
-          "name": "groups",
-          "parameterTypes": []
-        },
-        {
-          "name": "message",
-          "parameterTypes": []
-        },
-        {
-          "name": "payload",
-          "parameterTypes": []
-        }
-      ]
+      "type": "jakarta.validation.constraints.NotNull"
     },
     {
       "type": "jakarta.validation.constraints.Pattern",
@@ -2287,25 +2258,7 @@
       "type": "org.hibernate.validator.constraintvalidation.HibernateConstraintValidator"
     },
     {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.NotNullValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "org.hibernate.validator.internal.constraintvalidators.bv.PatternValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.notempty.NotEmptyValidatorForCharSequence",
       "methods": [
         {
           "name": "<init>",
@@ -7182,15 +7135,6 @@
       ]
     },
     {
-      "type": "sun.text.resources.FormatData"
-    },
-    {
-      "type": "sun.text.resources.FormatData_en"
-    },
-    {
-      "type": "sun.text.resources.JavaTimeSupplementary"
-    },
-    {
       "type": "sun.text.resources.cldr.FormatData"
     },
     {
@@ -7556,22 +7500,43 @@
       "glob": "br/com/tasknoteapp/server/hint/JjwtRuntimeHints.class"
     },
     {
+      "glob": "br/com/tasknoteapp/server/repository/NoteRepository$NoteRowMapper.class"
+    },
+    {
       "glob": "br/com/tasknoteapp/server/repository/NoteRepository.class"
+    },
+    {
+      "glob": "br/com/tasknoteapp/server/repository/NoteUrlRepository$NoteUrlRowMapper.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/repository/NoteUrlRepository.class"
     },
     {
+      "glob": "br/com/tasknoteapp/server/repository/TagRepository$TagRowMapper.class"
+    },
+    {
       "glob": "br/com/tasknoteapp/server/repository/TagRepository.class"
+    },
+    {
+      "glob": "br/com/tasknoteapp/server/repository/TaskRepository$TaskRowMapper.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/repository/TaskRepository.class"
     },
     {
+      "glob": "br/com/tasknoteapp/server/repository/TaskUrlRepository$TaskUrlRowMapper.class"
+    },
+    {
       "glob": "br/com/tasknoteapp/server/repository/TaskUrlRepository.class"
     },
     {
+      "glob": "br/com/tasknoteapp/server/repository/UserPwdLimitRepository$UserPwdLimitRowMapper.class"
+    },
+    {
       "glob": "br/com/tasknoteapp/server/repository/UserPwdLimitRepository.class"
+    },
+    {
+      "glob": "br/com/tasknoteapp/server/repository/UserRepository$UserRowMapper.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/repository/UserRepository.class"

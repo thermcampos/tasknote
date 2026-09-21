@@ -47,7 +47,7 @@ class MailgunEmailServiceTest {
     when(restClient.post()).thenReturn(requestBodyUriSpec);
     when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
     when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
-    when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+    when(requestBodySpec.body(any(Object.class))).thenReturn(requestBodySpec);
     when(requestBodySpec.retrieve()).thenReturn(responseSpec);
   }
 
@@ -62,6 +62,7 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
@@ -74,6 +75,7 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendPasswordResetConfirmation(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
@@ -87,6 +89,7 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendNewUser(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
@@ -102,6 +105,7 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
@@ -116,5 +120,6 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendEmailChangedNotification(user, oldEmail);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 }

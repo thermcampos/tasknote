@@ -151,7 +151,8 @@ public class TaskService {
       saveUrls(created, taskRequest.urls());
     }
 
-    tagRepository.deleteOrphanedTags(user.getId());
+    int deleted = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} tags for user", deleted);
 
     List<TaskResponse> responseList = buildTaskResponse(List.of(created), user.getId());
     if (responseList.isEmpty()) {
@@ -213,11 +214,26 @@ public class TaskService {
 
     patchTaskUrl(patchedTask, patchRequest);
 
-    if (!Objects.isNull(patchRequest.tags())) {
+    if (!Objects.isNull(patchRequest.tags()) && !patchRequest.tags().isEmpty()) {
       getOrCreateTags(patchRequest.tags(), user, taskId);
     }
 
-    tagRepository.deleteOrphanedTags(user.getId());
+    List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(user.getId(), List.of(taskId));
+    List<TaskNoteTag> toDelete = new ArrayList<>();
+    for (TaskNoteTag tnt : taskTags) {
+      if (!patchRequest.tags().contains(tnt.name())) {
+        toDelete.add(tnt);
+      }
+    }
+
+    List<Long> tagsIds = toDelete.stream().map((t) -> t.tagId()).toList();
+    if (!tagsIds.isEmpty()) {
+      int deleted = tagRepository.deleteTagFromTask(tagsIds, taskId);
+      logger.info("Deleted {} tags from task id {}", deleted, taskId);
+    }
+
+    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, taskId);
 
     List<TaskResponse> responseList = buildTaskResponse(List.of(patchedTask), user.getId());
     if (responseList.isEmpty()) {
@@ -327,6 +343,7 @@ public class TaskService {
 
     List<Long> allTaskIds = taskList.stream().map((t) -> t.id()).toList();
     List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(userId, allTaskIds);
+    
     Map<Long, List<Tag>> tagMap = new HashMap<>();
     for (TaskNoteTag taskTag : taskTags) {
       tagMap.putIfAbsent(taskTag.taskNoteId(), new ArrayList<>());
@@ -359,15 +376,16 @@ public class TaskService {
 
     Set<Tag> tags = new HashSet<>();
     for (String name : normalizedNames) {
-      Tag tag =
-          tagRepository
-              .findByUserIdAndName(user.getId(), name)
-              .orElseGet(() -> tagRepository.save(
-                new Tag(null, name, user.getId()), "tasks", taskId));
-      tags.add(tag);
-    }
+      Optional<Tag> tagOp = tagRepository.findByUserIdAndName(user.getId(), name);
 
-    logger.debug("getOrCreateTags completed with tags {}", tags);
+      if (tagOp.isEmpty()) {
+        Tag newTag = tagRepository.save(new Tag(null, name, user.getId()), "tasks", taskId);
+        tags.add(newTag);
+      } else {
+        tagRepository.updateTagForTask(tagOp.get(), taskId);
+        tags.add(tagOp.get());
+      }
+    }
 
     return tags;
   }
