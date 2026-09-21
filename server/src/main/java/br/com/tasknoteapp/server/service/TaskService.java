@@ -201,7 +201,7 @@ public class TaskService {
         description,
         completed,
         LocalDateTime.now(),
-        resolvtDueDate(taskEntity, patchRequest),
+        resolvDueDate(taskEntity, patchRequest),
         Boolean.FALSE,
         Boolean.FALSE,
         highPriority
@@ -292,8 +292,6 @@ public class TaskService {
   @Transactional
   public List<TaskResponse> getTasksByFilter(String filter) {
     User user = getCurrentUser();
-
-    logger.info("getTasksByFilter started - filter=[{}]", filter);
 
     List<Task> allTasks =
         taskRepository.findAllByUserId(user.getId()).stream()
@@ -397,7 +395,7 @@ public class TaskService {
     logger.info("Added {} URLs from task ID {}", tasksUrl.size(), taskEntity.id());
   }
 
-  private LocalDate resolvtDueDate(Task taskEntity, TaskPatchRequest patch) {
+  private LocalDate resolvDueDate(Task taskEntity, TaskPatchRequest patch) {
     LocalDate dueDate = null;
     if (!Objects.isNull(patch.dueDate()) && !patch.dueDate().isBlank()) {
       try {

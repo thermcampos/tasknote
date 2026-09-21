@@ -56,27 +56,36 @@ class HomeServiceTest {
     Tag tag4 = new Tag(null, "tag4", user.getId());
     Tag tag5 = new Tag(null, "tag5", user.getId());
     Tag tag6 = new Tag(null, "tag6", user.getId());
+    Tag tag7 = new Tag(null, "atag", user.getId());
+    Tag tag8 = new Tag(null, "dev", user.getId());
 
-    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId()))
-    //    .thenReturn(List.of(tag1, tag2, tag3, tag4, tag5, tag6));
-
+    List<String> tags = List.of(tag1.name(), tag2.name(), tag3.name(), tag4.name(), tag5.name(),
+        tag6.name(), tag7.name(), tag8.name());
     TaskResponse task1 =
-        new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of("tag1"), List.of());
+        new TaskResponse(1L, false, "Task 1", false, null, null, null, tags, List.of());
     when(taskService.getTasksByFilter("all")).thenReturn(List.of(task1));
     when(noteService.getAllNotes()).thenReturn(List.of());
 
-    List<String> tags = homeService.getTopTasksTag();
+    // List<TaskNoteTag> taskTags = List.of(
+    //   new TaskNoteTag(tag1.id(), tag1.name(), tag1.userId(), 1L),
+    //   new TaskNoteTag(tag2.id(), tag2.name(), tag2.userId(), 1L),
+    //   new TaskNoteTag(tag3.id(), tag3.name(), tag3.userId(), 1L)
+    // );
+    // when(tagRepository.findAllByUserIdAndTaskIdInList(user.getId(), List.of(1L)))
+    //     .thenReturn(taskTags);
 
-    Assertions.assertNotNull(tags);
-    Assertions.assertEquals(6, tags.size());
-    Assertions.assertEquals(List.of("tag1", "tag2", "tag3", "tag4", "tag5", "tag6"), tags);
+    List<String> homeTags = homeService.getTopTasksTag();
+
+    Assertions.assertNotNull(homeTags);
+    Assertions.assertEquals(8, homeTags.size());
+    Assertions.assertEquals(List.of("atag", "dev", "tag1", "tag2", "tag3", "tag4", "tag5", "tag6"),
+        homeTags);
   }
 
   @Test
   @DisplayName("Get top tasks tag with no tags should return empty list")
   void getTopTasksTag_noTags_shouldReturnEmptyList() {
-    User user = mockUser();
-    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of());
+    mockUser();
     when(taskService.getTasksByFilter("all")).thenReturn(List.of());
     when(noteService.getAllNotes()).thenReturn(List.of());
 
@@ -89,9 +98,7 @@ class HomeServiceTest {
   @Test
   @DisplayName("Get top tasks tag with untagged tasks/notes should include 'untagged'")
   void getTopTasksTag_withUntagged_shouldIncludeUntagged() {
-    User user = mockUser();
-    Tag tag1 = new Tag(null, "tag1", user.getId());
-    //when(tagRepository.findAllByUserIdOrderByNameAsc(user.getId())).thenReturn(List.of(tag1));
+    mockUser();
 
     TaskResponse task1 =
         new TaskResponse(1L, false, "Task 1", false, null, null, null, List.of(), List.of());
@@ -101,10 +108,9 @@ class HomeServiceTest {
     List<String> topTags = homeService.getTopTasksTag();
 
     Assertions.assertNotNull(topTags);
-    Assertions.assertEquals(2, topTags.size());
+    Assertions.assertEquals(1, topTags.size());
     Assertions.assertTrue(topTags.contains("untagged"));
-    Assertions.assertTrue(topTags.contains("tag1"));
-    Assertions.assertEquals(List.of("tag1", "untagged"), topTags);
+    Assertions.assertEquals(List.of("untagged"), topTags);
   }
 }
 

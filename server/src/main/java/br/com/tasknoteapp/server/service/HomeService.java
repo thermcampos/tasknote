@@ -61,8 +61,8 @@ public class HomeService {
     List<NoteResponse> notes = noteService.getAllNotes();
 
     Set<String> tagSet = new HashSet<>();
-    tasks.stream().map((t) -> tagSet.addAll(t.tags()));
-    notes.stream().map((n) -> tagSet.addAll(n.tags()));
+    tasks.forEach((t) -> tagSet.addAll(t.tags()));
+    notes.forEach((n) -> tagSet.addAll(n.tags()));
 
     boolean hasUntagged =
         tasks.stream().anyMatch(task -> task.tags().isEmpty())
