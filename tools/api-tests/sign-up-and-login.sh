@@ -13,4 +13,4 @@ PGPASSWORD=default ./tools/confirm-user.sh
 curl -X POST \
   -H "Content-Type:application/json" \
   http://localhost:8585/auth/sign-in \
-  -d '{"email":"email@email.com","password":"Teste@123","passwordAgain":"Teste@123","lang":"en"}'
+  -d '{"email":"email@email.com","password":"Teste@123"}'

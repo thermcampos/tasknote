@@ -168,6 +168,18 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.AuthService"
           ]
+        },
+        {
+          "name": "signIn",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.LoginRequest"
+          ]
+        },
+        {
+          "name": "signUp",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.LoginRequest"
+          ]
         }
       ]
     },
@@ -237,13 +249,19 @@
           ]
         },
         {
-          "name": "restoreNote",
+          "name": "postNotes",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.NoteRequest"
+          ]
+        },
+        {
+          "name": "shareNote",
           "parameterTypes": [
             "java.lang.Long"
           ]
         },
         {
-          "name": "shareNote",
+          "name": "unshareNote",
           "parameterTypes": [
             "java.lang.Long"
           ]
@@ -273,6 +291,12 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        },
+        {
+          "name": "handleNotFoundException",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.exception.BaseNotFoundException"
+          ]
         }
       ]
     },
@@ -307,6 +331,12 @@
             "java.lang.Long",
             "br.com.tasknoteapp.server.request.TaskPatchRequest"
           ]
+        },
+        {
+          "name": "postTasks",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.TaskRequest"
+          ]
         }
       ]
     },
@@ -318,6 +348,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.AuthService"
           ]
+        },
+        {
+          "name": "getCurrentUser",
+          "parameterTypes": []
         }
       ]
     },
@@ -330,6 +364,16 @@
             "br.com.tasknoteapp.server.service.UserSessionService",
             "br.com.tasknoteapp.server.service.AuthService"
           ]
+        },
+        {
+          "name": "deleteAccount",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.DeleteAccountRequest"
+          ]
+        },
+        {
+          "name": "refresh",
+          "parameterTypes": []
         }
       ]
     },
@@ -470,6 +514,12 @@
           "parameterTypes": [
             "java.lang.Long"
           ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.NoteUrl"
+          ]
         }
       ]
     },
@@ -494,15 +544,14 @@
           ]
         },
         {
-          "name": "deleteOrphanedTags",
+          "name": "deleteAllForUser",
           "parameterTypes": [
             "java.lang.Long"
           ]
         },
         {
-          "name": "deleteTagFromNote",
+          "name": "deleteOrphanedTags",
           "parameterTypes": [
-            "java.util.List",
             "java.lang.Long"
           ]
         },
@@ -528,14 +577,15 @@
           ]
         },
         {
-          "name": "updateTagForNote",
+          "name": "save",
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
+            "java.lang.String",
             "java.lang.Long"
           ]
         },
         {
-          "name": "updateTagForTask",
+          "name": "updateTagForNote",
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.Long"
@@ -611,12 +661,6 @@
           ]
         },
         {
-          "name": "deleteAllById_taskId",
-          "parameterTypes": [
-            "java.lang.Long"
-          ]
-        },
-        {
           "name": "findAllById_taskId",
           "parameterTypes": [
             "java.lang.Long"
@@ -643,6 +687,18 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "deleteAllForUser",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "findTop3ByUser_idOrderByWhenHappenedDesc",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
         }
       ]
     },
@@ -667,9 +723,21 @@
           ]
         },
         {
+          "name": "delete",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.User"
+          ]
+        },
+        {
           "name": "findByEmail",
           "parameterTypes": [
             "java.lang.String"
+          ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.User"
           ]
         }
       ]
@@ -686,18 +754,32 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.request.NoteRequest",
-      "fields": [
+      "type": "br.com.tasknoteapp.server.request.DeleteAccountRequest",
+      "methods": [
         {
-          "name": "description"
-        },
-        {
-          "name": "title"
-        },
-        {
-          "name": "url"
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.request.LoginRequest",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.request.NoteRequest",
       "methods": [
         {
           "name": "<init>",
@@ -712,14 +794,6 @@
     },
     {
       "type": "br.com.tasknoteapp.server.request.TaskPatchRequest",
-      "fields": [
-        {
-          "name": "description"
-        },
-        {
-          "name": "urls"
-        }
-      ],
       "methods": [
         {
           "name": "<init>",
@@ -731,6 +805,43 @@
             "java.lang.Boolean",
             "java.util.List"
           ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.request.TaskRequest",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.util.List",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.util.List"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.FieldIssueResponse",
+      "methods": [
+        {
+          "name": "fieldMessage",
+          "parameterTypes": []
+        },
+        {
+          "name": "fieldName",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.JwtAuthenticationResponse",
+      "methods": [
+        {
+          "name": "token",
+          "parameterTypes": []
         }
       ]
     },
@@ -817,6 +928,105 @@
       ]
     },
     {
+      "type": "br.com.tasknoteapp.server.response.UserResponse",
+      "methods": [
+        {
+          "name": "admin",
+          "parameterTypes": []
+        },
+        {
+          "name": "createdAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "email",
+          "parameterTypes": []
+        },
+        {
+          "name": "gravatarImageUrl",
+          "parameterTypes": []
+        },
+        {
+          "name": "inactivatedAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastLogin",
+          "parameterTypes": []
+        },
+        {
+          "name": "name",
+          "parameterTypes": []
+        },
+        {
+          "name": "theme",
+          "parameterTypes": []
+        },
+        {
+          "name": "userId",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.UserResponseWithToken",
+      "methods": [
+        {
+          "name": "admin",
+          "parameterTypes": []
+        },
+        {
+          "name": "createdAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "email",
+          "parameterTypes": []
+        },
+        {
+          "name": "gravatarImageUrl",
+          "parameterTypes": []
+        },
+        {
+          "name": "inactivatedAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "lang",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastLogin",
+          "parameterTypes": []
+        },
+        {
+          "name": "name",
+          "parameterTypes": []
+        },
+        {
+          "name": "token",
+          "parameterTypes": []
+        },
+        {
+          "name": "userId",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.ValidationExceptionResponse",
+      "methods": [
+        {
+          "name": "getErrorMessage",
+          "parameterTypes": []
+        },
+        {
+          "name": "getFields",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "br.com.tasknoteapp.server.service.AppVersionService",
       "methods": [
         {
@@ -848,8 +1058,43 @@
           ]
         },
         {
+          "name": "deleteUserAccount",
+          "parameterTypes": []
+        },
+        {
           "name": "findByEmail",
           "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "getCurrentUser",
+          "parameterTypes": []
+        },
+        {
+          "name": "getCurrentUserResponse",
+          "parameterTypes": []
+        },
+        {
+          "name": "refreshCurrentUserToken",
+          "parameterTypes": []
+        },
+        {
+          "name": "signInUser",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.LoginRequest"
+          ]
+        },
+        {
+          "name": "signUpNewUser",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.LoginRequest"
+          ]
+        },
+        {
+          "name": "verifyCurrentPassword",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.User",
             "java.lang.String"
           ]
         }
@@ -919,6 +1164,16 @@
           ]
         },
         {
+          "name": "createNote",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.NoteRequest"
+          ]
+        },
+        {
+          "name": "deleteAllNotesForCurrentUser",
+          "parameterTypes": []
+        },
+        {
           "name": "deleteNote",
           "parameterTypes": [
             "java.lang.Long"
@@ -948,13 +1203,13 @@
           ]
         },
         {
-          "name": "restoreNote",
+          "name": "shareNote",
           "parameterTypes": [
             "java.lang.Long"
           ]
         },
         {
-          "name": "shareNote",
+          "name": "unshareNote",
           "parameterTypes": [
             "java.lang.Long"
           ]
@@ -983,6 +1238,12 @@
             "br.com.tasknoteapp.server.util.AuthUtil",
             "br.com.tasknoteapp.server.repository.TaskUrlRepository",
             "br.com.tasknoteapp.server.repository.TagRepository"
+          ]
+        },
+        {
+          "name": "createTask",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.TaskRequest"
           ]
         },
         {
@@ -1041,6 +1302,14 @@
             "br.com.tasknoteapp.server.service.NoteService",
             "br.com.tasknoteapp.server.repository.TagRepository"
           ]
+        },
+        {
+          "name": "deleteCurrentUserAccount",
+          "parameterTypes": []
+        },
+        {
+          "name": "refreshUserSession",
+          "parameterTypes": []
         }
       ]
     },
@@ -1249,7 +1518,25 @@
       ]
     },
     {
+      "type": "com.sun.crypto.provider.TlsKeyMaterialGenerator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.sun.crypto.provider.TlsMasterSecretGenerator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.TlsPrfGenerator$V12",
       "methods": [
         {
           "name": "<init>",
@@ -1303,6 +1590,12 @@
       "type": "io.jsonwebtoken.gson.io.GsonDeserializer"
     },
     {
+      "type": "io.jsonwebtoken.gson.io.GsonSerializer"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultClaims"
+    },
+    {
       "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder",
       "methods": [
         {
@@ -1312,7 +1605,16 @@
       ]
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder"
+      "type": "io.jsonwebtoken.impl.DefaultJwsHeader"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder",
@@ -1441,9 +1743,6 @@
       "type": "jakarta.persistence.EntityManagerFactory"
     },
     {
-      "type": "jakarta.persistence.Persistence"
-    },
-    {
       "type": "jakarta.persistence.PersistenceContext"
     },
     {
@@ -1489,84 +1788,7 @@
       "type": "jakarta.transaction.Transactional"
     },
     {
-      "type": "jakarta.validation.Constraint"
-    },
-    {
-      "type": "jakarta.validation.ConstraintValidator"
-    },
-    {
-      "type": "jakarta.validation.Valid"
-    },
-    {
       "type": "jakarta.validation.Validator"
-    },
-    {
-      "type": "jakarta.validation.ValidatorFactory"
-    },
-    {
-      "type": "jakarta.validation.bootstrap.GenericBootstrap"
-    },
-    {
-      "type": "jakarta.validation.constraints.NotBlank"
-    },
-    {
-      "type": "jakarta.validation.constraints.NotEmpty"
-    },
-    {
-      "type": "jakarta.validation.constraints.NotNull"
-    },
-    {
-      "type": "jakarta.validation.constraints.Pattern",
-      "methods": [
-        {
-          "name": "flags",
-          "parameterTypes": []
-        },
-        {
-          "name": "groups",
-          "parameterTypes": []
-        },
-        {
-          "name": "message",
-          "parameterTypes": []
-        },
-        {
-          "name": "payload",
-          "parameterTypes": []
-        },
-        {
-          "name": "regexp",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "jakarta.validation.constraints.Size",
-      "methods": [
-        {
-          "name": "groups",
-          "parameterTypes": []
-        },
-        {
-          "name": "max",
-          "parameterTypes": []
-        },
-        {
-          "name": "message",
-          "parameterTypes": []
-        },
-        {
-          "name": "min",
-          "parameterTypes": []
-        },
-        {
-          "name": "payload",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "jakarta.validation.executable.ExecutableValidator"
     },
     {
       "type": "jakarta.xml.bind.Binder"
@@ -1757,6 +1979,9 @@
       ]
     },
     {
+      "type": "java.lang.reflect.RecordComponent"
+    },
+    {
       "type": "java.lang.reflect.Type"
     },
     {
@@ -1797,6 +2022,12 @@
     },
     {
       "type": "java.security.interfaces.EdECKey"
+    },
+    {
+      "type": "java.security.interfaces.RSAPrivateKey"
+    },
+    {
+      "type": "java.security.interfaces.RSAPublicKey"
     },
     {
       "type": "java.security.interfaces.XECKey"
@@ -1969,6 +2200,9 @@
       "type": "java.util.ImmutableCollections$AbstractImmutableList"
     },
     {
+      "type": "java.util.ImmutableCollections$List12"
+    },
+    {
       "type": "java.util.ImmutableCollections$ListN"
     },
     {
@@ -2003,9 +2237,6 @@
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "javafx.beans.value.ObservableValue"
     },
     {
       "type": "javax.money.MonetaryAmount"
@@ -2173,15 +2404,6 @@
     },
     {
       "type": "org.apache.derby.jdbc.EmbeddedDriver"
-    },
-    {
-      "type": "org.apache.el.ExpressionFactoryImpl",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
     },
     {
       "type": "org.apache.hc.client5.http.classic.HttpClient"
@@ -2462,73 +2684,10 @@
       "type": "org.h2.Driver"
     },
     {
-      "type": "org.hibernate.validator.HibernateValidator"
-    },
-    {
-      "type": "org.hibernate.validator.constraintvalidation.HibernateConstraintValidator"
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.PatternValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.size.SizeValidatorForCharSequence",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.engine.AbstractConfigurationImpl",
-      "methods": [
-        {
-          "name": "externalClassLoader",
-          "parameterTypes": [
-            "java.lang.ClassLoader"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.engine.ConfigurationImpl"
-    },
-    {
-      "type": "org.hibernate.validator.internal.util.logging.Log_$logger",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "org.jboss.logging.Logger"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.util.logging.Messages_$bundle",
-      "fields": [
-        {
-          "name": "INSTANCE"
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.util.logging.Messages_$bundle_en"
-    },
-    {
       "type": "org.hsqldb.jdbc.JDBCDriver"
     },
     {
       "type": "org.jboss.logging.Logger"
-    },
-    {
-      "type": "org.joda.time.ReadableInstant"
     },
     {
       "type": "org.jspecify.annotations.NullMarked"
@@ -2559,9 +2718,6 @@
     },
     {
       "type": "org.slf4j.helpers.Log4jLoggerFactory"
-    },
-    {
-      "type": "org.slf4j.spi.LocationAwareLogger"
     },
     {
       "type": "org.springframework.aop.PointcutAdvisor"
@@ -5089,54 +5245,6 @@
       ]
     },
     {
-      "type": "org.springframework.boot.validation.autoconfigure.JakartaValidationBackgroundPreinitializer",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.springframework.boot.validation.autoconfigure.PrimaryDefaultValidatorPostProcessor",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.springframework.boot.validation.autoconfigure.ValidationAutoConfiguration",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        },
-        {
-          "name": "defaultValidator",
-          "parameterTypes": [
-            "org.springframework.context.ApplicationContext",
-            "org.springframework.beans.factory.ObjectProvider"
-          ]
-        },
-        {
-          "name": "methodValidationPostProcessor",
-          "parameterTypes": [
-            "org.springframework.core.env.Environment",
-            "org.springframework.beans.factory.ObjectProvider",
-            "org.springframework.beans.factory.ObjectProvider"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "org.springframework.boot.validation.autoconfigure.ValidatorAdapter"
-    },
-    {
-      "type": "org.springframework.boot.validation.beanvalidation.FilteredMethodValidationPostProcessor"
-    },
-    {
       "type": "org.springframework.boot.validation.beanvalidation.MethodValidationExcludeFilter",
       "methods": [
         {
@@ -6557,19 +6665,7 @@
       "type": "org.springframework.util.PathMatcher"
     },
     {
-      "type": "org.springframework.validation.SmartValidator"
-    },
-    {
       "type": "org.springframework.validation.Validator"
-    },
-    {
-      "type": "org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"
-    },
-    {
-      "type": "org.springframework.validation.beanvalidation.MethodValidationPostProcessor"
-    },
-    {
-      "type": "org.springframework.validation.beanvalidation.SpringValidatorAdapter"
     },
     {
       "type": "org.springframework.web.accept.ApiVersionStrategy"
@@ -6889,6 +6985,9 @@
       ]
     },
     {
+      "type": "org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport$NoOpValidator"
+    },
+    {
       "type": "org.springframework.web.servlet.config.annotation.WebMvcConfigurer"
     },
     {
@@ -7097,6 +7196,24 @@
       ]
     },
     {
+      "type": "sun.security.provider.JavaKeyStore$DualFormatJKS",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.JavaKeyStore$JKS",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "sun.security.provider.NativePRNG",
       "methods": [
         {
@@ -7162,6 +7279,15 @@
       ]
     },
     {
+      "type": "sun.security.provider.certpath.PKIXCertPathValidator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "sun.security.rsa.PSSParameters",
       "methods": [
         {
@@ -7190,6 +7316,15 @@
     },
     {
       "type": "sun.security.rsa.RSASignature$SHA224withRSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSASignature$SHA256withRSA",
       "methods": [
         {
           "name": "<init>",
@@ -7322,6 +7457,18 @@
     },
     {
       "type": "sun.security.x509.PrivateKeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.SubjectAlternativeNameExtension",
       "methods": [
         {
           "name": "<init>",
@@ -7566,16 +7713,7 @@
       "glob": "META-INF/services/io.jsonwebtoken.io.Deserializer"
     },
     {
-      "glob": "META-INF/services/jakarta.el.ExpressionFactory"
-    },
-    {
-      "glob": "META-INF/services/jakarta.validation.ConstraintValidator"
-    },
-    {
-      "glob": "META-INF/services/jakarta.validation.spi.ValidationProvider"
-    },
-    {
-      "glob": "META-INF/services/jakarta.validation.valueextraction.ValueExtractor"
+      "glob": "META-INF/services/io.jsonwebtoken.io.Serializer"
     },
     {
       "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
@@ -7627,9 +7765,6 @@
     },
     {
       "glob": "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.replacements"
-    },
-    {
-      "glob": "META-INF/validation.xml"
     },
     {
       "glob": "application-default.properties"
@@ -8160,9 +8295,6 @@
       "glob": "org/springframework/boot/autoconfigure/condition/ConditionalOnProperty.class"
     },
     {
-      "glob": "org/springframework/boot/autoconfigure/condition/ConditionalOnResource.class"
-    },
-    {
       "glob": "org/springframework/boot/autoconfigure/condition/ConditionalOnSingleCandidate.class"
     },
     {
@@ -8676,7 +8808,7 @@
       "glob": "org/springframework/boot/transaction/autoconfigure/TransactionManagerCustomizationAutoConfiguration.class"
     },
     {
-      "glob": "org/springframework/boot/validation/autoconfigure/PrimaryDefaultValidatorPostProcessor.class"
+      "glob": "org/springframework/boot/validation/autoconfigure$ValidationAutoConfiguration.class"
     },
     {
       "glob": "org/springframework/boot/validation/autoconfigure/ValidationAutoConfiguration.class"
@@ -8933,6 +9065,14 @@
     {
       "module": "java.base",
       "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/uprops.icu"
+    },
+    {
+      "module": "java.base",
+      "glob": "sun/net/idn/uidna.spp"
     },
     {
       "bundle": "jakarta.servlet.LocalStrings"

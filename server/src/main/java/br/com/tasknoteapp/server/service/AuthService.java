@@ -111,7 +111,7 @@ public class AuthService {
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
 
-    Optional<String> signInValidation = isLoginRequestValid(newUser);
+    Optional<String> signInValidation = isLoginRequestValid(newUser, true);
     if (signInValidation.isPresent()) {
       throw new SignInException(signInValidation.get());
     }
@@ -194,7 +194,7 @@ public class AuthService {
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
 
-    Optional<String> signInValidation = isLoginRequestValid(login);
+    Optional<String> signInValidation = isLoginRequestValid(login, false);
     if (signInValidation.isPresent()) {
       throw new SignInException(signInValidation.get());
     }
@@ -617,7 +617,7 @@ public class AuthService {
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }
 
-  private Optional<String> isLoginRequestValid(LoginRequest request) {
+  private Optional<String> isLoginRequestValid(LoginRequest request, boolean isSigningUp) {
     if (Objects.isNull(request.email()) || request.email().isBlank()) {
       return Optional.of("Wrong or missing 'email' key and value.");
     }
@@ -628,11 +628,13 @@ public class AuthService {
     if (Objects.isNull(request.password()) || request.password().isBlank()) {
       return Optional.of("Wrong or missing 'password' key and value.");
     }
-    if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
-      return Optional.of("Wrong or missing 'passwordAgain' key and value.");
-    }
-    if (!request.password().equals(request.passwordAgain())) {
-      return Optional.of("Wrong password 'password' and 'passwordAgain' must match.");
+    if (isSigningUp) {
+      if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
+        return Optional.of("Wrong or missing 'passwordAgain' key and value.");
+      }
+      if (!request.password().equals(request.passwordAgain())) {
+        return Optional.of("Wrong password 'password' and 'passwordAgain' must match.");
+      }
     }
     return Optional.empty();
   }
