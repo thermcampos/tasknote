@@ -105,8 +105,8 @@ public class TagRepository {
   /**
    * Delete the tag x task relashionship for a tag ID lists.
    *
-   * @param tagId Tag ID
-   * @param taskId Task ID
+   * @param tagIds List of Tag IDs.
+   * @param taskId Task ID.
    * @return Number of affected rows.
    */
   public int deleteTagFromTask(List<Long> tagIds, Long taskId) {

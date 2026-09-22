@@ -218,7 +218,8 @@ public class TaskService {
       getOrCreateTags(patchRequest.tags(), user, taskId);
     }
 
-    List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(user.getId(), List.of(taskId));
+    List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(
+        user.getId(),  List.of(taskId));
     List<TaskNoteTag> toDelete = new ArrayList<>();
     for (TaskNoteTag tnt : taskTags) {
       if (!patchRequest.tags().contains(tnt.name())) {
