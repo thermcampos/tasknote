@@ -146,6 +146,14 @@ task docker-build-web
 ./tools/check-backend.sh
 ```
 
+Integration tests (`*IntTest`) run against a real PostgreSQL instance via Testcontainers, so a running Docker daemon is required. Unit tests alone do not need Docker:
+
+```bash
+task test-api-unit   # unit tests only, no Docker
+task test-api-it     # integration tests only, Docker required
+task test-api        # full backend gate (same as tools/check-backend.sh)
+```
+
 ## 🤝 Contributing
 
 We welcome contributions from the community! This project follows the **Fork & Merge** workflow.

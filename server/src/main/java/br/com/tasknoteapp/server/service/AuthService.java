@@ -1,7 +1,7 @@
 package br.com.tasknoteapp.server.service;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
-import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
+import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.entity.UserPwdLimit;
 import br.com.tasknoteapp.server.exception.BadLanguageException;
 import br.com.tasknoteapp.server.exception.BadPasswordException;
 import br.com.tasknoteapp.server.exception.BadThemeException;
@@ -11,7 +11,6 @@ import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.ResetExpiredException;
-import br.com.tasknoteapp.server.exception.UserForbiddenException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
@@ -24,7 +23,6 @@ import br.com.tasknoteapp.server.util.AuthUtil;
 import br.com.tasknoteapp.server.util.SecurityUtil;
 import br.com.tasknoteapp.server.util.TokenUtil;
 import br.com.tasknoteapp.server.util.UuidUtil;
-import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -44,15 +42,15 @@ import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** This class contains the implementation for the Auth Service class. */
 @Service
 public class AuthService {
 
-  private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final UserRepository userRepository;
 
@@ -107,7 +105,7 @@ public class AuthService {
    * @param newUser User details with email and password.
    * @return Token
    */
-  @Transactional
+  @Transactional 
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
 
@@ -132,7 +130,7 @@ public class AuthService {
 
     UUID emailUuid = new UuidUtil().generateEmailUuid(newUser.email());
 
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail(newUser.email());
     user.setPassword(passwordEncoder.encode(newUser.password()));
     user.setAdmin(false);
@@ -140,7 +138,7 @@ public class AuthService {
     user.setLastPasswordChange(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
     user.setEmailUuid(emailUuid);
     user.setLang(newUser.lang());
-    userRepository.save(user);
+    user = userRepository.save(user);
 
     if (hasValidMailgunApiKey()) {
       mailgunEmailService.sendNewUser(user);
@@ -157,7 +155,7 @@ public class AuthService {
    * @param email The user email.
    * @return Optional of a UserEntity instance.
    */
-  public Optional<UserEntity> findByEmail(String email) {
+  public Optional<User> findByEmail(String email) {
     return userRepository.findByEmail(email);
   }
 
@@ -165,15 +163,18 @@ public class AuthService {
    * Load a user from the database given his email.
    *
    * @param email The user email.
-   * @return User with found record.
+   * @return User with found record (from org.springframework.security.core.userdetails.User).
    */
-  public User loadUserByUsername(String email) {
-    Optional<UserEntity> user = userRepository.findByEmail(email);
+  public org.springframework.security.core.userdetails.User loadUserByUsername(String email) {
+    Optional<User> user = userRepository.findByEmail(email);
     if (user.isEmpty()) {
       throw new UserNotFoundException();
     }
 
-    return new User(user.get().getEmail(), user.get().getPassword(), new ArrayList<>());
+    org.springframework.security.core.userdetails.User springUser =
+        new org.springframework.security.core.userdetails.User(
+            user.get().getEmail(), user.get().getPassword(), new ArrayList<>());
+    return springUser;
   }
 
   /**
@@ -186,14 +187,14 @@ public class AuthService {
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
 
-    Optional<UserEntity> userOptional = findByEmail(login.email());
+    Optional<User> userOptional = findByEmail(login.email());
     if (userOptional.isEmpty()) {
       throw new InvalidCredentialsException();
     }
 
     checkLoginAttemptLimit(userOptional.get().getId());
 
-    UserEntity user = userOptional.get();
+    User user = userOptional.get();
 
     if (Objects.isNull(user.getEmailConfirmedAt())) {
       logger.warn("User {} tried to login but email is not confirmed", user.getId());
@@ -232,51 +233,11 @@ public class AuthService {
       logger.error(
           "BadCredentialsException when logging in user {}: {}", user.getId(), e.getMessage());
 
-      // store attempt
-      UserPwdLimitEntity pwdLimit = new UserPwdLimitEntity();
-      pwdLimit.setWhenHappened(LocalDateTime.now());
-      pwdLimit.setUser(user);
+      UserPwdLimit pwdLimit = new UserPwdLimit(null, LocalDateTime.now(), user.getId());
       userPwdLimitRepository.save(pwdLimit);
 
       return null;
     }
-  }
-
-  /**
-   * Get all registered users. Only allowed for admin users.
-   *
-   * @return List of UserEntity.
-   * @throws UserForbiddenException when the user has no permissions.
-   */
-  public List<UserResponse> getAllUsers() {
-    Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
-    if (currentUserEmail.isEmpty()) {
-      logger.error("Unable to get current user from the request");
-      throw new UserNotFoundException();
-    }
-
-    Optional<UserEntity> currentUserOpt = findByEmail(currentUserEmail.get());
-    if (currentUserOpt.isEmpty()) {
-      logger.error("Unable to find user by email with value: {}", currentUserEmail.get());
-      throw new UserNotFoundException();
-    }
-
-    UserEntity currentUser = currentUserOpt.get();
-    if (!currentUser.getAdmin()) {
-      logger.warn("User {} not allowed to list users.", currentUser.getId());
-      throw new UserForbiddenException();
-    }
-
-    logger.info("Getting all users to user {}", currentUser.getId());
-    List<UserEntity> users = userRepository.findAll();
-    List<UserResponse> usersResponse = new ArrayList<>(users.size());
-    users.forEach(
-        u ->
-            usersResponse.add(
-                UserResponse.fromEntity(u, getGravatarImageUrl(u.getEmail()).orElse(null))));
-    logger.info("{} user(s) found!", usersResponse.size());
-
-    return usersResponse;
   }
 
   /**
@@ -287,7 +248,7 @@ public class AuthService {
   public String refreshCurrentUserToken() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
-    UserEntity currentUser = findByEmail(email).orElseThrow();
+    User currentUser = findByEmail(email).orElseThrow();
 
     logger.info("Refreshing current session to user {}", currentUser.getId());
 
@@ -301,20 +262,18 @@ public class AuthService {
    * Verify the given password against the current user, recording a failed attempt for rate
    * limiting when it does not match.
    *
-   * @param user The {@link UserEntity} to check the password against.
+   * @param user The {@link User} to check the password against.
    * @param password The plain text password to verify.
    * @throws MaxLoginLimitAttemptException when too many failed attempts happened recently.
    * @throws InvalidCredentialsException when the password does not match.
    */
-  public void verifyCurrentPassword(UserEntity user, String password) {
+  public void verifyCurrentPassword(User user, String password) {
     checkLoginAttemptLimit(user.getId());
 
     if (Objects.isNull(password) || !passwordEncoder.matches(password, user.getPassword())) {
       logger.warn("Password verification failed for user {}", user.getId());
 
-      UserPwdLimitEntity pwdLimit = new UserPwdLimitEntity();
-      pwdLimit.setWhenHappened(LocalDateTime.now());
-      pwdLimit.setUser(user);
+      UserPwdLimit pwdLimit = new UserPwdLimit(null, LocalDateTime.now(), user.getId());
       userPwdLimitRepository.save(pwdLimit);
 
       throw new InvalidCredentialsException();
@@ -329,7 +288,7 @@ public class AuthService {
   public UserResponse deleteUserAccount() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
-    UserEntity currentUser = findByEmail(email).orElseThrow();
+    User currentUser = findByEmail(email).orElseThrow();
 
     logger.info("Deleting account for user {}", currentUser.getId());
 
@@ -350,7 +309,7 @@ public class AuthService {
   public UserResponse patchUserInfo(UserPatchRequest patchRequest) {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
-    UserEntity currentUser = findByEmail(email).orElseThrow();
+    User currentUser = findByEmail(email).orElseThrow();
     boolean shouldUpdate = false;
     boolean emailChanged = false;
 
@@ -416,7 +375,6 @@ public class AuthService {
     }
 
     if (emailChanged && hasValidMailgunApiKey()) {
-      // send email to older and new account
       logger.info(
           "Email changed from {} to {}", email, SecurityUtil.redactEmail(patchRequest.email()));
       mailgunEmailService.sendEmailChangedNotification(currentUser, email);
@@ -428,10 +386,10 @@ public class AuthService {
   /**
    * Get the current logged user (based in the JWT Authentication).
    *
-   * @return An instance of {@link UserEntity} with the current user.
+   * @return An instance of {@link User} with the current user.
    * @throws UserNotFoundException when the user was not found
    */
-  public Optional<UserEntity> getCurrentUser() {
+  public Optional<User> getCurrentUser() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     if (currentUserEmail.isEmpty()) {
       throw new UserNotFoundException();
@@ -447,7 +405,7 @@ public class AuthService {
    * @throws UserNotFoundException when the user was not found
    */
   public UserResponse getCurrentUserResponse() {
-    UserEntity user = getCurrentUser().orElseThrow(UserNotFoundException::new);
+    User user = getCurrentUser().orElseThrow(UserNotFoundException::new);
     return UserResponse.fromEntity(user, getGravatarImageUrl(user.getEmail()).orElse(null));
   }
 
@@ -468,12 +426,12 @@ public class AuthService {
       throw new BadUuidException();
     }
 
-    Optional<UserEntity> userOptional = userRepository.findByEmailUuid(uuid);
+    Optional<User> userOptional = userRepository.findByEmailUuid(uuid);
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
     }
 
-    UserEntity user = userOptional.get();
+    User user = userOptional.get();
     user.setEmailConfirmedAt(LocalDateTime.now());
 
     userRepository.save(user);
@@ -488,12 +446,12 @@ public class AuthService {
   public void resendEmailConfirmation(String email) {
     logger.info("Re-sending the confirmation email");
 
-    Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+    Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
     }
 
-    UserEntity user = userOptional.get();
+    User user = userOptional.get();
 
     if (hasValidMailgunApiKey()) {
       mailgunEmailService.sendNewUser(user);
@@ -511,7 +469,7 @@ public class AuthService {
   public void resetPasswordForUser(String email) {
     logger.info("Requesting password reset for email {}", email);
 
-    Optional<UserEntity> userOptional = userRepository.findByEmail(email);
+    Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
       logger.info("No user found with email {}", email);
       return;
@@ -519,7 +477,7 @@ public class AuthService {
 
     String resetToken = new TokenUtil().generateToken();
 
-    UserEntity user = userOptional.get();
+    User user = userOptional.get();
     user.setResetToken(resetToken);
     user.setResetPasswordExpiration(
         LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).plusHours(2L));
@@ -541,7 +499,7 @@ public class AuthService {
   public void confirmResetPasswordForUser(PasswordResetRequest request) {
     logger.info("Saving new password for token {}", request.token());
 
-    Optional<UserEntity> userOptional = userRepository.findByResetToken(request.token());
+    Optional<User> userOptional = userRepository.findByResetToken(request.token());
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
     }
@@ -562,7 +520,7 @@ public class AuthService {
       throw new BadPasswordException("The passwords should match");
     }
 
-    UserEntity user = userOptional.get();
+    User user = userOptional.get();
     user.setResetToken(null);
     user.setResetPasswordExpiration(null);
     user.setPassword(passwordEncoder.encode(request.password()));
@@ -603,16 +561,16 @@ public class AuthService {
   private void checkLoginAttemptLimit(Long userId) {
     // Fetch only the 3 most recent failed attempts to avoid loading unbounded rows for
     // targeted/brute-forced accounts.
-    List<UserPwdLimitEntity> userPwdList =
+    List<UserPwdLimit> userPwdList =
         userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(userId);
 
     logger.warn("login count attempt for user {}: {}", userId, userPwdList.size());
 
     // if it's more than 3 times in the last 10 minutes, raise timer of 3 hours.
     if (userPwdList.size() >= 3) {
-      UserPwdLimitEntity oldest = userPwdList.getLast();
-      logger.warn("Oldest failed attempt: {}", oldest.getWhenHappened());
-      Duration duration = Duration.between(oldest.getWhenHappened(), LocalDateTime.now());
+      UserPwdLimit oldest = userPwdList.getLast();
+      logger.warn("Oldest failed attempt: {}", oldest.whenHappened());
+      Duration duration = Duration.between(oldest.whenHappened(), LocalDateTime.now());
       if (duration.toMinutes() <= 3L) {
         logger.warn("Account locked, minutes remaining: {}", 3L - duration.toMinutes());
         throw new MaxLoginLimitAttemptException();

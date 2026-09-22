@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.service;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.templates.MailgunTemplate;
 import br.com.tasknoteapp.server.templates.MailgunTemplateEmailChanged;
 import br.com.tasknoteapp.server.templates.MailgunTemplateResetPwd;
@@ -75,7 +75,7 @@ public class MailgunEmailService {
    *
    * @param user The user that should be addressed the message.
    */
-  public void sendNewUser(UserEntity user) {
+  public void sendNewUser(User user) {
     logger.info("Sending message confirming user email address.");
 
     String to = user.getEmail();
@@ -95,7 +95,7 @@ public class MailgunEmailService {
    *
    * @param user The user that should be addressed the message.
    */
-  public void sendResetPassword(UserEntity user) {
+  public void sendResetPassword(User user) {
     logger.info("Sending message with password reset link");
 
     String to = user.getEmail();
@@ -115,7 +115,7 @@ public class MailgunEmailService {
    *
    * @param user The user that should be addressed the message.
    */
-  public void sendPasswordResetConfirmation(UserEntity user) {
+  public void sendPasswordResetConfirmation(User user) {
     logger.info("Sending message with password reset confirmation");
 
     String to = user.getEmail();
@@ -132,7 +132,7 @@ public class MailgunEmailService {
    * @param user The user that should be addressed the message.
    * @param oldEmail The user previous email
    */
-  public void sendEmailChangedNotification(UserEntity user, String oldEmail) {
+  public void sendEmailChangedNotification(User user, String oldEmail) {
     logger.info("Sending message with changed email notification");
 
     MailgunTemplateEmailChanged emailChanged = new MailgunTemplateEmailChanged();

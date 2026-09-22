@@ -76,7 +76,6 @@ public class TimeAgoUtil {
 
     StringBuilder sb = new StringBuilder();
 
-    // Format should be: yyyy-MM-dd
     Period period = Period.between(LocalDate.now(), futureDate);
     if (period.getYears() > 1) {
       sb.append(String.format("%d years left", period.getYears()));

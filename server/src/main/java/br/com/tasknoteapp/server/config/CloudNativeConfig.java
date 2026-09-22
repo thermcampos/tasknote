@@ -23,7 +23,6 @@ import org.springframework.context.annotation.ImportRuntimeHints;
   io.jsonwebtoken.impl.DefaultJwtParserBuilder.class,
   io.jsonwebtoken.impl.DefaultJwtBuilder.class,
   io.jsonwebtoken.lang.Supplier.class,
-  org.flywaydb.core.internal.publishing.PublishingConfigurationExtension.class,
 })
 @ImportRuntimeHints(value = {HttpServletRequestRuntimeHint.class})
 public class CloudNativeConfig {}

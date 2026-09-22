@@ -17,7 +17,6 @@ class MailgunTemplateTest {
 
   @Test
   void mailgunTemplateResetPwdConfirmTest() {
-    // MailgunTemplateResetPwdConfirm
     MailgunTemplateResetPwdConfirm confirm = new MailgunTemplateResetPwdConfirm();
 
     Assertions.assertNotNull(confirm.getName());
@@ -28,8 +27,6 @@ class MailgunTemplateTest {
 
   @Test
   void mailgunTemplateSignUpTest() {
-    // MailgunTemplateSignUp
-
     MailgunTemplateSignUp signUp = new MailgunTemplateSignUp();
 
     Assertions.assertNotNull(signUp.getName());
@@ -40,8 +37,6 @@ class MailgunTemplateTest {
 
   @Test
   void mailgunTemplateEmailChangedTest() {
-    // MailgunTemplateEmailChanged
-
     MailgunTemplateEmailChanged emailChanged = new MailgunTemplateEmailChanged();
 
     Assertions.assertNotNull(emailChanged.getName());

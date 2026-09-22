@@ -19,7 +19,6 @@ public class JjwtRuntimeHints {
   static class JjwtHintsRegistrar implements RuntimeHintsRegistrar {
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
-      // Register JJWT exceptions for reflection
       hints
           .reflection()
           .registerType(SignatureException.class)

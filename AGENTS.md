@@ -18,7 +18,7 @@
 
 ## Developer workflows (use these first)
 - Frontend quality gate: `bash tools/check-frontend.sh` (runs `npm ci`, `lint:fix`, `build`, `test:no-watch`).
-- Backend quality gate: `bash tools/check-backend.sh` (runs checkstyle, compile, then `clean verify -P tests`).
+- Backend quality gate: `bash tools/check-backend.sh` (runs checkstyle, compile, then `clean verify -P tests`). Integration tests (`*IntTest`) use Testcontainers with a `jdbc:tc:postgresql:15.8-bookworm` URL and real Flyway migrations, so Docker must be running; there is no H2 or test-only schema. Equivalent Taskfile tasks: `task test-api`, `task test-api-unit` (no Docker), `task test-api-it`.
 - Backend dependency freshness check: `bash tools/check-be-deps.sh` (verifies that `failsafe`, `surefire`, `jacoco`, `checkstyle`, and Spring Boot plugin versions in `pom.xml` match the latest releases on Maven Central; must be run from the repo root or `server/`).
 - Important Maven default: tests/checkstyle/jacoco are skipped unless profile `-P tests` is enabled (`server/pom.xml`).
 - Dev stack via Docker Compose/Taskfile (`Taskfile.yml`, `docker-compose.dev.yml`): app `5000`, API `8585`, Java debug port `5005`, Postgres `5432`.

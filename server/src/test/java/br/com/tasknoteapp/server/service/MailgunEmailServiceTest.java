@@ -6,7 +6,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,13 +47,13 @@ class MailgunEmailServiceTest {
     when(restClient.post()).thenReturn(requestBodyUriSpec);
     when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
     when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
-    when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+    when(requestBodySpec.body(any(Object.class))).thenReturn(requestBodySpec);
     when(requestBodySpec.retrieve()).thenReturn(responseSpec);
   }
 
   @Test
   void testSendResetPassword() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setResetToken("reset-token");
 
@@ -62,11 +62,12 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
   void testSendPasswordResetConfirmation() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
 
     setupMockChain();
@@ -74,11 +75,12 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendPasswordResetConfirmation(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
   void testSendNewUser() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setEmailUuid(java.util.UUID.randomUUID());
 
@@ -87,11 +89,12 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendNewUser(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
   void testSendEmailHandlesHttpClientErrorException() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
     user.setResetToken("reset-token");
 
@@ -102,11 +105,12 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 
   @Test
   void testSendEmailChanged() {
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmail("test@example.com");
 
     setupMockChain();
@@ -116,5 +120,6 @@ class MailgunEmailServiceTest {
     mailgunEmailService.sendEmailChangedNotification(user, oldEmail);
 
     verify(restClient, times(1)).post();
+    verify(responseSpec, times(1)).toBodilessEntity();
   }
 }

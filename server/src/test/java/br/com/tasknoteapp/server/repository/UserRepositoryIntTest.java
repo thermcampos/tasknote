@@ -1,18 +1,14 @@
 package br.com.tasknoteapp.server.repository;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.User;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase.Replace;
 import org.springframework.test.context.jdbc.Sql;
 
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = Replace.NONE)
+@RepositoryIntTest
 @Sql(scripts = {"classpath:sql/UserRepositoryTest.sql"})
 class UserRepositoryIntTest {
 
@@ -23,7 +19,7 @@ class UserRepositoryIntTest {
   @Test
   void findByEmailUuid_happyPath_shouldSucceed() {
     UUID uuid = UUID.fromString(UUID_CODE);
-    Optional<UserEntity> user = userRepository.findByEmailUuid(uuid);
+    Optional<User> user = userRepository.findByEmailUuid(uuid);
 
     Assertions.assertFalse(user.isEmpty());
   }
@@ -31,7 +27,7 @@ class UserRepositoryIntTest {
   @Test
   void findByResetToken_happyPath_shouldSucceed() {
     String token = "abc123456";
-    Optional<UserEntity> user = userRepository.findByResetToken(token);
+    Optional<User> user = userRepository.findByResetToken(token);
 
     Assertions.assertFalse(user.isEmpty());
   }

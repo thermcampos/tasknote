@@ -9,9 +9,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.NoteEntity;
-import br.com.tasknoteapp.server.entity.NoteUrlEntity;
-import br.com.tasknoteapp.server.entity.UserEntity;
+import br.com.tasknoteapp.server.entity.Note;
+import br.com.tasknoteapp.server.entity.NoteUrl;
+import br.com.tasknoteapp.server.entity.Tag;
+import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
@@ -44,22 +45,27 @@ class NoteServiceTest {
 
   @InjectMocks private NoteService noteService;
 
-  private UserEntity user;
-  private NoteEntity note;
+  private User user;
+  private Note note;
   private NoteRequest noteRequest;
   private NotePatchRequest notePatchRequest;
 
   @BeforeEach
   void setUp() {
-    user = new UserEntity();
+    user = new User();
     user.setId(1L);
     user.setEmail("test@example.com");
 
-    note = new NoteEntity();
-    note.setId(1L);
-    note.setTitle("Test Note");
-    note.setDescription("Test Description");
-    note.setUser(user);
+    note = new Note(
+        1L,
+        user.getId(),
+        "Test Description",
+        "Test Note",
+        null,
+        Boolean.FALSE,
+        null,
+        Boolean.FALSE
+    );
 
     noteRequest =
         new NoteRequest("Test Note", "Test Description", "http://example.com", List.of("tag"));
@@ -72,33 +78,33 @@ class NoteServiceTest {
   void getAllNotes() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findAllByUser_id(user.getId())).thenReturn(List.of(note));
+    when(noteRepository.findAllByUserId(user.getId())).thenReturn(List.of(note));
 
     List<NoteResponse> notes = noteService.getAllNotes();
 
     assertEquals(1, notes.size());
     assertEquals("Test Note", notes.get(0).title());
-    verify(noteRepository, times(1)).findAllByUser_id(user.getId());
+    verify(noteRepository, times(1)).findAllByUserId(user.getId());
   }
 
   @Test
   void getNoteById() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findById(note.getId())).thenReturn(Optional.of(note));
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId())).thenReturn(Optional.of(note));
 
-    NoteResponse noteResponse = noteService.getNoteById(note.getId());
+    NoteResponse noteResponse = noteService.getNoteById(note.id());
 
     assertEquals("Test Note", noteResponse.title());
-    verify(noteRepository, times(1)).findById(note.getId());
+    verify(noteRepository, times(1)).findByIdAndUserId(note.id(), user.getId());
   }
 
   @Test
   void getNoteById_NotFound() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findById(note.getId())).thenReturn(Optional.empty());
-    Long noteId = note.getId();
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId())).thenReturn(Optional.empty());
+    Long noteId = note.id();
 
     assertThrows(NoteNotFoundException.class, () -> noteService.getNoteById(noteId));
   }
@@ -107,42 +113,53 @@ class NoteServiceTest {
   void createNote_withExistingCount() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.save(any(NoteEntity.class))).thenReturn(note);
-    when(noteUrlRepository.save(any(NoteUrlEntity.class))).thenReturn(new NoteUrlEntity());
-    when(tagRepository.findByNameAndUser_id(anyString(), eq(user.getId())))
-        .thenReturn(Optional.of(new br.com.tasknoteapp.server.entity.TagEntity("tag", user)));
+    when(noteRepository.save(any(Note.class))).thenReturn(note);
+    when(noteUrlRepository.save(any(NoteUrl.class))).thenReturn(new NoteUrl(null, null, null));
+    when(tagRepository.findByUserIdAndName(eq(user.getId()), anyString()))
+        .thenReturn(Optional.of(new Tag(null, "tag", user.getId())));
 
     NoteResponse createdNote = noteService.createNote(noteRequest);
 
     assertEquals("Test Note", createdNote.title());
-    verify(noteRepository, times(1)).save(any(NoteEntity.class));
-    verify(noteUrlRepository, times(1)).save(any(NoteUrlEntity.class));
+    verify(noteRepository, times(1)).save(any(Note.class));
+    verify(noteUrlRepository, times(1)).save(any(NoteUrl.class));
   }
 
   @Test
   void patchNote() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
-        .thenReturn(Optional.of(note));
-    when(noteRepository.save(any(NoteEntity.class))).thenReturn(note);
-    when(tagRepository.findByNameAndUser_id(anyString(), eq(user.getId())))
-        .thenReturn(Optional.of(new br.com.tasknoteapp.server.entity.TagEntity("tag", user)));
 
-    NoteResponse patchedNote = noteService.patchNote(note.getId(), notePatchRequest);
+    Note noteUpdated = new Note(
+        note.id(),
+        note.userId(),
+        note.description(),
+        "Updated Note",
+        note.lastUpdate(),
+        note.shared(),
+        note.shareToken(),
+        note.archived()
+    );
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId()))
+        .thenReturn(Optional.of(note));
+    when(noteRepository.save(any(Note.class))).thenReturn(noteUpdated);
+    when(tagRepository.findByUserIdAndName(eq(user.getId()), anyString()))
+        .thenReturn(Optional.of(new Tag(null, "tag", user.getId())));
+
+    NoteResponse patchedNote = noteService.patchNote(note.id(), notePatchRequest);
 
     assertEquals("Updated Note", patchedNote.title());
-    verify(noteRepository, times(1)).findByIdAndUser_id(note.getId(), user.getId());
-    verify(noteRepository, times(1)).save(any(NoteEntity.class));
+    verify(noteRepository, times(1)).findByIdAndUserId(note.id(), user.getId());
+    verify(noteRepository, times(1)).save(any(Note.class));
   }
 
   @Test
   void patchNote_notFound() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId()))
         .thenReturn(Optional.empty());
-    Long noteId = note.getId();
+    Long noteId = note.id();
 
     assertThrows(
         NoteNotFoundException.class, () -> noteService.patchNote(noteId, notePatchRequest));
@@ -150,35 +167,48 @@ class NoteServiceTest {
 
   @Test
   void deleteNote() {
-    note.setArchived(true);
+    Note noteToDelete = new Note(
+        11L,
+        user.getId(),
+        "Test Description",
+        "Test Note",
+        null,
+        Boolean.FALSE,
+        null,
+        Boolean.TRUE
+    );
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
-        .thenReturn(Optional.of(note));
+    when(noteRepository.findByIdAndUserId(noteToDelete.id(), user.getId()))
+        .thenReturn(Optional.of(noteToDelete));
 
-    noteService.deleteNote(note.getId());
+    noteService.deleteNote(noteToDelete.id());
 
-    verify(noteRepository, times(1)).findByIdAndUser_id(note.getId(), user.getId());
-    verify(noteRepository, times(1)).delete(note);
+    verify(noteRepository, times(1)).findByIdAndUserId(noteToDelete.id(), user.getId());
+    verify(noteRepository, times(1)).delete(noteToDelete);
   }
 
   @Test
   void deleteAllNotesForCurrentUser() {
-    NoteEntity archivedNote = new NoteEntity();
-    archivedNote.setId(2L);
-    archivedNote.setTitle("Archived Note");
-    archivedNote.setDescription("Archived Description");
-    archivedNote.setUser(user);
-    archivedNote.setArchived(true);
+    Note archivedNote = new Note(
+        2L,
+        user.getId(),
+        "Archived Description",
+        "Archived Note",
+        null,
+        Boolean.FALSE,
+        null,
+        Boolean.TRUE
+    );
 
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findAllByUser_id(user.getId())).thenReturn(List.of(note, archivedNote));
+    when(noteRepository.findAllByUserId(user.getId())).thenReturn(List.of(note, archivedNote));
 
     noteService.deleteAllNotesForCurrentUser();
 
-    verify(noteUrlRepository, times(1)).deleteByNote_id(note.getId());
-    verify(noteUrlRepository, times(1)).deleteByNote_id(archivedNote.getId());
+    verify(noteUrlRepository, times(1)).deleteByNoteId(note.id());
+    verify(noteUrlRepository, times(1)).deleteByNoteId(archivedNote.id());
     verify(noteRepository, times(1)).delete(note);
     verify(noteRepository, times(1)).delete(archivedNote);
     verify(tagRepository, times(1)).deleteOrphanedTags(user.getId());
@@ -188,64 +218,72 @@ class NoteServiceTest {
   void searchNotes() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findAllBySearchTerm(anyString(), eq(user.getId())))
+    when(noteRepository.findAllBySearchTerm(eq(user.getId()), anyString()))
         .thenReturn(List.of(note));
 
     List<NoteResponse> notes = noteService.searchNotes("Test");
 
     assertEquals(1, notes.size());
     assertEquals("Test Note", notes.get(0).title());
-    verify(noteRepository, times(1)).findAllBySearchTerm(anyString(), eq(user.getId()));
+    verify(noteRepository, times(1)).findAllBySearchTerm(eq(user.getId()), anyString());
   }
 
   @Test
   void shareNote() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId()))
         .thenReturn(Optional.of(note));
-    when(noteRepository.save(any(NoteEntity.class))).thenReturn(note);
+    when(noteRepository.save(any(Note.class))).thenReturn(note);
 
-    NoteResponse response = noteService.shareNote(note.getId());
+    NoteResponse response = noteService.shareNote(note.id());
 
     assertEquals("Test Note", response.title());
-    verify(noteRepository, times(1)).save(any(NoteEntity.class));
+    verify(noteRepository, times(1)).save(any(Note.class));
   }
 
   @Test
   void shareNote_notFound() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId()))
         .thenReturn(Optional.empty());
-    Long noteId = note.getId();
+    Long noteId = note.id();
 
     assertThrows(NoteNotFoundException.class, () -> noteService.shareNote(noteId));
   }
 
   @Test
   void unshareNote() {
-    note.setShared(true);
-    note.setShareToken("some-token");
+    Note noteToUnShare = new Note(
+        111L,
+        user.getId(),
+        "Test Description",
+        "Test Note",
+        null,
+        Boolean.TRUE,
+        "some-token",
+        Boolean.FALSE
+    );
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
-        .thenReturn(Optional.of(note));
-    when(noteRepository.save(any(NoteEntity.class))).thenReturn(note);
+    when(noteRepository.findByIdAndUserId(noteToUnShare.id(), user.getId()))
+        .thenReturn(Optional.of(noteToUnShare));
+    when(noteRepository.save(any(Note.class))).thenReturn(noteToUnShare);
 
-    NoteResponse response = noteService.unshareNote(note.getId());
+    NoteResponse response = noteService.unshareNote(noteToUnShare.id());
 
     assertEquals("Test Note", response.title());
-    verify(noteRepository, times(1)).save(any(NoteEntity.class));
+    verify(noteRepository, times(1)).save(any(Note.class));
   }
 
   @Test
   void unshareNote_notFound() {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(noteRepository.findByIdAndUser_id(note.getId(), user.getId()))
+    when(noteRepository.findByIdAndUserId(note.id(), user.getId()))
         .thenReturn(Optional.empty());
-    Long noteId = note.getId();
+    Long noteId = note.id();
 
     assertThrows(NoteNotFoundException.class, () -> noteService.unshareNote(noteId));
   }
@@ -253,9 +291,18 @@ class NoteServiceTest {
   @Test
   void getSharedNote() {
     final String token = "share-token-123";
-    note.setShared(true);
-    note.setShareToken(token);
-    when(noteRepository.findByShareToken(token)).thenReturn(Optional.of(note));
+    Note sharedNote = new Note(
+        2L,
+        user.getId(),
+        "Archived Description",
+        "Test Note",
+        null,
+        Boolean.TRUE,
+        token,
+        Boolean.FALSE
+    );
+    
+    when(noteRepository.findByShareToken(token)).thenReturn(Optional.of(sharedNote));
 
     NoteResponse response = noteService.getSharedNote(token);
 
@@ -273,9 +320,17 @@ class NoteServiceTest {
   @Test
   void getSharedNote_notShared() {
     final String token = "share-token-456";
-    note.setShared(false);
-    note.setShareToken(token);
-    when(noteRepository.findByShareToken(token)).thenReturn(Optional.of(note));
+    Note notSharedNote = new Note(
+        2L,
+        user.getId(),
+        "Archived Description",
+        "Archived Note",
+        null,
+        Boolean.FALSE,
+        token,
+        Boolean.FALSE
+    );
+    when(noteRepository.findByShareToken(token)).thenReturn(Optional.of(notSharedNote));
 
     assertThrows(NoteNotFoundException.class, () -> noteService.getSharedNote(token));
   }

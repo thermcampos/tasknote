@@ -1,7 +1,7 @@
 package br.com.tasknoteapp.server.response;
 
-import br.com.tasknoteapp.server.entity.TagEntity;
-import br.com.tasknoteapp.server.entity.TaskEntity;
+import br.com.tasknoteapp.server.entity.Tag;
+import br.com.tasknoteapp.server.entity.Task;
 import br.com.tasknoteapp.server.util.TimeAgoUtil;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,19 +25,19 @@ public record TaskResponse(
    * @param urls The URLs associated with the task.
    * @return TaskResponse instance with all task data and URLs, if any.
    */
-  public static TaskResponse fromEntity(TaskEntity entity, List<String> urls) {
-    String timeAgoFmt = TimeAgoUtil.format(entity.getLastUpdate());
-    String dueDateFmt = TimeAgoUtil.formatDueDate(entity.getDueDate());
+  public static TaskResponse fromEntity(Task entity, List<String> urls, List<Tag> tags) {
+    String timeAgoFmt = TimeAgoUtil.format(entity.lastUpdate());
+    String dueDateFmt = TimeAgoUtil.formatDueDate(entity.dueDate());
 
     return new TaskResponse(
-        entity.getId(),
-        entity.getCompleted(),
-        entity.getDescription(),
-        entity.getHighPriority(),
-        entity.getDueDate(),
+        entity.id(),
+        entity.completed(),
+        entity.description(),
+        entity.highPriority(),
+        entity.dueDate(),
         dueDateFmt,
         timeAgoFmt,
-        entity.getTags().stream().map(TagEntity::getName).toList(),
+        tags.stream().map((t) -> t.name()).toList(),
         urls);
   }
 }

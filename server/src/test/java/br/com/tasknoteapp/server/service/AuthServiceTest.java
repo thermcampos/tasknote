@@ -6,8 +6,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import br.com.tasknoteapp.server.entity.UserEntity;
-import br.com.tasknoteapp.server.entity.UserPwdLimitEntity;
+import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.entity.UserPwdLimit;
 import br.com.tasknoteapp.server.exception.BadPasswordException;
 import br.com.tasknoteapp.server.exception.BadThemeException;
 import br.com.tasknoteapp.server.exception.BadUuidException;
@@ -16,7 +16,6 @@ import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.ResetExpiredException;
-import br.com.tasknoteapp.server.exception.UserForbiddenException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
@@ -40,7 +39,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,7 +85,7 @@ class AuthServiceTest {
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.empty());
     when(authUtil.validatePassword(request.password())).thenReturn(Optional.empty());
 
-    UserEntity entity = new UserEntity();
+    User entity = new User();
     entity.setId(3L);
     entity.setEmail(request.email());
     entity.setName("User");
@@ -101,7 +99,7 @@ class AuthServiceTest {
     Assertions.assertNull(token.token());
     Assertions.assertEquals(entity.getEmail(), token.email());
     Assertions.assertNotNull(entity.getEmailUuid());
-    verify(userRepository).save(any(UserEntity.class));
+    verify(userRepository).save(any(User.class));
   }
 
   @Test
@@ -110,7 +108,7 @@ class AuthServiceTest {
     LoginRequest request =
         new LoginRequest("email@domain.com", "123456@abcde!", "123456@abcde!", "en");
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(existing));
 
     Assertions.assertThrows(
@@ -140,11 +138,11 @@ class AuthServiceTest {
   void findByEmail_happyPath_shouldSucceed() {
     String email = "user@email.com";
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
 
-    Optional<UserEntity> userOp = authService.findByEmail(email);
+    Optional<User> userOp = authService.findByEmail(email);
 
     Assertions.assertTrue(userOp.isPresent());
     Assertions.assertEquals(email, userOp.get().getEmail());
@@ -157,7 +155,7 @@ class AuthServiceTest {
 
     when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
-    Optional<UserEntity> userOp = authService.findByEmail(email);
+    Optional<User> userOp = authService.findByEmail(email);
 
     Assertions.assertTrue(userOp.isEmpty());
   }
@@ -167,12 +165,12 @@ class AuthServiceTest {
   void loadUserByUsername_happyPath_shouldSucceed() {
     String email = "user@domain.com";
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setEmail(email);
     existing.setPassword(email + "123");
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
 
-    User user = authService.loadUserByUsername(email);
+    org.springframework.security.core.userdetails.User user = authService.loadUserByUsername(email);
 
     Assertions.assertNotNull(user);
     Assertions.assertEquals(email, user.getUsername());
@@ -198,7 +196,7 @@ class AuthServiceTest {
     LoginRequest request = new LoginRequest("email@domain.com", "123456", "123456", "en");
     LocalDateTime oldLastLogin = LocalDateTime.of(2026, 5, 1, 10, 20, 30);
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(request.email());
     existing.setEmailConfirmedAt(LocalDateTime.now());
@@ -224,7 +222,7 @@ class AuthServiceTest {
   void signInUser_notConfirmed_shouldFail() {
     LoginRequest request = new LoginRequest("email@domain.com", "123456", "123456", "en");
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(request.email());
     existing.setEmailConfirmedAt(null);
@@ -259,17 +257,26 @@ class AuthServiceTest {
   void signInUser_maxLoginAttempt_shouldFail() {
     LoginRequest request = new LoginRequest("email@domain.com", "123456", "123456", "en");
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmailConfirmedAt(LocalDateTime.now());
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(existing));
 
-    UserPwdLimitEntity limit1 = new UserPwdLimitEntity();
-    limit1.setWhenHappened(LocalDateTime.now().minusSeconds(30));
-    UserPwdLimitEntity limit2 = new UserPwdLimitEntity();
-    limit2.setWhenHappened(LocalDateTime.now().minusMinutes(1));
-    UserPwdLimitEntity limit3 = new UserPwdLimitEntity();
-    limit3.setWhenHappened(LocalDateTime.now().minusMinutes(2));
+    UserPwdLimit limit1 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusSeconds(30),
+        null
+    );
+    UserPwdLimit limit2 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusMinutes(1),
+        null
+    );
+    UserPwdLimit limit3 = new UserPwdLimit(
+        null,
+        LocalDateTime.now().minusMinutes(2),
+        null
+    );
     when(userPwdLimitRepository.findTop3ByUser_idOrderByWhenHappenedDesc(existing.getId()))
         .thenReturn(List.of(limit1, limit2, limit3));
 
@@ -285,7 +292,7 @@ class AuthServiceTest {
   void signInUser_badCredentials_shouldFail() {
     LoginRequest request = new LoginRequest("email@domain.com", "123456", "123456", "en");
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmailConfirmedAt(LocalDateTime.now());
     when(userRepository.findByEmail(request.email())).thenReturn(Optional.of(existing));
@@ -301,83 +308,12 @@ class AuthServiceTest {
   }
 
   @Test
-  @DisplayName("Get all users happy path should succeed")
-  void getAllUsers_happyPath_shouldSucceed() {
-    String email = "user@domain.com";
-    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
-
-    UserEntity existing = new UserEntity();
-    existing.setId(919L);
-    existing.setEmail(email);
-    existing.setAdmin(true);
-    when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
-
-    UserEntity user1 = new UserEntity();
-    user1.setEmail("user1@domain.com");
-    UserEntity user2 = new UserEntity();
-    user2.setEmail("user2@domain.com");
-    when(userRepository.findAll()).thenReturn(List.of(user1, user2));
-
-    List<UserResponse> users = authService.getAllUsers();
-
-    Assertions.assertNotNull(users);
-    Assertions.assertFalse(users.isEmpty());
-    Assertions.assertEquals(user1.getEmail(), users.get(0).email());
-    Assertions.assertEquals(user2.getEmail(), users.get(1).email());
-  }
-
-  @Test
-  @DisplayName("Get all users no current user should fail")
-  void getAllUsers_noCurrentUser_shouldFail() {
-    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.empty());
-
-    Assertions.assertThrows(
-        UserNotFoundException.class,
-        () -> {
-          authService.getAllUsers();
-        });
-  }
-
-  @Test
-  @DisplayName("Get all users user not found should fail")
-  void getAllUsers_userNotFound_shouldFail() {
-    String email = "user@domain.com";
-    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
-    when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
-
-    Assertions.assertThrows(
-        UserNotFoundException.class,
-        () -> {
-          authService.getAllUsers();
-        });
-  }
-
-  @Test
-  @DisplayName("Get all users user not admin should fail")
-  void getAllUsers_userNotAdmin_shouldFail() {
-    String email = "user@domain.com";
-    when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
-
-    UserEntity existing = new UserEntity();
-    existing.setId(919L);
-    existing.setEmail(email);
-    existing.setAdmin(false);
-    when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
-
-    Assertions.assertThrows(
-        UserForbiddenException.class,
-        () -> {
-          authService.getAllUsers();
-        });
-  }
-
-  @Test
   @DisplayName("Refresh current user token happy path should succeed")
   void refreshCurrentUserToken_happyPath_shouldSucceed() {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     existing.setAdmin(false);
@@ -397,7 +333,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
@@ -415,7 +351,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setName(null);
     existing.setEmail(email);
@@ -443,7 +379,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setName(null);
     existing.setEmail(email);
@@ -475,7 +411,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     existing.setAdmin(false);
@@ -498,7 +434,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     existing.setAdmin(false);
@@ -518,7 +454,7 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     existing.setAdmin(false);
@@ -540,14 +476,14 @@ class AuthServiceTest {
     String email = "user@domain.com";
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(email));
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(775L);
     existing.setName("Test");
     existing.setEmail(email);
     existing.setAdmin(false);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
 
-    Optional<UserEntity> userOptional = authService.getCurrentUser();
+    Optional<User> userOptional = authService.getCurrentUser();
 
     Assertions.assertNotNull(userOptional);
     Assertions.assertTrue(userOptional.isPresent());
@@ -566,7 +502,7 @@ class AuthServiceTest {
   void confirmUserAccount_happyPath_shouldSucceed() {
     String uuid = UUID.randomUUID().toString();
 
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setEmailUuid(UUID.fromString(uuid));
     when(userRepository.findByEmailUuid(UUID.fromString(uuid))).thenReturn(Optional.of(user));
     when(userRepository.save(any())).thenReturn(user);
@@ -609,7 +545,7 @@ class AuthServiceTest {
   void resendEmailConfirmation_happyPath_shouldSucceed() {
     String email = "user@domain.com";
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
@@ -626,7 +562,7 @@ class AuthServiceTest {
   void resendEmailConfirmation_noMailgunApiKey_shouldSucceed() {
     String email = "user@domain.com";
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
@@ -652,7 +588,7 @@ class AuthServiceTest {
   void resetPasswordForUser_happyPath_shouldSucceed() {
     String email = "user@domain.com";
 
-    UserEntity existing = new UserEntity();
+    User existing = new User();
     existing.setId(919L);
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
@@ -682,7 +618,7 @@ class AuthServiceTest {
   @DisplayName("Confirm reset password happy path should succeed")
   void confirmResetPasswordForUser_happyPath_shouldSucceed() {
     String token = "validToken";
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setResetToken(token);
     user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(30));
 
@@ -711,7 +647,7 @@ class AuthServiceTest {
   @DisplayName("Confirm reset password no mailgun api token should succeed")
   void confirmResetPasswordForUser_noMailgunApiToken_shouldSucceed() {
     String token = "validToken";
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setResetToken(token);
     user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(30));
 
@@ -741,7 +677,7 @@ class AuthServiceTest {
     String token = "expiredToken";
     String newPassword = "NewPassword@123";
 
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setResetToken(token);
     user.setResetPasswordExpiration(LocalDateTime.now().minusHours(3));
 
@@ -779,7 +715,7 @@ class AuthServiceTest {
     String newPassword = "NewPassword@123";
     String mismatchedPassword = "Mismatch@123";
 
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setResetToken(token);
     user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(30));
     PasswordResetRequest request = new PasswordResetRequest(token, newPassword, mismatchedPassword);
@@ -799,7 +735,7 @@ class AuthServiceTest {
     String token = "validToken";
     String newPassword = "weak";
 
-    UserEntity user = new UserEntity();
+    User user = new User();
     user.setResetToken(token);
     user.setResetPasswordExpiration(LocalDateTime.now().plusMinutes(30));
 
