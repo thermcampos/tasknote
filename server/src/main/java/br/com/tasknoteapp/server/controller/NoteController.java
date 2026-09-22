@@ -1,11 +1,9 @@
 package br.com.tasknoteapp.server.controller;
 
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.service.NoteService;
-import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +60,7 @@ public class NoteController {
    */
   @PatchMapping("/{id}")
   public ResponseEntity<NoteResponse> patchNote(
-      @PathVariable Long id, @RequestBody @Valid NotePatchRequest noteRequest) {
+      @PathVariable Long id, @RequestBody NoteRequest noteRequest) {
 
     return ResponseEntity.ok(noteService.patchNote(id, noteRequest));
   }
@@ -75,7 +73,7 @@ public class NoteController {
    * @return NoteResponse containing data that was created.
    */
   @PostMapping
-  public ResponseEntity<NoteResponse> postNotes(@RequestBody @Valid NoteRequest noteRequest) {
+  public ResponseEntity<NoteResponse> postNotes(@RequestBody NoteRequest noteRequest) {
     NoteResponse createdNote = noteService.createNote(noteRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(createdNote);
   }

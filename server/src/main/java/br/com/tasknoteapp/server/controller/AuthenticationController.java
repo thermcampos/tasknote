@@ -9,7 +9,6 @@ import br.com.tasknoteapp.server.request.PasswordResetRequest;
 import br.com.tasknoteapp.server.request.ResendConfirmationRequest;
 import br.com.tasknoteapp.server.response.UserResponseWithToken;
 import br.com.tasknoteapp.server.service.AuthService;
-import jakarta.validation.Valid;
 import java.util.Objects;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +36,7 @@ public class AuthenticationController {
    * @throws EmailAlreadyExistsException when the provide email is already in use.
    */
   @PutMapping(path = "/sign-up", consumes = "application/json", produces = "application/json")
-  public ResponseEntity<Void> signUp(@RequestBody @Valid LoginRequest loginRequest) {
+  public ResponseEntity<Void> signUp(@RequestBody LoginRequest loginRequest) {
     authService.signUpNewUser(loginRequest);
     return ResponseEntity.noContent().build();
   }
@@ -51,8 +50,7 @@ public class AuthenticationController {
    *     invalid.
    */
   @PostMapping(path = "/sign-in", consumes = "application/json", produces = "application/json")
-  public ResponseEntity<UserResponseWithToken> signIn(
-      @RequestBody @Valid LoginRequest loginRequest) {
+  public ResponseEntity<UserResponseWithToken> signIn(@RequestBody LoginRequest loginRequest) {
     UserResponseWithToken response = authService.signInUser(loginRequest);
     if (Objects.isNull(response)) {
       throw new InvalidCredentialsException();
@@ -68,7 +66,7 @@ public class AuthenticationController {
    */
   @PostMapping(path = "/email-confirmation", consumes = "application/json")
   public ResponseEntity<Void> confirmEmailAddress(
-      @RequestBody @Valid EmailConfirmationRequest confirmation) {
+        @RequestBody EmailConfirmationRequest confirmation) {
     authService.confirmUserAccount(confirmation.identification());
     return ResponseEntity.noContent().build();
   }
@@ -81,7 +79,7 @@ public class AuthenticationController {
    */
   @PostMapping(path = "/resend-email-confirmation", consumes = "application/json")
   public ResponseEntity<Void> resendEmailConfirmation(
-      @RequestBody @Valid ResendConfirmationRequest request) {
+        @RequestBody ResendConfirmationRequest request) {
     authService.resendEmailConfirmation(request.email());
     return ResponseEntity.noContent().build();
   }
@@ -93,7 +91,7 @@ public class AuthenticationController {
    * @return No content 204 http code.
    */
   @PostMapping(path = "/password-reset", consumes = "application/json")
-  public ResponseEntity<Void> passwordReset(@RequestBody @Valid ResendConfirmationRequest request) {
+  public ResponseEntity<Void> passwordReset(@RequestBody ResendConfirmationRequest request) {
     authService.resetPasswordForUser(request.email());
     return ResponseEntity.noContent().build();
   }
@@ -106,7 +104,7 @@ public class AuthenticationController {
    */
   @PostMapping(path = "/complete-password-reset", consumes = "application/json")
   public ResponseEntity<Void> completePasswordReset(
-      @RequestBody @Valid PasswordResetRequest request) {
+        @RequestBody PasswordResetRequest request) {
     authService.confirmResetPasswordForUser(request);
     return ResponseEntity.noContent().build();
   }

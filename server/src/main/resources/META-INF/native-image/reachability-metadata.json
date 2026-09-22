@@ -233,7 +233,7 @@
           "name": "patchNote",
           "parameterTypes": [
             "java.lang.Long",
-            "br.com.tasknoteapp.server.request.NotePatchRequest"
+            "br.com.tasknoteapp.server.request.NoteRequest"
           ]
         },
         {
@@ -686,7 +686,7 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.request.NotePatchRequest",
+      "type": "br.com.tasknoteapp.server.request.NoteRequest",
       "fields": [
         {
           "name": "description"
@@ -944,7 +944,7 @@
           "name": "patchNote",
           "parameterTypes": [
             "java.lang.Long",
-            "br.com.tasknoteapp.server.request.NotePatchRequest"
+            "br.com.tasknoteapp.server.request.NoteRequest"
           ]
         },
         {

@@ -5,13 +5,13 @@ import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InvalidNoteException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,11 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse createNote(NoteRequest noteRequest) {
+    Optional<String> patchError = isNoteRequestValid(noteRequest);
+    if (patchError.isPresent()) {
+      throw new InvalidNoteException(patchError.get());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Creating note to user ID {}", user.getId());
@@ -161,11 +167,16 @@ public class NoteService {
    * Patch an existing note updating its content.
    *
    * @param noteId The note id from the database.
-   * @param patch An instance of {@link NotePatchRequest} with the new content.
+   * @param patch An instance of {@link NoteRequest} with the new content.
    * @return {@link NoteResponse} containing the updated note.
    */
   @Transactional
-  public NoteResponse patchNote(Long noteId, NotePatchRequest patch) {
+  public NoteResponse patchNote(Long noteId, NoteRequest patch) {
+    Optional<String> patchError = isNoteRequestValid(patch);
+    if (patchError.isPresent()) {
+      throw new InvalidNoteException(patchError.get());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Patching note ID {} to user ID {}", noteId, user.getId());
@@ -533,7 +544,7 @@ public class NoteService {
     return responseList.getFirst();
   }
 
-  private void patchNoteTags(Note note, NotePatchRequest patch, User user) {
+  private void patchNoteTags(Note note, NoteRequest patch, User user) {
     if (!Objects.isNull(patch.tags()) && !patch.tags().isEmpty()) {
       getOrCreateTags(patch.tags(), user, note.id());
     }
@@ -563,7 +574,7 @@ public class NoteService {
     logger.info("Deleted {} orphaned tags from note id {}", deletedOrphan, note.id());
   }
 
-  private void patchNoteUrl(Note note, NotePatchRequest patch, User user) {
+  private void patchNoteUrl(Note note, NoteRequest patch, User user) {
     if (!Objects.isNull(patch.url()) && !patch.url().isBlank()) {
       getOrCreateUrls(List.of(patch.url()), user, note.id());
     }
@@ -655,5 +666,30 @@ public class NoteService {
     NoteUrl savedUrl = noteUrlRepository.save(noteUrl);
     logger.info("URL saved to note ID {}", noteEntity.id());
     return savedUrl;
+  }
+
+  private Optional<String> isNoteRequestValid(NoteRequest request) {
+    if (Objects.isNull(request.title()) || request.title().isBlank()) {
+      return Optional.of("Wrong or missing 'title' key and value.");
+    }
+    if (request.title().length() > 100) {
+      return Optional.of("Invalid value for 'title', length must be less or equal 100");
+    }
+    if (Objects.isNull(request.description()) || request.description().isBlank()) {
+      return Optional.of("Wrong or missing 'description' key and value.");
+    }
+    if (request.description().length() > 50000) {
+      return Optional.of("Invalid value for 'description', length must be less or equal 50000");
+    }
+    if (!Objects.isNull(request.url()) && !request.url().isBlank()) {
+      if (request.url().length() > 200) {
+        return Optional.of("Invalid value for 'url', length must be less or equal 200");
+      }
+      Pattern pattern = Pattern.compile("^(https?://.*|#.*)?$");
+      if (!pattern.matcher(request.url()).matches()) {
+        return Optional.of("Invalid value for 'url', it needs to start with http or https");
+      }
+    }
+    return Optional.empty();
   }
 }

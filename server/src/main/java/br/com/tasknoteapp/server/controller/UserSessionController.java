@@ -1,13 +1,15 @@
 package br.com.tasknoteapp.server.controller;
 
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.request.DeleteAccountRequest;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
 import br.com.tasknoteapp.server.service.UserSessionService;
-import jakarta.validation.Valid;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,11 +49,21 @@ public class UserSessionController {
    * @return {@link UserResponse} with the user information.
    */
   @PostMapping("/delete-account")
-  public ResponseEntity<UserResponse> deleteAccount(
-      @RequestBody @Valid DeleteAccountRequest request) {
+  public ResponseEntity<UserResponse> deleteAccount(@RequestBody DeleteAccountRequest request) {
+    Optional<String> deleteError = isDeleteAccountRequestValid(request);
+    if (deleteError.isPresent()) {
+      throw new InvalidCredentialsException();
+    }
     User user = authService.getCurrentUser().orElseThrow(UserNotFoundException::new);
     authService.verifyCurrentPassword(user, request.password());
     UserResponse deleted = userSessionService.deleteCurrentUserAccount();
     return ResponseEntity.ok(deleted);
+  }
+
+  private Optional<String> isDeleteAccountRequestValid(DeleteAccountRequest request) {
+    if (Objects.isNull(request.password()) || request.password().isBlank()) {
+      return Optional.of("Wrong or missing 'password' key and value.");
+    }
+    return Optional.empty();
   }
 }

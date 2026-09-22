@@ -3,7 +3,6 @@ package br.com.tasknoteapp.server.controller;
 import br.com.tasknoteapp.server.request.UserPatchRequest;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,8 +32,7 @@ public class UserController {
   }
 
   @PatchMapping
-  public ResponseEntity<UserResponse> patchUserInfo(
-      @RequestBody @Valid UserPatchRequest taskRequest) {
+  public ResponseEntity<UserResponse> patchUserInfo(@RequestBody UserPatchRequest taskRequest) {
     UserResponse patched = authService.patchUserInfo(taskRequest);
     return ResponseEntity.ok().body(patched);
   }

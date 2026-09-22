@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
+import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.NoteUrlResponse;
@@ -97,8 +97,8 @@ class NoteControllerTest {
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void patchNote_happyPath_shouldSucceed() throws Exception {
     Long noteId = 123L;
-    NotePatchRequest patchRequest =
-        new NotePatchRequest("New title", "New description", null, List.of("tag"));
+    NoteRequest patchRequest =
+        new NoteRequest("New title", "New description", null, List.of("tag"));
 
     NoteResponse response =
         new NoteResponse(
@@ -144,8 +144,8 @@ class NoteControllerTest {
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void patchNote_notFound_shouldFail() throws Exception {
     Long noteId = 123L;
-    NotePatchRequest patchRequest =
-        new NotePatchRequest("New title", "New description", null, List.of("tag"));
+    NoteRequest patchRequest =
+        new NoteRequest("New title", "New description", null, List.of("tag"));
 
     when(noteService.patchNote(noteId, patchRequest)).thenThrow(new NoteNotFoundException());
 

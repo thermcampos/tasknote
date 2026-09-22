@@ -5,7 +5,6 @@ import br.com.tasknoteapp.server.request.TaskPatchRequest;
 import br.com.tasknoteapp.server.request.TaskRequest;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.service.TaskService;
-import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +60,7 @@ public class TaskController {
    */
   @PatchMapping("/{id}")
   public ResponseEntity<TaskResponse> patchTask(
-      @PathVariable Long id, @RequestBody @Valid TaskPatchRequest taskRequest) {
+      @PathVariable Long id, @RequestBody TaskPatchRequest taskRequest) {
     return ResponseEntity.ok(taskService.patchTask(id, taskRequest));
   }
 
@@ -73,7 +72,7 @@ public class TaskController {
    * @return TaskResponse containing data that was created.
    */
   @PostMapping
-  public ResponseEntity<TaskResponse> postTasks(@RequestBody @Valid TaskRequest taskRequest) {
+  public ResponseEntity<TaskResponse> postTasks(@RequestBody TaskRequest taskRequest) {
     TaskResponse response = taskService.createTask(taskRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }

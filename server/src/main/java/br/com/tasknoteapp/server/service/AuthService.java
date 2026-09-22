@@ -11,6 +11,7 @@ import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.ResetExpiredException;
+import br.com.tasknoteapp.server.exception.SignInException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -108,6 +110,11 @@ public class AuthService {
   @Transactional 
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
+
+    Optional<String> signInValidation = isLoginRequestValid(newUser);
+    if (signInValidation.isPresent()) {
+      throw new SignInException(signInValidation.get());
+    }
 
     if (findByEmail(newUser.email()).isPresent()) {
       throw new EmailAlreadyExistsException();
@@ -186,6 +193,11 @@ public class AuthService {
   @Transactional
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
+
+    Optional<String> signInValidation = isLoginRequestValid(login);
+    if (signInValidation.isPresent()) {
+      throw new SignInException(signInValidation.get());
+    }
 
     Optional<User> userOptional = findByEmail(login.email());
     if (userOptional.isEmpty()) {
@@ -418,6 +430,12 @@ public class AuthService {
   @Transactional
   public void confirmUserAccount(String identification) {
     logger.info("Confirming user email account");
+
+    Optional<String> confirmationMessage = isEmailConfirmationRequestValid(identification);
+    if (confirmationMessage.isPresent()) {
+      throw new SignInException(confirmationMessage.get());
+    }
+
     UUID uuid;
 
     try {
@@ -446,6 +464,11 @@ public class AuthService {
   public void resendEmailConfirmation(String email) {
     logger.info("Re-sending the confirmation email");
 
+    Optional<String> confirmationMessage = isResendConfirmationRequestValid(email);
+    if (confirmationMessage.isPresent()) {
+      throw new SignInException(confirmationMessage.get());
+    }
+
     Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
@@ -468,6 +491,11 @@ public class AuthService {
   @Transactional
   public void resetPasswordForUser(String email) {
     logger.info("Requesting password reset for email {}", email);
+
+    Optional<String> confirmationMessage = isResendConfirmationRequestValid(email);
+    if (confirmationMessage.isPresent()) {
+      throw new SignInException(confirmationMessage.get());
+    }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
@@ -498,6 +526,11 @@ public class AuthService {
   @Transactional
   public void confirmResetPasswordForUser(PasswordResetRequest request) {
     logger.info("Saving new password for token {}", request.token());
+
+    Optional<String> resetMessage = isPasswordResetRequestValid(request);
+    if (resetMessage.isPresent()) {
+      throw new SignInException(resetMessage.get());
+    }
 
     Optional<User> userOptional = userRepository.findByResetToken(request.token());
     if (userOptional.isEmpty()) {
@@ -584,4 +617,49 @@ public class AuthService {
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }
 
+  private Optional<String> isLoginRequestValid(LoginRequest request) {
+    if (Objects.isNull(request.email()) || request.email().isBlank()) {
+      return Optional.of("Wrong or missing 'email' key and value.");
+    }
+    Pattern emailPattern = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    if (!emailPattern.matcher(request.email()).matches()) {
+      return Optional.of("Invalid 'email' please review.");
+    }
+    if (Objects.isNull(request.password()) || request.password().isBlank()) {
+      return Optional.of("Wrong or missing 'password' key and value.");
+    }
+    return Optional.empty();
+  }
+
+  private Optional<String> isEmailConfirmationRequestValid(String identification) {
+    if (Objects.isNull(identification) || identification.isBlank()) {
+      return Optional.of("Wrong or missing 'identification' key and value.");
+    }
+    
+    return Optional.empty();
+  }
+
+  private Optional<String> isResendConfirmationRequestValid(String email) {
+    if (Objects.isNull(email) || email.isBlank()) {
+      return Optional.of("Wrong or missing 'email' key and value.");
+    }
+    Pattern emailPattern = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    if (!emailPattern.matcher(email).matches()) {
+      return Optional.of("Invalid 'email' please review.");
+    }
+    return Optional.empty();
+  }
+
+  private Optional<String> isPasswordResetRequestValid(PasswordResetRequest request) {
+    if (Objects.isNull(request.token()) || request.token().isBlank()) {
+      return Optional.of("Wrong or missing 'token' key and value.");
+    }
+    if (Objects.isNull(request.password()) || request.password().isBlank()) {
+      return Optional.of("Wrong or missing 'password' key and value.");
+    }
+    if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
+      return Optional.of("Wrong or missing 'passwordAgain' key and value.");
+    }
+    return Optional.empty();
+  }
 }
