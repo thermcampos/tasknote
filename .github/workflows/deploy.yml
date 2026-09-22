@@ -56,7 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_OWNER: thermcampos
         run: |
-          BACKEND_TAG="api-v2026.08.31.7"
+          BACKEND_TAG=$(bash .github/scripts/get-latest-tag.sh tasknote/server)
           FRONTEND_TAG=$(bash .github/scripts/get-latest-tag.sh tasknote/client)
           echo "backend_tag=$BACKEND_TAG" >> "$GITHUB_OUTPUT"
           echo "frontend_tag=$FRONTEND_TAG" >> "$GITHUB_OUTPUT"
