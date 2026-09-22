@@ -212,29 +212,9 @@ public class TaskService {
 
     logger.info("Task patched! ID {}", taskId);
 
-    patchTaskUrl(patchedTask, patchRequest);
+    patchTaskUrl(patchedTask, patchRequest, user);
 
-    if (!Objects.isNull(patchRequest.tags()) && !patchRequest.tags().isEmpty()) {
-      getOrCreateTags(patchRequest.tags(), user, taskId);
-    }
-
-    List<TaskNoteTag> taskTags = tagRepository.findAllByUserIdAndTaskIdInList(
-        user.getId(),  List.of(taskId));
-    List<TaskNoteTag> toDelete = new ArrayList<>();
-    for (TaskNoteTag tnt : taskTags) {
-      if (!patchRequest.tags().contains(tnt.name())) {
-        toDelete.add(tnt);
-      }
-    }
-
-    List<Long> tagsIds = toDelete.stream().map((t) -> t.tagId()).toList();
-    if (!tagsIds.isEmpty()) {
-      int deleted = tagRepository.deleteTagFromTask(tagsIds, taskId);
-      logger.info("Deleted {} tags from task id {}", deleted, taskId);
-    }
-
-    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
-    logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, taskId);
+    patchTaskTags(patchedTask, patchRequest, user);
 
     List<TaskResponse> responseList = buildTaskResponse(List.of(patchedTask), user.getId());
     if (responseList.isEmpty()) {
@@ -391,6 +371,44 @@ public class TaskService {
     return tags;
   }
 
+  private Set<TaskUrl> getOrCreateUrls(List<String> urls, User user, Long taskId) {
+    if (Objects.isNull(urls) || urls.isEmpty()) {
+      return new HashSet<>();
+    }
+
+    Set<String> normalizedUrls =
+        urls.stream()
+            .filter(name -> !Objects.isNull(name) && !name.isBlank())
+            .map(name -> name.trim().toLowerCase())
+            .collect(Collectors.toSet());
+
+    logger.info("Handling {} urls: {}", normalizedUrls.size(), normalizedUrls);
+
+    List<TaskUrl> currentTaskUrls = taskUrlRepository.findAllById_taskId(taskId);
+
+    logger.info("Found {} urls: {} for task {}", currentTaskUrls.size(), currentTaskUrls, taskId);
+
+    Set<TaskUrl> taskUrls = new HashSet<>();
+
+    List<TaskUrl> taskUrlsToInsert = new ArrayList<>();
+    for (String url : normalizedUrls) {
+      Optional<TaskUrl> taskUrlOp = currentTaskUrls
+          .stream()
+          .filter((tu) -> tu.id().url().equals(url))
+          .findFirst();
+
+      if (taskUrlOp.isEmpty()) {
+        TaskUrl newTaskUrl = new TaskUrl(new TaskUrlPk(taskId, url));
+        taskUrlsToInsert.add(newTaskUrl);
+        taskUrls.add(newTaskUrl);
+      } else {
+        taskUrls.add(taskUrlOp.get());
+      }
+    }
+
+    return taskUrls;
+  }
+
   private User getCurrentUser() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
@@ -426,22 +444,58 @@ public class TaskService {
     return dueDate;
   }
 
-  private void patchTaskUrl(Task taskEntity, TaskPatchRequest patch) {
-    Long taskId = taskEntity.id();
-    List<TaskUrl> urlsToDelete = taskUrlRepository.findAllById_taskId(taskId);
-    if (!urlsToDelete.isEmpty()) {
-      taskUrlRepository.deleteAllById_taskId(taskId);
-      logger.info("Deleted {} URLs from task ID {}", urlsToDelete.size(), taskId);
-    } else {
-      logger.info("No URLs to delete for task ID {}", taskId);
+  private void patchTaskTags(Task task, TaskPatchRequest patch, User user) {
+    if (!Objects.isNull(patch.tags()) && !patch.tags().isEmpty()) {
+      getOrCreateTags(patch.tags(), user, task.id());
     }
 
-    if (!Objects.isNull(patch.urls())) {
-      List<String> urlListToAdd =
-          patch.urls().stream().filter(u -> !u.isBlank()).map((u) -> u.trim()).toList();
-      saveUrls(taskEntity, urlListToAdd);
-    } else {
-      logger.info("No URLs to add for task ID {}", taskId);
+    List<TaskNoteTag> taskTags = tagRepository
+        .findAllByUserIdAndTaskIdInList(user.getId(),  List.of(task.id()));
+
+    logger.info("Found {} tags for task {}", taskTags.size(), task.id());
+
+    List<TaskNoteTag> toDelete = new ArrayList<>();
+    
+    for (TaskNoteTag tnt : taskTags) {
+      if (!Objects.isNull(patch.tags()) && !patch.tags().contains(tnt.name())) {
+        toDelete.add(tnt);
+      }
     }
+
+    List<Long> tagsIds = toDelete.stream().map((t) -> t.tagId()).toList();
+    
+    if (!tagsIds.isEmpty()) {
+      int deleted = tagRepository.deleteTagFromTask(tagsIds, task.id());
+      logger.info("Deleted {} tags from task id {}", deleted, task.id());
+    }
+
+    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
+  }
+
+  private void patchTaskUrl(Task task, TaskPatchRequest patch, User user) {
+    if (!Objects.isNull(patch.urls()) && !patch.urls().isEmpty()) {
+      getOrCreateUrls(patch.urls(), user, task.id());
+    }
+
+    List<TaskUrl> taskUrls = taskUrlRepository.findAllById_taskId(task.id());
+
+    logger.info("Found {} urls for task {}", taskUrls.size(), task.id());
+
+    int deletedCount = 0;
+    
+    for (TaskUrl tnt : taskUrls) {
+      if (!Objects.isNull(patch.urls()) && !patch.urls().contains(tnt.id().url())) {
+        taskUrlRepository.deleteById(tnt.id());
+        deletedCount++;
+      }
+    }
+
+    if (deletedCount > 0) {
+      logger.info("Deleted {} tags from task id {}", deletedCount, task.id());
+    }
+
+    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
   }
 }

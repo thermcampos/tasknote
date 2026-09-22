@@ -60,6 +60,27 @@ public class TaskUrlRepository {
   }
 
   /**
+   * Delete a TaskUrl by its ID (Task ID and URL).
+   *
+   * @param taskUrlId The ID with Task ID and URL.
+   * @return Number of affected rows.
+   */
+  public int deleteById(TaskUrlPk taskUrlId) {
+    String sql =
+        """
+        DELETE FROM tasknote.task_url
+        WHERE task_id = :taskId
+          AND url = :url
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("taskId", taskUrlId.taskId())
+        .addValue("url", taskUrlId.url());
+
+    return jdbcTemplate.update(sql, params);
+  }
+
+  /**
    * Find all Task URLs given a Task ID.
    *
    * @param taskId The Task ID to search by.

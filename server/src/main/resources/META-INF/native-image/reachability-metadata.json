@@ -191,6 +191,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.HomeService"
           ]
+        },
+        {
+          "name": "getTasksTags",
+          "parameterTypes": []
         }
       ]
     },
@@ -202,6 +206,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.NoteService"
           ]
+        },
+        {
+          "name": "getAllNotes",
+          "parameterTypes": []
         }
       ]
     },
@@ -233,6 +241,17 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.TaskService"
           ]
+        },
+        {
+          "name": "getAllTasks",
+          "parameterTypes": []
+        },
+        {
+          "name": "patchTask",
+          "parameterTypes": [
+            "java.lang.Long",
+            "br.com.tasknoteapp.server.request.TaskPatchRequest"
+          ]
         }
       ]
     },
@@ -244,6 +263,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.AuthService"
           ]
+        },
+        {
+          "name": "getCurrentUser",
+          "parameterTypes": []
         }
       ]
     },
@@ -256,6 +279,10 @@
             "br.com.tasknoteapp.server.service.UserSessionService",
             "br.com.tasknoteapp.server.service.AuthService"
           ]
+        },
+        {
+          "name": "refresh",
+          "parameterTypes": []
         }
       ]
     },
@@ -325,6 +352,12 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "findAllByUserId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
         }
       ]
     },
@@ -346,6 +379,12 @@
           "name": "<init>",
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+          ]
+        },
+        {
+          "name": "findByNoteId",
+          "parameterTypes": [
+            "java.lang.Long"
           ]
         }
       ]
@@ -369,6 +408,19 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "deleteOrphanedTags",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "findAllByUserIdAndTaskIdInList",
+          "parameterTypes": [
+            "java.lang.Long",
+            "java.util.List"
+          ]
         }
       ]
     },
@@ -391,6 +443,25 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "findAllByUserId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "findByIdAndUserId",
+          "parameterTypes": [
+            "java.lang.Long",
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.Task"
+          ]
         }
       ]
     },
@@ -412,6 +483,18 @@
           "name": "<init>",
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+          ]
+        },
+        {
+          "name": "deleteAllById_taskId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "findAllById_taskId",
+          "parameterTypes": [
+            "java.lang.Long"
           ]
         }
       ]
@@ -457,6 +540,12 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "findByEmail",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
         }
       ]
     },
@@ -468,6 +557,162 @@
         },
         {
           "name": "CGLIB$FACTORY_DATA"
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.request.TaskPatchRequest",
+      "fields": [
+        {
+          "name": "description"
+        },
+        {
+          "name": "urls"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.String",
+            "java.util.List",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.util.List"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.JwtAuthenticationResponse",
+      "methods": [
+        {
+          "name": "token",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.NoteResponse",
+      "methods": [
+        {
+          "name": "archived",
+          "parameterTypes": []
+        },
+        {
+          "name": "description",
+          "parameterTypes": []
+        },
+        {
+          "name": "id",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastUpdate",
+          "parameterTypes": []
+        },
+        {
+          "name": "shareToken",
+          "parameterTypes": []
+        },
+        {
+          "name": "shared",
+          "parameterTypes": []
+        },
+        {
+          "name": "tags",
+          "parameterTypes": []
+        },
+        {
+          "name": "title",
+          "parameterTypes": []
+        },
+        {
+          "name": "url",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.TaskResponse",
+      "methods": [
+        {
+          "name": "completed",
+          "parameterTypes": []
+        },
+        {
+          "name": "description",
+          "parameterTypes": []
+        },
+        {
+          "name": "dueDate",
+          "parameterTypes": []
+        },
+        {
+          "name": "dueDateFmt",
+          "parameterTypes": []
+        },
+        {
+          "name": "highPriority",
+          "parameterTypes": []
+        },
+        {
+          "name": "id",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastUpdate",
+          "parameterTypes": []
+        },
+        {
+          "name": "tags",
+          "parameterTypes": []
+        },
+        {
+          "name": "urls",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.UserResponse",
+      "methods": [
+        {
+          "name": "admin",
+          "parameterTypes": []
+        },
+        {
+          "name": "createdAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "email",
+          "parameterTypes": []
+        },
+        {
+          "name": "gravatarImageUrl",
+          "parameterTypes": []
+        },
+        {
+          "name": "inactivatedAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastLogin",
+          "parameterTypes": []
+        },
+        {
+          "name": "name",
+          "parameterTypes": []
+        },
+        {
+          "name": "theme",
+          "parameterTypes": []
+        },
+        {
+          "name": "userId",
+          "parameterTypes": []
         }
       ]
     },
@@ -501,6 +746,20 @@
             "br.com.tasknoteapp.server.service.MailgunEmailService",
             "org.springframework.core.env.Environment"
           ]
+        },
+        {
+          "name": "findByEmail",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "getCurrentUserResponse",
+          "parameterTypes": []
+        },
+        {
+          "name": "refreshCurrentUserToken",
+          "parameterTypes": []
         }
       ]
     },
@@ -560,6 +819,10 @@
             "br.com.tasknoteapp.server.repository.NoteUrlRepository",
             "br.com.tasknoteapp.server.repository.TagRepository"
           ]
+        },
+        {
+          "name": "getAllNotes",
+          "parameterTypes": []
         }
       ]
     },
@@ -585,6 +848,23 @@
             "br.com.tasknoteapp.server.util.AuthUtil",
             "br.com.tasknoteapp.server.repository.TaskUrlRepository",
             "br.com.tasknoteapp.server.repository.TagRepository"
+          ]
+        },
+        {
+          "name": "getAllTasks",
+          "parameterTypes": []
+        },
+        {
+          "name": "getTasksByFilter",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "patchTask",
+          "parameterTypes": [
+            "java.lang.Long",
+            "br.com.tasknoteapp.server.request.TaskPatchRequest"
           ]
         }
       ]
@@ -614,6 +894,10 @@
             "br.com.tasknoteapp.server.service.NoteService",
             "br.com.tasknoteapp.server.repository.TagRepository"
           ]
+        },
+        {
+          "name": "refreshUserSession",
+          "parameterTypes": []
         }
       ]
     },
@@ -873,31 +1157,91 @@
       "type": "io.jsonwebtoken.Jwts$SIG"
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder"
+      "type": "io.jsonwebtoken.gson.io.GsonDeserializer"
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder"
+      "type": "io.jsonwebtoken.gson.io.GsonSerializer"
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder"
+      "type": "io.jsonwebtoken.impl.DefaultClaims"
     },
     {
-      "type": "io.jsonwebtoken.impl.io.StandardCompressionAlgorithms"
+      "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwsHeader"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.io.StandardCompressionAlgorithms",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "io.jsonwebtoken.impl.security.KeysBridge"
     },
     {
-      "type": "io.jsonwebtoken.impl.security.StandardEncryptionAlgorithms"
+      "type": "io.jsonwebtoken.impl.security.StandardEncryptionAlgorithms",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
-      "type": "io.jsonwebtoken.impl.security.StandardKeyAlgorithms"
+      "type": "io.jsonwebtoken.impl.security.StandardKeyAlgorithms",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
-      "type": "io.jsonwebtoken.impl.security.StandardKeyOperations"
+      "type": "io.jsonwebtoken.impl.security.StandardKeyOperations",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
-      "type": "io.jsonwebtoken.impl.security.StandardSecureDigestAlgorithms"
+      "type": "io.jsonwebtoken.impl.security.StandardSecureDigestAlgorithms",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "io.jsonwebtoken.lang.Supplier"
@@ -1020,6 +1364,9 @@
       "type": "jakarta.validation.Constraint"
     },
     {
+      "type": "jakarta.validation.ConstraintValidator"
+    },
+    {
       "type": "jakarta.validation.Valid"
     },
     {
@@ -1041,10 +1388,54 @@
       "type": "jakarta.validation.constraints.NotNull"
     },
     {
-      "type": "jakarta.validation.constraints.Pattern"
+      "type": "jakarta.validation.constraints.Pattern",
+      "methods": [
+        {
+          "name": "flags",
+          "parameterTypes": []
+        },
+        {
+          "name": "groups",
+          "parameterTypes": []
+        },
+        {
+          "name": "message",
+          "parameterTypes": []
+        },
+        {
+          "name": "payload",
+          "parameterTypes": []
+        },
+        {
+          "name": "regexp",
+          "parameterTypes": []
+        }
+      ]
     },
     {
-      "type": "jakarta.validation.constraints.Size"
+      "type": "jakarta.validation.constraints.Size",
+      "methods": [
+        {
+          "name": "groups",
+          "parameterTypes": []
+        },
+        {
+          "name": "max",
+          "parameterTypes": []
+        },
+        {
+          "name": "message",
+          "parameterTypes": []
+        },
+        {
+          "name": "min",
+          "parameterTypes": []
+        },
+        {
+          "name": "payload",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "jakarta.validation.executable.ExecutableValidator"
@@ -1238,6 +1629,9 @@
       ]
     },
     {
+      "type": "java.lang.reflect.RecordComponent"
+    },
+    {
       "type": "java.lang.reflect.Type"
     },
     {
@@ -1277,6 +1671,15 @@
       "type": "java.security.KeyStoreSpi"
     },
     {
+      "type": "java.security.interfaces.EdECKey"
+    },
+    {
+      "type": "java.security.interfaces.XECKey"
+    },
+    {
+      "type": "java.security.spec.NamedParameterSpec"
+    },
+    {
       "type": "java.sql.Date"
     },
     {
@@ -1292,10 +1695,138 @@
       "type": "java.sql.Timestamp"
     },
     {
+      "type": "java.sql.Types",
+      "fields": [
+        {
+          "name": "ARRAY"
+        },
+        {
+          "name": "BIGINT"
+        },
+        {
+          "name": "BINARY"
+        },
+        {
+          "name": "BIT"
+        },
+        {
+          "name": "BLOB"
+        },
+        {
+          "name": "BOOLEAN"
+        },
+        {
+          "name": "CHAR"
+        },
+        {
+          "name": "CLOB"
+        },
+        {
+          "name": "DATALINK"
+        },
+        {
+          "name": "DATE"
+        },
+        {
+          "name": "DECIMAL"
+        },
+        {
+          "name": "DISTINCT"
+        },
+        {
+          "name": "DOUBLE"
+        },
+        {
+          "name": "FLOAT"
+        },
+        {
+          "name": "INTEGER"
+        },
+        {
+          "name": "JAVA_OBJECT"
+        },
+        {
+          "name": "LONGNVARCHAR"
+        },
+        {
+          "name": "LONGVARBINARY"
+        },
+        {
+          "name": "LONGVARCHAR"
+        },
+        {
+          "name": "NCHAR"
+        },
+        {
+          "name": "NCLOB"
+        },
+        {
+          "name": "NULL"
+        },
+        {
+          "name": "NUMERIC"
+        },
+        {
+          "name": "NVARCHAR"
+        },
+        {
+          "name": "OTHER"
+        },
+        {
+          "name": "REAL"
+        },
+        {
+          "name": "REF"
+        },
+        {
+          "name": "REF_CURSOR"
+        },
+        {
+          "name": "ROWID"
+        },
+        {
+          "name": "SMALLINT"
+        },
+        {
+          "name": "SQLXML"
+        },
+        {
+          "name": "STRUCT"
+        },
+        {
+          "name": "TIME"
+        },
+        {
+          "name": "TIMESTAMP"
+        },
+        {
+          "name": "TIMESTAMP_WITH_TIMEZONE"
+        },
+        {
+          "name": "TIME_WITH_TIMEZONE"
+        },
+        {
+          "name": "TINYINT"
+        },
+        {
+          "name": "VARBINARY"
+        },
+        {
+          "name": "VARCHAR"
+        }
+      ]
+    },
+    {
       "type": "java.sql.Wrapper"
     },
     {
+      "type": "java.util.AbstractCollection"
+    },
+    {
       "type": "java.util.ArrayList"
+    },
+    {
+      "type": "java.util.Collection"
     },
     {
       "type": "java.util.Enumeration"
@@ -1307,13 +1838,28 @@
       "type": "java.util.HashSet"
     },
     {
+      "type": "java.util.ImmutableCollections$AbstractImmutableCollection"
+    },
+    {
+      "type": "java.util.ImmutableCollections$AbstractImmutableList"
+    },
+    {
+      "type": "java.util.ImmutableCollections$ListN"
+    },
+    {
       "type": "java.util.List"
+    },
+    {
+      "type": "java.util.RandomAccess"
     },
     {
       "type": "java.util.SequencedCollection"
     },
     {
       "type": "java.util.Set"
+    },
+    {
+      "type": "java.util.concurrent.Callable"
     },
     {
       "type": "java.util.concurrent.Executor"
@@ -1794,51 +2340,6 @@
       "type": "org.hibernate.validator.HibernateValidator"
     },
     {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.EmailValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.NotBlankValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.NotNullValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.PatternValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "org.hibernate.validator.internal.constraintvalidators.bv.notempty.NotEmptyValidatorForCharSequence",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "org.hibernate.validator.internal.constraintvalidators.bv.size.SizeValidatorForCharSequence",
       "methods": [
         {
@@ -1989,6 +2490,9 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "org.springframework.aop.scope.ScopedObject"
     },
     {
       "type": "org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor"
@@ -6922,6 +7426,12 @@
       "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
     },
     {
+      "glob": "META-INF/services/io.jsonwebtoken.io.Deserializer"
+    },
+    {
+      "glob": "META-INF/services/io.jsonwebtoken.io.Serializer"
+    },
+    {
       "glob": "META-INF/services/jakarta.el.ExpressionFactory"
     },
     {
@@ -7273,6 +7783,12 @@
       "glob": "jakarta/servlet/Filter.class"
     },
     {
+      "glob": "jakarta/servlet/LocalStrings.properties"
+    },
+    {
+      "glob": "jakarta/servlet/LocalStrings_en.properties"
+    },
+    {
       "glob": "jakarta/servlet/http/LocalStrings.properties"
     },
     {
@@ -7319,6 +7835,9 @@
     },
     {
       "glob": "org/apache/catalina/authenticator/LocalStrings.properties"
+    },
+    {
+      "glob": "org/apache/catalina/authenticator/jaspic/LocalStrings.properties"
     },
     {
       "glob": "org/apache/catalina/connector/LocalStrings.properties"
@@ -7379,6 +7898,9 @@
     },
     {
       "glob": "org/apache/coyote/http11/LocalStrings.properties"
+    },
+    {
+      "glob": "org/apache/coyote/http11/filters/LocalStrings.properties"
     },
     {
       "glob": "org/apache/naming/LocalStrings.properties"
@@ -8279,10 +8801,16 @@
       "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
     },
     {
+      "bundle": "jakarta.servlet.LocalStrings"
+    },
+    {
       "bundle": "jakarta.servlet.http.LocalStrings"
     },
     {
       "bundle": "org.apache.catalina.authenticator.LocalStrings"
+    },
+    {
+      "bundle": "org.apache.catalina.authenticator.jaspic.LocalStrings"
     },
     {
       "bundle": "org.apache.catalina.connector.LocalStrings"
@@ -8325,6 +8853,9 @@
     },
     {
       "bundle": "org.apache.coyote.http11.LocalStrings"
+    },
+    {
+      "bundle": "org.apache.coyote.http11.filters.LocalStrings"
     },
     {
       "bundle": "org.apache.naming.LocalStrings"
