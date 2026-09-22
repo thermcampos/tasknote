@@ -7,7 +7,7 @@ services:
     user: ${UID:-1000}:${GID:-1000}
     ports: 
       - "5000:5000"
-    entrypoint: sh -c "npm i --no-update-notifier && export NGROK=1 && npm start"
+    entrypoint: sh -c "npm i --no-update-notifier && npm start"
     environment:
       VITE_BACKEND_SERVER: "/api"
       VITE_BUILD: nightly
@@ -22,21 +22,19 @@ services:
       timeout: 15s
       retries: 3
       start_period: 10s
-    networks:
-      - tasknote
+    depends_on:
+      tasknote-api:
+        condition: service_healthy
 
   tasknote-api:
     container_name: tasknote-api
-    depends_on:
-      tasknote-db:
-        condition: service_started
     user: ${UID:-1000}:${GID:-1000}
     environment:
       POSTGRES_DB: tasknote
       POSTGRES_HOST: tasknote-db
       POSTGRES_USER: tasknoteuser
       POSTGRES_PASSWORD: default
-      CORS_ALLOWED_ORIGINS: http://localhost:5000,http://tasknote-web:5000,https://flattop-depth-dropper.ngrok-free.dev
+      CORS_ALLOWED_ORIGINS: http://localhost:5000, http://tasknote-web:5000, https://flattop-depth-dropper.ngrok-free.dev
       SECURITY_KEY: this-is-a-very-long-security-key-for-dev
       MAILGUN_APIKEY: invalid-api-key-only-placeholder
     ports:
@@ -53,21 +51,8 @@ services:
       timeout: 15s
       retries: 3
       start_period: 10s
-    networks:
-      - tasknote
-
-  schemaspy:
-    container_name: schemaspy
-    profiles: ["schemaspy"]
-    image: schemaspy/schemaspy:7.0.2
-    user: ${UID:-1000}:${GID:-1000}
-    volumes:
-      - "./schemaspy/output:/output"
-      - "./schemaspy/postgres.properties:/schemaspy.properties"
     depends_on:
       tasknote-db:
-        condition: service_healthy
-      tasknote-api:
         condition: service_healthy
 
   tasknote-db:
@@ -85,8 +70,19 @@ services:
       timeout: 15s
       retries: 3
       start_period: 10s
-    networks:
-      - tasknote
 
-networks:
-  tasknote:
+  tasknote-ngrok:
+    container_name: tasknote-ngrok
+    image: ngrok/ngrok:3-alpine
+    restart: unless-stopped
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:?NGROK_AUTHTOKEN must be set}
+    command:
+      - http
+      - --url=https://flattop-depth-dropper.ngrok-free.dev
+      - tasknote-web:5000
+    ports:
+      - "4040:4040"
+    depends_on:
+      tasknote-web:
+        condition: service_healthy

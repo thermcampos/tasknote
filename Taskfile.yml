@@ -5,59 +5,91 @@ version: '3'
 tasks:
   docker-build-web:
     desc: Build the tasknote-web prod-ready docker image, tagging it as candidate
-    cmd: docker build --no-cache --build-arg VITE_BUILD="v999-$(date '+%Y-%m-%d-%H%M%S')" --build-arg SOURCE_PR="v999-123456789-$(date '+%Y-%m-%d-%H%M%S')" -t rmcampos/tasknote-app:latest ./client
+    cmd: docker build --no-cache --build-arg VITE_BUILD="v999-$(date '+%Y-%m-%d-%H%M%S')" --build-arg SOURCE_PR="v999-123456789-$(date '+%Y-%m-%d-%H%M%S')" -t ghcr.io/thermcampos/tasknote/client:latest ./client
 
   docker-build-api:
     desc: Build the tasknote-api prod-ready docker image, tagging it as candidate
-    cmd: cd server && ./mvnw -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=rmcampos/tasknote-api:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
+    cmd: cd server && ./mvnw -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/thermcampos/tasknote/server:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
 
-  prod-up-web:
-    desc: Speed up the tasknote-web prod-like image, building it if required
-    cmd: docker compose -f docker-compose.prod.yml up -d tasknote-web
+  db-up:
+    desc: Starts Postgres database container
+    cmd: docker compose -f compose.dev.yaml up -d tasknote-db
 
-  prod-up-api:
-    desc: Speed up the tasknote-api prod-like image, building it if required
-    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-api
+  db-down:
+    desc: Stops and remove Postgres database container
+    cmd: docker compose -f compose.dev.yaml down tasknote-db -v --remove-orphans
 
-  prod-up-db:
-    desc: Start the database container
-    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-db
+  schemaspy-up:
+    desc: Starts database, API, SchemaSpy containers and a Python http server
+    cmd: docker compose -f compose.schemaspy.yaml up -d
 
-  prod-up:
-    desc: Speed up the prod-like images for both tasknote-api and tasknote-web, building them if required
-    cmd: docker compose -f docker-compose.prod.yml up -d
+  schemaspy-down:
+    desc: Stops and remove database, API, SchemaSpy and the Python http server
+    cmd: docker compose -f compose.schemaspy.yaml down -v --remove-orphans
 
-  prod-stop:
-    desc: Stop prod containers
-    cmd: docker compose -f docker-compose.prod.yml stop
+  dev-up:
+    desc: Starts database, API and web app locally
+    cmd: doppler run --project tasknote --config dev -- docker compose -f compose.dev.yaml up -d
 
-  prod-tier-down:
-    desc: Stop and remove prod containers
-    cmd: docker compose -f docker-compose.prod.yml down --remove-orphans
+  dev-down:
+    desc: Stops and remove database, API and web app containers
+    cmd: export NGROK_AUTHTOKEN=1 && docker compose -f compose.dev.yaml down -v --remove-orphans
 
-  dev-run-web:
-    desc: Get the tasknote-web up and running locally inside docker ready for development
-    cmd: docker compose -f docker-compose.dev.yml up -d tasknote-web
+  prod-like-up:
+    desc: Starts Postgres, GraalVM API and Docker web app using prod images
+    cmd: docker compose -f compose.prod-like.yaml up -d
 
-  dev-run-api:
-    desc: Get the tasknote-api up and running locally inside docker ready for development
-    cmd: docker compose -f docker-compose.dev.yml up -d tasknote-api
+  prod-like-down:
+    desc: Stops and remove Postgres, GraalVM API and Docker web app using prod images
+    cmd: docker compose -f compose.prod-like.yaml down -v --remove-orphans
 
-  dev-run-db:
-    desc: Get the tasknote-db up and running locally inside docker ready for development
-    cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.dev.yml up -d tasknote-db
+  # prod-up-web:
+  #   desc: Speed up the tasknote-web prod-like image, building it if required
+  #   cmd: docker compose -f docker-compose.prod.yml up -d tasknote-web
 
-  dev-run:
-    desc: Get both tasknote-web and tasknote-api up and running locally inside docker ready for development
-    cmd: docker compose -f docker-compose.dev.yml up -d
+  # prod-up-api:
+  #   desc: Speed up the tasknote-api prod-like image, building it if required
+  #   cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-api
 
-  dev-stop:
-    desc: Stop dev containers
-    cmd: docker compose -f docker-compose.dev.yml stop
+  # prod-up-db:
+  #   desc: Start the database container
+  #   cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.prod.yml up -d tasknote-db
 
-  dev-tier-down:
-    desc: Stop and remove dev containers
-    cmd: docker compose -f docker-compose.dev.yml down --remove-orphans
+  # prod-up:
+  #   desc: Speed up the prod-like images for both tasknote-api and tasknote-web, building them if required
+  #   cmd: docker compose -f docker-compose.prod.yml up -d
+
+  # prod-stop:
+  #   desc: Stop prod containers
+  #   cmd: docker compose -f docker-compose.prod.yml stop
+
+  # prod-tier-down:
+  #   desc: Stop and remove prod containers
+  #   cmd: docker compose -f docker-compose.prod.yml down --remove-orphans
+
+  # dev-run-web:
+  #   desc: Get the tasknote-web up and running locally inside docker ready for development
+  #   cmd: docker compose -f docker-compose.dev.yml up -d tasknote-web
+
+  # dev-run-api:
+  #   desc: Get the tasknote-api up and running locally inside docker ready for development
+  #   cmd: docker compose -f docker-compose.dev.yml up -d tasknote-api
+
+  # dev-run-db:
+  #   desc: Get the tasknote-db up and running locally inside docker ready for development
+  #   cmd: doppler run --project tasknote --config dev -- docker compose -f docker-compose.dev.yml up -d tasknote-db
+
+  # dev-run:
+  #   desc: Get both tasknote-web and tasknote-api up and running locally inside docker ready for development
+  #   cmd: docker compose -f docker-compose.dev.yml up -d
+
+  # dev-stop:
+  #   desc: Stop dev containers
+  #   cmd: docker compose -f docker-compose.dev.yml stop
+
+  # dev-tier-down:
+  #   desc: Stop and remove dev containers
+  #   cmd: docker compose -f docker-compose.dev.yml down --remove-orphans
 
   test-api:
     desc: Run all backend checks (checkstyle, build, unit and integration tests). Integration tests run on Testcontainers PostgreSQL, so Docker is required
@@ -73,6 +105,7 @@ tasks:
 
   run-native-tracing:
     desc: Buidl and run with native agent to trace reflections
+    deps: [db-up]
     cmds:
       - |
         cd server && \
