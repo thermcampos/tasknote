@@ -103,6 +103,27 @@ public class TagRepository {
   }
 
   /**
+   * Update the relationship for a tag and a note.
+   *
+   * @param tag The Tag instance to be updated.
+   * @param noteId The Note ID to be updated.
+   */
+  public void updateTagForNote(Tag tag, Long noteId) {
+    String sql =
+        """
+        INSERT INTO tasknote.note_tags (note_id, tag_id)
+        VALUES (:noteId, :tagId)
+        ON CONFLICT DO NOTHING;
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("noteId", noteId)
+        .addValue("tagId", tag.id());
+
+    jdbcTemplate.update(sql, params);
+  }
+
+  /**
    * Delete the tag x task relashionship for a tag ID lists.
    *
    * @param tagIds List of Tag IDs.
@@ -119,6 +140,28 @@ public class TagRepository {
 
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("taskId", taskId)
+        .addValue("tagIds", tagIds);
+
+    return jdbcTemplate.update(sql, params);
+  }
+
+  /**
+   * Delete the tag x note relashionship for a tag ID lists.
+   *
+   * @param tagIds List of Tag IDs.
+   * @param noteId Note ID.
+   * @return Number of affected rows.
+   */
+  public int deleteTagFromNote(List<Long> tagIds, Long noteId) {
+    String sql =
+        """
+        DELETE FROM tasknote.note_tags
+        WHERE note_id = :noteId
+          AND tag_id IN (:tagIds)
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("noteId", noteId)
         .addValue("tagIds", tagIds);
 
     return jdbcTemplate.update(sql, params);

@@ -138,18 +138,15 @@ public class NoteService {
     logger.info("Note created! ID {}", created.id());
 
     if (!Objects.isNull(noteRequest.tags())) {
-      Set<Tag> tagSet = getOrCreateTags(noteRequest.tags(), user, created.id());
-      logger.info("Get or create tags for note id {}, set returned {} items",
-          created.id(), tagSet.size());
+      getOrCreateTags(noteRequest.tags(), user, created.id());
     }
 
     if (!Objects.isNull(noteRequest.url()) && !noteRequest.url().isEmpty()) {
       saveUrl(created, noteRequest.url());
     }
 
-    tagRepository.deleteOrphanedTags(user.getId());
-
-    logger.info("Finished note creation!");
+    int deleted = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} tags for user", deleted);
 
     List<NoteResponse> responseList = buildNoteResponse(List.of(created), user.getId());
     if (responseList.isEmpty()) {
@@ -170,7 +167,7 @@ public class NoteService {
   public NoteResponse patchNote(Long noteId, NotePatchRequest patch) {
     User user = getCurrentUser();
 
-    logger.info("Patching task ID {} to user ID {}", noteId, user.getId());
+    logger.info("Patching note ID {} to user ID {}", noteId, user.getId());
 
     Optional<Note> note = noteRepository.findByIdAndUserId(noteId, user.getId());
     if (note.isEmpty()) {
@@ -182,27 +179,13 @@ public class NoteService {
       throw new NoteArchivedException();
     }
 
-    String title = noteEntity.title();
+    var title = noteEntity.title();
     if (!Objects.isNull(patch.title()) && !patch.title().isBlank()) {
       title = patch.title().trim();
     }
-    String description = noteEntity.description();
+    var description = noteEntity.description();
     if (!Objects.isNull(patch.description()) && !patch.description().isBlank()) {
       description = patch.description();
-    }
-    if (!Objects.isNull(patch.tags())) {
-      Set<Tag> tagSet = getOrCreateTags(patch.tags(), user, noteId);
-      logger.info("Get or create tags for note id {}, set returned {} items",
-          noteId, tagSet.size());
-    }
-
-    noteUrlRepository.deleteByNoteId(noteId);
-    logger.info("URL deleted from note ID {} during patch", noteId);
-
-    if (!Objects.isNull(patch.url()) && !patch.url().isBlank()) {
-      saveUrl(noteEntity, patch.url());
-    } else {
-      logger.info("No URLs to patch for note ID {}", noteId);
     }
 
     Note noteToPatch = new Note(
@@ -218,9 +201,11 @@ public class NoteService {
 
     Note patchedNote = noteRepository.save(noteToPatch);
 
-    tagRepository.deleteOrphanedTags(user.getId());
-
     logger.info("Note patched! ID {}", patchedNote.id());
+
+    patchNoteUrl(patchedNote, patch, user);
+
+    patchNoteTags(patchedNote, patch, user);
 
     List<NoteResponse> responseList = buildNoteResponse(List.of(patchedNote), user.getId());
     if (responseList.isEmpty()) {
@@ -299,7 +284,7 @@ public class NoteService {
 
     List<Note> notes =
         noteRepository.findAllBySearchTerm(user.getId(), searchTerm.toUpperCase());
-    logger.info("{} tasks found!", notes.size());
+    logger.info("{} notes found!", notes.size());
     
     return buildNoteResponse(notes, user.getId());
   }
@@ -431,16 +416,23 @@ public class NoteService {
             .map(name -> name.trim().toLowerCase())
             .collect(Collectors.toSet());
 
-    logger.info("getOrCreateTags - tags {}", tagNames);
+    logger.info("Handling {} tags: {}", normalizedNames.size(), normalizedNames);
+
     Set<Tag> tags = new HashSet<>();
     for (String name : normalizedNames) {
-      Tag tag = tagRepository
-              .findByUserIdAndName(user.getId(), name)
-              .orElseGet(() -> tagRepository.save(
-                new Tag(null, name, user.getId()), "notes", noteId));
-      tags.add(tag);
+      Optional<Tag> tagOp = tagRepository.findByUserIdAndName(user.getId(), name);
+
+      if (tagOp.isEmpty()) {
+        Tag newTag = tagRepository.save(new Tag(null, name, user.getId()), "notes", noteId);
+        tags.add(newTag);
+        logger.info("Saved new tag {} for note {}", name, noteId);
+      } else {
+        tagRepository.updateTagForNote(tagOp.get(), noteId);
+        tags.add(tagOp.get());
+        logger.info("Kept existing tag {} for note {}", name, noteId);
+      }
     }
-    logger.info("getOrCreateTags - tags completed {}", tags);
+
     return tags;
   }
 
@@ -454,25 +446,6 @@ public class NoteService {
     Optional<NoteUrl> noteUrl = noteUrlRepository.findByNoteId(noteId);
     return noteUrl.isPresent() ? noteUrl.get().url() : null;
   }
-
-  // private List<NoteResponse> getNotesUrl(List<Note> notes) {
-  //   List<Long> noteIds = notes.stream().map((n) -> n.id()).toList();
-  //   if (noteIds.isEmpty()) {
-  //     // TODO: review empty tag list
-  //     return notes.stream().map(n -> NoteResponse.fromEntity(n, null, List.of())).toList();
-  //   }
-  //   List<NoteUrl> urls = noteUrlRepository.findAllByNoteIdList(noteIds);
-  //   Map<Long, String> noteUrls = new HashMap<>();
-  //   for (NoteUrl nu : urls) {
-  //     noteUrls.put(nu.noteId(), nu.url());
-  //   }
-
-  //   // TODO: review empty tag list
-  //   return notes
-  //       .stream()
-  //       .map(n -> NoteResponse.fromEntity(n, noteUrls.get(n.id()), List.of()))
-  //       .toList();
-  // }
 
   /**
    * Archive a note, disabling edits and revoking public sharing.
@@ -560,13 +533,106 @@ public class NoteService {
     return responseList.getFirst();
   }
 
+  private void patchNoteTags(Note note, NotePatchRequest patch, User user) {
+    if (!Objects.isNull(patch.tags()) && !patch.tags().isEmpty()) {
+      getOrCreateTags(patch.tags(), user, note.id());
+    }
+
+    List<TaskNoteTag> noteTags = tagRepository
+        .findAllByUserIdAndNoteIdInList(user.getId(),  List.of(note.id()));
+
+    logger.info("Found {} tags for note {}", noteTags.size(), note.id());
+
+    List<TaskNoteTag> toDelete = new ArrayList<>();
+    
+    for (TaskNoteTag tnt : noteTags) {
+      if (!Objects.isNull(patch.tags()) && !patch.tags().contains(tnt.name())) {
+        logger.info("Flagged tag {} to be deleted for note {}", tnt, note.id());
+        toDelete.add(tnt);
+      }
+    }
+
+    List<Long> tagsIds = toDelete.stream().map((t) -> t.tagId()).toList();
+    
+    if (!tagsIds.isEmpty()) {
+      int deleted = tagRepository.deleteTagFromNote(tagsIds, note.id());
+      logger.info("Deleted {} tags from note id {}", deleted, note.id());
+    }
+
+    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} orphaned tags from note id {}", deletedOrphan, note.id());
+  }
+
+  private void patchNoteUrl(Note note, NotePatchRequest patch, User user) {
+    if (!Objects.isNull(patch.url()) && !patch.url().isBlank()) {
+      getOrCreateUrls(List.of(patch.url()), user, note.id());
+    }
+
+    List<NoteUrl> noteUrls = noteUrlRepository.findAllByNoteIdList(List.of(note.id()));
+
+    logger.info("Found {} urls for note {}", noteUrls.size(), note.id());
+
+    int deletedCount = 0;
+    
+    for (NoteUrl nu : noteUrls) {
+      if (!Objects.isNull(patch.url()) && !patch.url().contains(nu.url())) {
+        noteUrlRepository.deleteByNoteId(note.id());
+        deletedCount++;
+      }
+    }
+
+    if (deletedCount > 0) {
+      logger.info("Deleted {} url from note id {}", deletedCount, note.id());
+    }
+
+    int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
+    logger.info("Deleted {} orphaned urls from note id {}", deletedOrphan, note.id());
+  }
+
+  private Set<NoteUrl> getOrCreateUrls(List<String> urls, User user, Long noteId) {
+    if (Objects.isNull(urls) || urls.isEmpty()) {
+      return new HashSet<>();
+    }
+
+    Set<String> normalizedUrls =
+        urls.stream()
+            .filter(name -> !Objects.isNull(name) && !name.isBlank())
+            .map(name -> name.trim().toLowerCase())
+            .collect(Collectors.toSet());
+
+    logger.info("Handling {} urls: {}", normalizedUrls.size(), normalizedUrls);
+
+    List<NoteUrl> currentNoteUrls = noteUrlRepository.findAllByNoteIdList(List.of(noteId));
+
+    logger.info("Found {} urls: {} for note {}", currentNoteUrls.size(), currentNoteUrls, noteId);
+
+    Set<NoteUrl> noteUrls = new HashSet<>();
+
+    for (String url : normalizedUrls) {
+      Optional<NoteUrl> noteUrlOp = currentNoteUrls
+          .stream()
+          .filter((tu) -> tu.url().equals(url))
+          .findFirst();
+
+      if (noteUrlOp.isEmpty()) {
+        NoteUrl newNotekUrl = new NoteUrl(null, noteId,url);
+        NoteUrl added = noteUrlRepository.save(newNotekUrl);
+        noteUrls.add(added);
+      } else {
+        noteUrls.add(noteUrlOp.get());
+      }
+    }
+
+    return noteUrls;
+  }
+  
   private List<NoteResponse> buildNoteResponse(List<Note> noteList, Long userId) {
     if (noteList.isEmpty()) {
       return List.of();
     }
 
     List<Long> allNotesIds = noteList.stream().map((t) -> t.id()).toList();
-    List<TaskNoteTag> notesTags = tagRepository.findAllByUserIdAndTaskIdInList(userId, allNotesIds);
+    List<TaskNoteTag> notesTags = tagRepository.findAllByUserIdAndNoteIdInList(userId, allNotesIds);
     Map<Long, List<Tag>> tagMap = new HashMap<>();
     for (TaskNoteTag noteTag : notesTags) {
       tagMap.putIfAbsent(noteTag.taskNoteId(), new ArrayList<>());
