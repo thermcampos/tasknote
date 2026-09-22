@@ -233,7 +233,6 @@ public class AuthService {
       logger.error(
           "BadCredentialsException when logging in user {}: {}", user.getId(), e.getMessage());
 
-      // store attempt
       UserPwdLimit pwdLimit = new UserPwdLimit(null, LocalDateTime.now(), user.getId());
       userPwdLimitRepository.save(pwdLimit);
 
@@ -376,7 +375,6 @@ public class AuthService {
     }
 
     if (emailChanged && hasValidMailgunApiKey()) {
-      // send email to older and new account
       logger.info(
           "Email changed from {} to {}", email, SecurityUtil.redactEmail(patchRequest.email()));
       mailgunEmailService.sendEmailChangedNotification(currentUser, email);

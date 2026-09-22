@@ -185,7 +185,7 @@ class TaskServiceTest {
         .thenReturn(Optional.of(tagEntity));
 
     Task entity = new Task(
-        null,
+        188L,
         null,
         request.description(),
         Boolean.FALSE,
@@ -197,11 +197,15 @@ class TaskServiceTest {
     );
     when(taskRepository.save(any())).thenReturn(entity);
 
-    taskService.createTask(request);
+    TaskNoteTag taskTags = new TaskNoteTag(tagEntity.id(), tagEntity.name(), tagEntity.userId(),
+        entity.id());
+    when(tagRepository.findAllByUserIdAndTaskIdInList(USER_ID, List.of(entity.id())))
+            .thenReturn(List.of(taskTags));
+
+    TaskResponse response = taskService.createTask(request);
 
     assertNotNull(entity);
-    // FIXME get tags
-    // assertTrue(entity.getTags().stream().anyMatch(t -> t.getName().equals("development")));
+    assertTrue(response.tags().stream().anyMatch(t -> t.equals("development")));
   }
 
   @Test
@@ -502,7 +506,6 @@ class TaskServiceTest {
 
     TaskUrl urlEntity = new TaskUrl(new TaskUrlPk(taskId, "www.url.com"));
     when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of(urlEntity));
-    //when(taskUrlRepository.deleteAllById_taskId(taskId)).thenReturn(1);
 
     final String dueDate = "2026-12-31";
 
@@ -528,8 +531,6 @@ class TaskServiceTest {
     List<String> tags = List.of("test");
     TaskPatchRequest patch =
         new TaskPatchRequest(true, "Test task updated", List.of(url), dueDate, false, tags);
-
-    when(taskUrlRepository.saveAll(any())).thenReturn(0);
 
     TaskNoteTag taskTags = new TaskNoteTag(tag.id(), tag.name(), tag.userId(),
         savedTask.id());

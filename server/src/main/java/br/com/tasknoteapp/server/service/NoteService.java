@@ -6,6 +6,7 @@ import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
+import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
@@ -256,8 +257,7 @@ public class NoteService {
 
     Note noteEntity = note.get();
     if (!noteEntity.archived()) {
-      // FIXME create a not archived exception
-      throw new NoteArchivedException();
+      throw new NoteNotArchivedException();
     }
 
     noteUrlRepository.deleteByNoteId(noteId);
@@ -615,7 +615,7 @@ public class NoteService {
           .findFirst();
 
       if (noteUrlOp.isEmpty()) {
-        NoteUrl newNotekUrl = new NoteUrl(null, noteId,url);
+        NoteUrl newNotekUrl = new NoteUrl(null, noteId, url);
         NoteUrl added = noteUrlRepository.save(newNotekUrl);
         noteUrls.add(added);
       } else {

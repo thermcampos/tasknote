@@ -12,7 +12,7 @@ import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.entity.UserPwdLimit;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
-import br.com.tasknoteapp.server.exception.NoteArchivedException;
+import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
@@ -203,7 +203,7 @@ class AccountDeletionIntTest {
 
     Long noteId = activeNote.id();
 
-    assertThrows(NoteArchivedException.class, () -> noteService.deleteNote(noteId));
+    assertThrows(NoteNotArchivedException.class, () -> noteService.deleteNote(noteId));
 
     assertTrue(noteRepository.findById(noteId).isPresent());
   }
