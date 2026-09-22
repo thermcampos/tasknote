@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
+import br.com.tasknoteapp.server.exception.SignInException;
 import br.com.tasknoteapp.server.request.LoginRequest;
 import br.com.tasknoteapp.server.response.UserResponseWithToken;
 import br.com.tasknoteapp.server.service.AuthService;
@@ -78,19 +79,7 @@ class AuthenticationControllerTest {
         new LoginRequest("user@domain..com", "abcde123456", "abcde123456", "en");
     final String token = "xaxbxcxdx1x2x3@A";
 
-    UserResponseWithToken response =
-        new UserResponseWithToken(
-            123L,
-            null,
-            request.email(),
-            false,
-            LocalDateTime.now(),
-            null,
-            null,
-            null,
-            token,
-            "en");
-    when(authService.signUpNewUser(request)).thenReturn(response);
+    when(authService.signUpNewUser(request)).thenThrow(new SignInException("Invalid email"));
 
     String jsonString =
         """
@@ -98,6 +87,7 @@ class AuthenticationControllerTest {
           "email": "user@domain..com",
           "password": "abcde123456",
           "passwordAgain": "abcde123456",
+          "lang": "en",
           "timezone": "UTC"
         }
         """;

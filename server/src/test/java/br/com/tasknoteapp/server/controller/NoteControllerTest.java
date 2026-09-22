@@ -12,8 +12,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.tasknoteapp.server.exception.InvalidNoteException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
-import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.NoteUrlResponse;
@@ -241,6 +241,14 @@ class NoteControllerTest {
           "description": "Description"
         }
         """;
+
+    NoteRequest notePayload = new NoteRequest(
+        null,
+        "Description",
+        null,
+        null
+    );
+    when(noteService.createNote(notePayload)).thenThrow(new InvalidNoteException("missing fields"));
 
     mockMvc
         .perform(

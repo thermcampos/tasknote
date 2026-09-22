@@ -97,7 +97,7 @@ class UserSessionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}")
                 .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isBadRequest())
+        .andExpect(status().isUnauthorized())
         .andReturn();
   }
 

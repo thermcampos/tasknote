@@ -628,6 +628,12 @@ public class AuthService {
     if (Objects.isNull(request.password()) || request.password().isBlank()) {
       return Optional.of("Wrong or missing 'password' key and value.");
     }
+    if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
+      return Optional.of("Wrong or missing 'passwordAgain' key and value.");
+    }
+    if (!request.password().equals(request.passwordAgain())) {
+      return Optional.of("Wrong password 'password' and 'passwordAgain' must match.");
+    }
     return Optional.empty();
   }
 
