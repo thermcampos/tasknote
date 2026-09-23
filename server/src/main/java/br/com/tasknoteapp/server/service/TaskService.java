@@ -566,6 +566,7 @@ public class TaskService {
       // DueDate
       if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
         ValidationUtil.maxSize("dueDate", request.dueDate(), ValidationUtil.MAX_TASK_DUEDATE);
+        ValidationUtil.date("dueDate", request.dueDate());
       }
 
       // Tags

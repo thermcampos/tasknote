@@ -214,16 +214,6 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.NoteService"
           ]
-        },
-        {
-          "name": "getAllNotes",
-          "parameterTypes": []
-        },
-        {
-          "name": "postNotes",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.request.NoteRequest"
-          ]
         }
       ]
     },
@@ -249,18 +239,6 @@
           "name": "handleBadRequestException",
           "parameterTypes": [
             "br.com.tasknoteapp.server.exception.BaseBadRequestException"
-          ]
-        },
-        {
-          "name": "handleEmailAlreadyExistsException",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.exception.EmailAlreadyExistsException"
-          ]
-        },
-        {
-          "name": "handleEmailNotConfirmedException",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.exception.EmailNotConfirmedException"
           ]
         }
       ]
@@ -375,18 +353,6 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
-        },
-        {
-          "name": "findAllByUserId",
-          "parameterTypes": [
-            "java.lang.Long"
-          ]
-        },
-        {
-          "name": "save",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.entity.Note"
-          ]
         }
       ]
     },
@@ -408,18 +374,6 @@
           "name": "<init>",
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
-          ]
-        },
-        {
-          "name": "findByNoteId",
-          "parameterTypes": [
-            "java.lang.Long"
-          ]
-        },
-        {
-          "name": "save",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.entity.NoteUrl"
           ]
         }
       ]
@@ -451,13 +405,6 @@
           ]
         },
         {
-          "name": "findAllByUserIdAndNoteIdInList",
-          "parameterTypes": [
-            "java.lang.Long",
-            "java.util.List"
-          ]
-        },
-        {
           "name": "findAllByUserIdAndTaskIdInList",
           "parameterTypes": [
             "java.lang.Long",
@@ -476,13 +423,6 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.String",
-            "java.lang.Long"
-          ]
-        },
-        {
-          "name": "updateTagForTask",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.Long"
           ]
         }
@@ -650,20 +590,6 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.request.NoteRequest",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.util.List"
-          ]
-        }
-      ]
-    },
-    {
       "type": "br.com.tasknoteapp.server.request.TaskRequest",
       "methods": [
         {
@@ -687,47 +613,6 @@
         },
         {
           "name": "fieldName",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "br.com.tasknoteapp.server.response.NoteResponse",
-      "methods": [
-        {
-          "name": "archived",
-          "parameterTypes": []
-        },
-        {
-          "name": "description",
-          "parameterTypes": []
-        },
-        {
-          "name": "id",
-          "parameterTypes": []
-        },
-        {
-          "name": "lastUpdate",
-          "parameterTypes": []
-        },
-        {
-          "name": "shareToken",
-          "parameterTypes": []
-        },
-        {
-          "name": "shared",
-          "parameterTypes": []
-        },
-        {
-          "name": "tags",
-          "parameterTypes": []
-        },
-        {
-          "name": "title",
-          "parameterTypes": []
-        },
-        {
-          "name": "url",
           "parameterTypes": []
         }
       ]
@@ -938,16 +823,6 @@
             "br.com.tasknoteapp.server.repository.NoteUrlRepository",
             "br.com.tasknoteapp.server.repository.TagRepository"
           ]
-        },
-        {
-          "name": "createNote",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.request.NoteRequest"
-          ]
-        },
-        {
-          "name": "getAllNotes",
-          "parameterTypes": []
         }
       ]
     },
@@ -1056,9 +931,6 @@
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "br.com.tasknoteapp.server.util.ValidationUtil"
     },
     {
       "type": "ch.qos.logback.classic.BasicConfigurator",

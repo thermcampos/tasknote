@@ -1,6 +1,8 @@
 package br.com.tasknoteapp.server.util;
 
 import br.com.tasknoteapp.server.exception.InternalValidationException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -72,6 +74,21 @@ public class ValidationUtil {
     Pattern urlPattern = Pattern.compile("^(https?://.*|#.*)?$");
     if (!urlPattern.matcher(value).matches()) {
       throw new InternalValidationException(field, "must be a well-formed url address");
+    }
+  }
+
+  /**
+   * Validates a field against a LocalDate parser for the format YYYY-MM-DD.
+   *
+   * @param field The field name to be added to the response error.
+   * @param value The date to be validated.
+   * @throws InternalValidationException if validation fails.
+   */
+  public static void date(String field, String value) {
+    try {
+      LocalDate.parse(value);
+    } catch (DateTimeParseException ex) {
+      throw new InternalValidationException(field, "must be a valid format");
     }
   }
 }

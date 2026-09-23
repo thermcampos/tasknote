@@ -160,4 +160,33 @@ class ValidationUtilTest {
     Assertions.assertEquals("url", ex.getErrorKey());
     Assertions.assertEquals("must be a well-formed url address", ex.getMessage());
   }
+
+  @Test
+  void date_invalidDate_returnsErrorTest() {
+    InternalValidationException ex = 
+        Assertions.assertThrows(InternalValidationException.class, () -> {
+          ValidationUtil.date("date", "202a-11/a2");
+        });
+
+    Assertions.assertEquals("date", ex.getErrorKey());
+    Assertions.assertEquals("must be a valid format", ex.getMessage());
+  }
+
+  @Test
+  void date_invalidDormat_returnsErrorTest() {
+    InternalValidationException ex = 
+        Assertions.assertThrows(InternalValidationException.class, () -> {
+          ValidationUtil.date("date", "2026/09/23");
+        });
+
+    Assertions.assertEquals("date", ex.getErrorKey());
+    Assertions.assertEquals("must be a valid format", ex.getMessage());
+  }
+
+  @Test
+  void date_format2_returnsEmptyMapTest() {
+    Assertions.assertDoesNotThrow(() -> {
+      ValidationUtil.date("date", "2026-09-23");
+    });
+  }
 }
