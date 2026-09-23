@@ -1,6 +1,7 @@
 package br.com.tasknoteapp.server.controller;
 
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.request.DeleteAccountRequest;
@@ -8,7 +9,7 @@ import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
 import br.com.tasknoteapp.server.service.UserSessionService;
-import java.util.Objects;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,8 +51,8 @@ public class UserSessionController {
    */
   @PostMapping("/delete-account")
   public ResponseEntity<UserResponse> deleteAccount(@RequestBody DeleteAccountRequest request) {
-    Optional<String> deleteError = isDeleteAccountRequestValid(request);
-    if (deleteError.isPresent()) {
+    Optional<InternalValidationException> deleteValidation = isDeleteAccountRequestValid(request);
+    if (deleteValidation.isPresent()) {
       throw new InvalidCredentialsException();
     }
     User user = authService.getCurrentUser().orElseThrow(UserNotFoundException::new);
@@ -60,10 +61,14 @@ public class UserSessionController {
     return ResponseEntity.ok(deleted);
   }
 
-  private Optional<String> isDeleteAccountRequestValid(DeleteAccountRequest request) {
-    if (Objects.isNull(request.password()) || request.password().isBlank()) {
-      return Optional.of("Wrong or missing 'password' key and value.");
+  private Optional<InternalValidationException> isDeleteAccountRequestValid(
+      DeleteAccountRequest request) {
+    try {
+      ValidationUtil.notNullNorBlank("password", request.password());
+      ValidationUtil.maxSize("password", request.password(), ValidationUtil.MAX_PASSWORD_SIZE);
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
     }
-    return Optional.empty();
   }
 }
