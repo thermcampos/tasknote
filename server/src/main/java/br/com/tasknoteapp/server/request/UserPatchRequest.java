@@ -8,5 +8,18 @@ public record UserPatchRequest(
     String passwordAgain,
     String lang,
     String theme,
-    String currentPassword) {}
+    String currentPassword) {
 
+  @Override
+  public String toString() {
+    return "UserPatchRequest{"
+        + "name=' + name + '"
+        + ",email=' + email + '"
+        + ",password='[REDACTED]'"
+        + ",passwordAgain='[REDACTED]'"
+        + ",lang=' + lang + '"
+        + ",theme=' + theme + '"
+        + ",currentPassword='[REDACTED]'"
+        + "}";
+  }
+}

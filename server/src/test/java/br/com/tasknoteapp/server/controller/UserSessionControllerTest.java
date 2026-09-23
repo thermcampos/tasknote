@@ -1,5 +1,6 @@
 package br.com.tasknoteapp.server.controller;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.response.JwtAuthenticationResponse;
 import br.com.tasknoteapp.server.response.UserResponse;
 import br.com.tasknoteapp.server.service.AuthService;
@@ -97,7 +99,7 @@ class UserSessionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}")
                 .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isBadRequest())
+        .andExpect(status().isUnauthorized())
         .andReturn();
   }
 
@@ -110,6 +112,60 @@ class UserSessionControllerTest {
                 .with(csrf().asHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"password\": \"abcde123456A@\"}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Delete account with blank password should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void deleteAccount_blankPassword_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            post("/rest/user-sessions/delete-account")
+                .with(csrf().asHeader())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\": \"   \"}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Delete account with user not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void deleteAccount_userNotFound_shouldFail() throws Exception {
+    when(authService.getCurrentUser()).thenReturn(Optional.empty());
+
+    mockMvc
+        .perform(
+            post("/rest/user-sessions/delete-account")
+                .with(csrf().asHeader())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\": \"abcde123456A@\"}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Delete account with wrong password should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void deleteAccount_wrongPassword_shouldFail() throws Exception {
+    User user = new User();
+    user.setId(1L);
+    when(authService.getCurrentUser()).thenReturn(Optional.of(user));
+    doThrow(new InvalidCredentialsException())
+        .when(authService)
+        .verifyCurrentPassword(user, "wrongPassword123");
+
+    mockMvc
+        .perform(
+            post("/rest/user-sessions/delete-account")
+                .with(csrf().asHeader())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\": \"wrongPassword123\"}")
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized())
         .andReturn();

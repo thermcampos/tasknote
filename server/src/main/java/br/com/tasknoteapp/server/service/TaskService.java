@@ -6,6 +6,8 @@ import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
 import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.TaskNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.repository.TaskRepository;
@@ -14,6 +16,7 @@ import br.com.tasknoteapp.server.request.TaskPatchRequest;
 import br.com.tasknoteapp.server.request.TaskRequest;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -118,6 +121,12 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse createTask(TaskRequest taskRequest) {
+    Optional<InternalValidationException> createValidation = isTaskRequestValid(taskRequest);
+    if (createValidation.isPresent()) {
+      throw new RequestValidationException(
+          createValidation.get().getErrorKey(), createValidation.get().getMessage());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Creating task to user ID {}", user.getId());
@@ -171,6 +180,12 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse patchTask(Long taskId, TaskPatchRequest patchRequest) {
+    Optional<InternalValidationException> patchValidation = isTaskPatchRequestValid(patchRequest);
+    if (patchValidation.isPresent()) {
+      throw new RequestValidationException(
+          patchValidation.get().getErrorKey(), patchValidation.get().getMessage());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Patching task ID {} to user ID {}", taskId, user.getId());
@@ -497,5 +512,74 @@ public class TaskService {
 
     int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
     logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
+  }
+
+  private Optional<InternalValidationException> isTaskPatchRequestValid(TaskPatchRequest request) {
+    try {
+      // Description
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
+      
+      // URLs
+      if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
+        for (String url : request.urls()) {
+          int idx = request.urls().indexOf(url);
+          ValidationUtil.maxSize("url " + idx, url, 200);
+          ValidationUtil.url("url " + idx, url);
+        }
+      }
+
+      // DueDate
+      if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+        ValidationUtil.maxSize("dueDate", request.dueDate(), ValidationUtil.MAX_TASK_DUEDATE);
+      }
+
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
+  }
+
+  private Optional<InternalValidationException> isTaskRequestValid(TaskRequest request) {
+    try {
+      // Descrition
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
+
+      // URLs
+      if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
+        for (String url : request.urls()) {
+          int idx = request.urls().indexOf(url);
+          ValidationUtil.maxSize("url " + idx, url, ValidationUtil.MAX_URL_SIZE);
+          ValidationUtil.url("url " + idx, url);
+        }
+      }
+
+      // DueDate
+      if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+        ValidationUtil.maxSize("dueDate", request.dueDate(), ValidationUtil.MAX_TASK_DUEDATE);
+        ValidationUtil.date("dueDate", request.dueDate());
+      }
+
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 }

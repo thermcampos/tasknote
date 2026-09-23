@@ -8,8 +8,10 @@ import br.com.tasknoteapp.server.exception.BadThemeException;
 import br.com.tasknoteapp.server.exception.BadUuidException;
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
 import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.ResetExpiredException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
@@ -23,6 +25,7 @@ import br.com.tasknoteapp.server.util.AuthUtil;
 import br.com.tasknoteapp.server.util.SecurityUtil;
 import br.com.tasknoteapp.server.util.TokenUtil;
 import br.com.tasknoteapp.server.util.UuidUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -109,6 +112,12 @@ public class AuthService {
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
 
+    Optional<InternalValidationException> signUpValidation = isLoginRequestValid(newUser);
+    if (signUpValidation.isPresent()) {
+      throw new RequestValidationException(
+          signUpValidation.get().getErrorKey(), signUpValidation.get().getMessage());
+    }
+
     if (findByEmail(newUser.email()).isPresent()) {
       throw new EmailAlreadyExistsException();
     }
@@ -186,6 +195,12 @@ public class AuthService {
   @Transactional
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
+
+    Optional<InternalValidationException> signInValidation = isLoginRequestValid(login);
+    if (signInValidation.isPresent()) {
+      throw new RequestValidationException(
+          signInValidation.get().getErrorKey(), signInValidation.get().getMessage());
+    }
 
     Optional<User> userOptional = findByEmail(login.email());
     if (userOptional.isEmpty()) {
@@ -418,6 +433,14 @@ public class AuthService {
   @Transactional
   public void confirmUserAccount(String identification) {
     logger.info("Confirming user email account");
+
+    Optional<InternalValidationException> confirmationValidation =
+        isEmailConfirmationRequestValid(identification);
+    if (confirmationValidation.isPresent()) {
+      throw new RequestValidationException(
+          confirmationValidation.get().getErrorKey(), confirmationValidation.get().getMessage());
+    }
+
     UUID uuid;
 
     try {
@@ -446,6 +469,13 @@ public class AuthService {
   public void resendEmailConfirmation(String email) {
     logger.info("Re-sending the confirmation email");
 
+    Optional<InternalValidationException> resendValidation =
+        isResendConfirmationRequestValid(email);
+    if (resendValidation.isPresent()) {
+      throw new RequestValidationException(
+          resendValidation.get().getErrorKey(), resendValidation.get().getMessage());
+    }
+
     Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
       throw new UserNotFoundException();
@@ -468,6 +498,13 @@ public class AuthService {
   @Transactional
   public void resetPasswordForUser(String email) {
     logger.info("Requesting password reset for email {}", email);
+
+    Optional<InternalValidationException> resetValidation =
+        isResendConfirmationRequestValid(email);
+    if (resetValidation.isPresent()) {
+      throw new RequestValidationException(
+          resetValidation.get().getErrorKey(), resetValidation.get().getMessage());
+    }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
     if (userOptional.isEmpty()) {
@@ -498,6 +535,13 @@ public class AuthService {
   @Transactional
   public void confirmResetPasswordForUser(PasswordResetRequest request) {
     logger.info("Saving new password for token {}", request.token());
+
+    Optional<InternalValidationException> confirmValidation =
+        isPasswordResetRequestValid(request);
+    if (confirmValidation.isPresent()) {
+      throw new RequestValidationException(
+          confirmValidation.get().getErrorKey(), confirmValidation.get().getMessage());
+    }
 
     Optional<User> userOptional = userRepository.findByResetToken(request.token());
     if (userOptional.isEmpty()) {
@@ -584,4 +628,75 @@ public class AuthService {
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }
 
+  private Optional<InternalValidationException> isLoginRequestValid(LoginRequest request) {
+    try {
+      // Email
+      ValidationUtil.notNullNorBlank("email", request.email());
+      ValidationUtil.maxSize("email", request.email(), ValidationUtil.MAX_EMAIL_SIZE);
+      ValidationUtil.email("email", request.email());
+
+      // Password
+      ValidationUtil.notNullNorBlank("password", request.password());
+      ValidationUtil.maxSize("password", request.password(), ValidationUtil.MAX_PASSWORD_SIZE);
+      
+      // PasswordAgain
+      if (!Objects.isNull(request.passwordAgain()) && !request.passwordAgain().isBlank()) {
+        ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+            ValidationUtil.MAX_PASSWORD_SIZE);
+      }
+
+      // Lang
+      if (!Objects.isNull(request.lang()) && !request.lang().isBlank()) {
+        ValidationUtil.maxSize("lang", request.lang(), ValidationUtil.MAX_LANG_SIZE);
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
+  }
+
+  private Optional<InternalValidationException> isEmailConfirmationRequestValid(
+      String identification) {
+    try {
+      ValidationUtil.notNullNorBlank("identification", identification);
+      ValidationUtil.maxSize("identification", identification, ValidationUtil.MAX_UUID_SIZE);
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
+  }
+
+  private Optional<InternalValidationException> isResendConfirmationRequestValid(String email) {
+    try {
+      ValidationUtil.notNullNorBlank("email", email);
+      ValidationUtil.email("email", email);
+      ValidationUtil.maxSize("email", email, ValidationUtil.MAX_EMAIL_SIZE);
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
+  }
+
+  private Optional<InternalValidationException> isPasswordResetRequestValid(
+      PasswordResetRequest request) {
+    try {
+      // Token
+      ValidationUtil.notNullNorBlank("token", request.token());
+      ValidationUtil.maxSize("token", request.token(), ValidationUtil.MAX_TOKEN_SIZE);
+
+      // Password
+      ValidationUtil.notNullNorBlank("password", request.password());
+      ValidationUtil.maxSize("password", request.password(), ValidationUtil.MAX_PASSWORD_SIZE);
+
+      // PasswordAgain
+      ValidationUtil.notNullNorBlank("passwordAgain", request.passwordAgain());
+      ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+          ValidationUtil.MAX_PASSWORD_SIZE);
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
+  }
 }

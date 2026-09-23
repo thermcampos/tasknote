@@ -12,8 +12,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.tasknoteapp.server.exception.InvalidNoteException;
+import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.NoteUrlResponse;
@@ -97,8 +98,8 @@ class NoteControllerTest {
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void patchNote_happyPath_shouldSucceed() throws Exception {
     Long noteId = 123L;
-    NotePatchRequest patchRequest =
-        new NotePatchRequest("New title", "New description", null, List.of("tag"));
+    NoteRequest patchRequest =
+        new NoteRequest("New title", "New description", null, List.of("tag"));
 
     NoteResponse response =
         new NoteResponse(
@@ -144,8 +145,8 @@ class NoteControllerTest {
   @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
   void patchNote_notFound_shouldFail() throws Exception {
     Long noteId = 123L;
-    NotePatchRequest patchRequest =
-        new NotePatchRequest("New title", "New description", null, List.of("tag"));
+    NoteRequest patchRequest =
+        new NoteRequest("New title", "New description", null, List.of("tag"));
 
     when(noteService.patchNote(noteId, patchRequest)).thenThrow(new NoteNotFoundException());
 
@@ -241,6 +242,14 @@ class NoteControllerTest {
           "description": "Description"
         }
         """;
+
+    NoteRequest notePayload = new NoteRequest(
+        null,
+        "Description",
+        null,
+        null
+    );
+    when(noteService.createNote(notePayload)).thenThrow(new InvalidNoteException("missing fields"));
 
     mockMvc
         .perform(
@@ -391,6 +400,239 @@ class NoteControllerTest {
     mockMvc
         .perform(
             put("/rest/notes/{id}/unshare", 1L)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get note by id happy path should succeed")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void getNoteById_happyPath_shouldSucceed() throws Exception {
+    final Long noteId = 321L;
+    NoteResponse note =
+        new NoteResponse(
+            noteId, "title", "description", "https://test.com", null, List.of("tag"), false, null,
+            false);
+
+    when(noteService.getNoteById(noteId)).thenReturn(note);
+
+    mockMvc
+        .perform(
+            get("/rest/notes/{id}", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(note.id()))
+        .andExpect(jsonPath("$.title").value(note.title()))
+        .andExpect(jsonPath("$.description").value(note.description()))
+        .andExpect(jsonPath("$.url").value(note.url()))
+        .andExpect(jsonPath("$.archived").value(false))
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get note by id not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void getNoteById_notFound_shouldFail() throws Exception {
+    final Long noteId = 322L;
+
+    when(noteService.getNoteById(noteId)).thenThrow(new NoteNotFoundException());
+
+    mockMvc
+        .perform(
+            get("/rest/notes/{id}", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get note by id with 401 unauthorized should fail")
+  void getNoteById_unauthorized_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            get("/rest/notes/{id}", 323L)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Patch an archived note should fail with bad request")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void patchNote_archived_shouldFail() throws Exception {
+    Long noteId = 124L;
+    NoteRequest patchRequest =
+        new NoteRequest("New title", "New description", null, List.of("tag"));
+
+    when(noteService.patchNote(noteId, patchRequest)).thenThrow(new NoteArchivedException());
+
+    final String payloadJson =
+        """
+        {
+          "title": "New title",
+          "description": "New description",
+          "url": null,
+          "tags": ["tag"]
+        }
+        """;
+
+    mockMvc
+        .perform(
+            patch("/rest/notes/{id}", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(payloadJson))
+        .andExpect(status().isBadRequest())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Share note not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void shareNote_notFound_shouldFail() throws Exception {
+    final Long noteId = 2L;
+
+    when(noteService.shareNote(noteId)).thenThrow(new NoteNotFoundException());
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/share", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Unshare note not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void unshareNote_notFound_shouldFail() throws Exception {
+    final Long noteId = 2L;
+
+    when(noteService.unshareNote(noteId)).thenThrow(new NoteNotFoundException());
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/unshare", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Archive note happy path should succeed")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void archiveNote_happyPath_shouldSucceed() throws Exception {
+    final Long noteId = 1L;
+    NoteResponse response =
+        new NoteResponse(
+            noteId, "title", "description", null, null, List.of("tag"), false, null, true);
+
+    when(noteService.archiveNote(noteId)).thenReturn(response);
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/archive", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.archived").value(true))
+        .andExpect(jsonPath("$.shared").value(false))
+        .andExpect(jsonPath("$.shareToken", Matchers.nullValue()))
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Archive note not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void archiveNote_notFound_shouldFail() throws Exception {
+    final Long noteId = 2L;
+
+    when(noteService.archiveNote(noteId)).thenThrow(new NoteNotFoundException());
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/archive", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Archive note with 401 unauthorized should fail")
+  void archiveNote_unauthorized_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/archive", 1L)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Restore note happy path should succeed")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void restoreNote_happyPath_shouldSucceed() throws Exception {
+    final Long noteId = 1L;
+    NoteResponse response =
+        new NoteResponse(
+            noteId, "title", "description", null, null, List.of("tag"), false, null, false);
+
+    when(noteService.restoreNote(noteId)).thenReturn(response);
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/restore", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.archived").value(false))
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Restore note not found should fail")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void restoreNote_notFound_shouldFail() throws Exception {
+    final Long noteId = 2L;
+
+    when(noteService.restoreNote(noteId)).thenThrow(new NoteNotFoundException());
+
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/restore", noteId)
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Restore note with 401 unauthorized should fail")
+  void restoreNote_unauthorized_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            put("/rest/notes/{id}/restore", 1L)
                 .with(csrf().asHeader())
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .accept(MediaType.APPLICATION_JSON))

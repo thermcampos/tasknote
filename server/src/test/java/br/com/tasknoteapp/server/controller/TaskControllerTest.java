@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.TaskNotFoundException;
 import br.com.tasknoteapp.server.request.TaskPatchRequest;
 import br.com.tasknoteapp.server.request.TaskRequest;
@@ -312,6 +313,16 @@ class TaskControllerTest {
           "description": ""
         }
         """;
+
+    TaskRequest taskPayload = new TaskRequest(
+        "",
+        null,
+        null,
+        null,
+        null
+    );
+    when(taskService.createTask(taskPayload))
+        .thenThrow(new RequestValidationException("task", "Invalid task"));
 
     mockMvc
         .perform(

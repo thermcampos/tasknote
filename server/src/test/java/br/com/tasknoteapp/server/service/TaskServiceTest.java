@@ -295,7 +295,7 @@ class TaskServiceTest {
     List<String> tags = List.of("development");
     TaskRequest request =
         new TaskRequest(
-            "Write unit tests", List.of("debian.org"), "2025-12-12", false, tags);
+            "Write unit tests", List.of("https://debian.org"), "2025-12-12", false, tags);
 
     Tag tagEntity = new Tag(null, "development", userEntity.getId());
     when(tagRepository.findByUserIdAndName(eq(userEntity.getId()), anyString()))
@@ -315,14 +315,14 @@ class TaskServiceTest {
 
     when(taskRepository.save(any())).thenReturn(entity);
 
-    TaskUrl urlEntity = new TaskUrl(new TaskUrlPk(entity.id(), "debian.org"));
+    TaskUrl urlEntity = new TaskUrl(new TaskUrlPk(entity.id(), "https://debian.org"));
     when(taskUrlRepository.findAllById_taskId(entity.id())).thenReturn(List.of(urlEntity));
 
     TaskResponse response = taskService.createTask(request);
 
     assertNotNull(response);
     assertFalse(response.urls().isEmpty());
-    assertEquals("debian.org", response.urls().get(0));
+    assertEquals("https://debian.org", response.urls().get(0));
   }
 
   @Test

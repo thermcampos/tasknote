@@ -5,16 +5,18 @@ import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -120,6 +122,12 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse createNote(NoteRequest noteRequest) {
+    Optional<InternalValidationException> createValidation = isNoteRequestValid(noteRequest);
+    if (createValidation.isPresent()) {
+      throw new RequestValidationException(
+          createValidation.get().getErrorKey(), createValidation.get().getMessage());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Creating note to user ID {}", user.getId());
@@ -161,11 +169,17 @@ public class NoteService {
    * Patch an existing note updating its content.
    *
    * @param noteId The note id from the database.
-   * @param patch An instance of {@link NotePatchRequest} with the new content.
+   * @param patch An instance of {@link NoteRequest} with the new content.
    * @return {@link NoteResponse} containing the updated note.
    */
   @Transactional
-  public NoteResponse patchNote(Long noteId, NotePatchRequest patch) {
+  public NoteResponse patchNote(Long noteId, NoteRequest patch) {
+    Optional<InternalValidationException> patchValidation = isNoteRequestValid(patch);
+    if (patchValidation.isPresent()) {
+      throw new RequestValidationException(
+          patchValidation.get().getErrorKey(), patchValidation.get().getMessage());
+    }
+
     User user = getCurrentUser();
 
     logger.info("Patching note ID {} to user ID {}", noteId, user.getId());
@@ -533,7 +547,7 @@ public class NoteService {
     return responseList.getFirst();
   }
 
-  private void patchNoteTags(Note note, NotePatchRequest patch, User user) {
+  private void patchNoteTags(Note note, NoteRequest patch, User user) {
     if (!Objects.isNull(patch.tags()) && !patch.tags().isEmpty()) {
       getOrCreateTags(patch.tags(), user, note.id());
     }
@@ -563,7 +577,7 @@ public class NoteService {
     logger.info("Deleted {} orphaned tags from note id {}", deletedOrphan, note.id());
   }
 
-  private void patchNoteUrl(Note note, NotePatchRequest patch, User user) {
+  private void patchNoteUrl(Note note, NoteRequest patch, User user) {
     if (!Objects.isNull(patch.url()) && !patch.url().isBlank()) {
       getOrCreateUrls(List.of(patch.url()), user, note.id());
     }
@@ -655,5 +669,36 @@ public class NoteService {
     NoteUrl savedUrl = noteUrlRepository.save(noteUrl);
     logger.info("URL saved to note ID {}", noteEntity.id());
     return savedUrl;
+  }
+
+  private Optional<InternalValidationException> isNoteRequestValid(NoteRequest request) {
+    try {
+      // Title
+      ValidationUtil.notNullNorBlank("title", request.title());
+      ValidationUtil.maxSize("title", request.title(), ValidationUtil.MAX_NOTE_TITLE_SIZE);
+
+      // Description
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(),
+          ValidationUtil.MAX_NOTE_CONTENT_SIZE);
+      
+      // URLs
+      if (!Objects.isNull(request.url()) && !request.url().isBlank()) {
+        ValidationUtil.maxSize("url", request.url(), ValidationUtil.MAX_URL_SIZE);
+        ValidationUtil.url("url", request.url());
+      }
+
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 }

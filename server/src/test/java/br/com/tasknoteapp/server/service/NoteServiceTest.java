@@ -17,7 +17,7 @@ import br.com.tasknoteapp.server.exception.NoteNotFoundException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
-import br.com.tasknoteapp.server.request.NotePatchRequest;
+import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
@@ -48,7 +48,7 @@ class NoteServiceTest {
   private User user;
   private Note note;
   private NoteRequest noteRequest;
-  private NotePatchRequest notePatchRequest;
+  private NoteRequest notePatchRequest;
 
   @BeforeEach
   void setUp() {
@@ -70,7 +70,7 @@ class NoteServiceTest {
     noteRequest =
         new NoteRequest("Test Note", "Test Description", "http://example.com", List.of("tag"));
     notePatchRequest =
-        new NotePatchRequest(
+        new NoteRequest(
             "Updated Note", "Updated Description", "http://example.com", List.of("tag"));
   }
 
