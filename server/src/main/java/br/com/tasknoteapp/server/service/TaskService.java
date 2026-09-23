@@ -6,6 +6,7 @@ import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
 import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.TaskNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
@@ -120,10 +121,10 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse createTask(TaskRequest taskRequest) {
-    Map<String, String> createValidation = isTaskRequestValid(taskRequest);
-    if (!createValidation.isEmpty()) {
-      String key = createValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, createValidation.get(key));
+    Optional<InternalValidationException> createValidation = isTaskRequestValid(taskRequest);
+    if (createValidation.isPresent()) {
+      throw new RequestValidationException(
+          createValidation.get().getErrorKey(), createValidation.get().getMessage());
     }
 
     User user = getCurrentUser();
@@ -179,10 +180,10 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse patchTask(Long taskId, TaskPatchRequest patchRequest) {
-    Map<String, String> patchValidation = isTaskPatchRequestValid(patchRequest);
-    if (!patchValidation.isEmpty()) {
-      String key = patchValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, patchValidation.get(key));
+    Optional<InternalValidationException> patchValidation = isTaskPatchRequestValid(patchRequest);
+    if (patchValidation.isPresent()) {
+      throw new RequestValidationException(
+          patchValidation.get().getErrorKey(), patchValidation.get().getMessage());
     }
 
     User user = getCurrentUser();
@@ -513,72 +514,71 @@ public class TaskService {
     logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
   }
 
-  private Map<String, String> isTaskPatchRequestValid(TaskPatchRequest request) {
-    Map<String, String> validationMap = new HashMap<>();
-    
-    // Description
-    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
-    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
-        ValidationUtil.MAX_TASK_NAME));
-    
-    // URLs
-    if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
-      for (String url : request.urls()) {
-        int idx = request.urls().indexOf(url);
-        validationMap.putAll(ValidationUtil.maxSize("url " + idx, url, 200));
-        validationMap.putAll(ValidationUtil.url("url " + idx, url));
+  private Optional<InternalValidationException> isTaskPatchRequestValid(TaskPatchRequest request) {
+    try {
+      // Description
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
+      
+      // URLs
+      if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
+        for (String url : request.urls()) {
+          int idx = request.urls().indexOf(url);
+          ValidationUtil.maxSize("url " + idx, url, 200);
+          ValidationUtil.url("url " + idx, url);
+        }
       }
-    }
 
-    // DueDate
-    if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
-      validationMap.putAll(ValidationUtil.maxSize("dueDate", request.dueDate(),
-          ValidationUtil.MAX_TASK_DUEDATE));
-    }
-
-    // Tags
-    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
-      for (String tag : request.tags()) {
-        int idx = request.tags().indexOf(tag);
-        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
-            ValidationUtil.MAX_TAG_NAME_SIZE));
+      // DueDate
+      if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+        ValidationUtil.maxSize("dueDate", request.dueDate(), ValidationUtil.MAX_TASK_DUEDATE);
       }
-    }
 
-    return validationMap;
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 
-  private Map<String, String> isTaskRequestValid(TaskRequest request) {
-    Map<String, String> validationMap = new HashMap<>();
+  private Optional<InternalValidationException> isTaskRequestValid(TaskRequest request) {
+    try {
+      // Descrition
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
 
-    // Descrition
-    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
-    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
-        ValidationUtil.MAX_TASK_NAME));
-
-    // URLs
-    if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
-      for (String url : request.urls()) {
-        int idx = request.urls().indexOf(url);
-        validationMap.putAll(ValidationUtil.maxSize("url " + idx, url, 200));
-        validationMap.putAll(ValidationUtil.url("url " + idx, url));
+      // URLs
+      if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
+        for (String url : request.urls()) {
+          int idx = request.urls().indexOf(url);
+          ValidationUtil.maxSize("url " + idx, url, ValidationUtil.MAX_URL_SIZE);
+          ValidationUtil.url("url " + idx, url);
+        }
       }
-    }
 
-    // DueDate
-    if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
-      validationMap.putAll(ValidationUtil.maxSize("dueDate", request.dueDate(),
-          ValidationUtil.MAX_TASK_DUEDATE));
-    }
-
-    // Tags
-    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
-      for (String tag : request.tags()) {
-        int idx = request.tags().indexOf(tag);
-        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
-            ValidationUtil.MAX_TAG_NAME_SIZE));
+      // DueDate
+      if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+        ValidationUtil.maxSize("dueDate", request.dueDate(), ValidationUtil.MAX_TASK_DUEDATE);
       }
+
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
     }
-    return validationMap;
   }
 }

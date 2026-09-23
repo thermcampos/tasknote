@@ -1,6 +1,6 @@
 package br.com.tasknoteapp.server.util;
 
-import java.util.Map;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -25,16 +25,12 @@ public class ValidationUtil {
    *
    * @param field The field name to be added to the response error.
    * @param value The field value to be validated.
-   * @return Map of String String containing an ERROR_KEY key if present, or empty.
+   * @throws InternalValidationException if validation fails.
    */
-  public static Map<String, String> notNullNorBlank(String field, String value) {
+  public static void notNullNorBlank(String field, String value) {
     if (Objects.isNull(value) || value.isBlank()) {
-      return Map.of(
-          ERROR_KEY, field,
-          field, "must not be null or empty"
-      );
+      throw new InternalValidationException(field, "must not be null or empty");
     }
-    return Map.of();
   }
 
   /**
@@ -42,17 +38,13 @@ public class ValidationUtil {
    *
    * @param field The field name to be added to the response error.
    * @param value The email to be validated.
-   * @return Map of tring String containing an ERROR_KEY key if present, or empty.
+   * @throws InternalValidationException if validation fails.
    */
-  public static Map<String, String> email(String field, String value) {
+  public static void email(String field, String value) {
     Pattern emailPattern = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     if (!emailPattern.matcher(value).matches()) {
-      return Map.of(
-          ERROR_KEY, field,
-          field, "must be a well-formed email address"
-      );
+      throw new InternalValidationException(field, "must be a well-formed email address");
     }
-    return Map.of();
   }
 
   /**
@@ -61,16 +53,12 @@ public class ValidationUtil {
    * @param field The field name to be added to the response error.
    * @param value The field value to be validated.
    * @param maxSize The integer max size to be validated against.
-   * @return Map of tring String containing an ERROR_KEY key if present, or empty.
+   * @throws InternalValidationException if validation fails.
    */
-  public static Map<String, String> maxSize(String field, String value, int maxSize) {
+  public static void maxSize(String field, String value, int maxSize) {
     if (value.length() > maxSize) {
-      return Map.of(
-        ERROR_KEY, field,
-        field, "size must be between 0 and " + maxSize
-      );
+      throw new InternalValidationException(field, "size must be between 0 and " + maxSize);
     }
-    return Map.of();
   }
 
   /**
@@ -78,16 +66,12 @@ public class ValidationUtil {
    *
    * @param field The field name to be added to the response error.
    * @param value The url to be validated.
-   * @return Map of tring String containing an ERROR_KEY key if present, or empty.
+   * @throws InternalValidationException if validation fails.
    */
-  public static Map<String, String> url(String field, String value) {
+  public static void url(String field, String value) {
     Pattern urlPattern = Pattern.compile("^(https?://.*|#.*)?$");
     if (!urlPattern.matcher(value).matches()) {
-      return Map.of(
-          ERROR_KEY, field,
-          field, "must be a well-formed url address"
-      );
+      throw new InternalValidationException(field, "must be a well-formed url address");
     }
-    return Map.of();
   }
 }

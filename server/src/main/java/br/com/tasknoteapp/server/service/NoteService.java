@@ -5,6 +5,7 @@ import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
@@ -121,10 +122,10 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse createNote(NoteRequest noteRequest) {
-    Map<String, String> createValidation = isNoteRequestValid(noteRequest);
-    if (!createValidation.isEmpty()) {
-      String key = createValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, createValidation.get(key));
+    Optional<InternalValidationException> createValidation = isNoteRequestValid(noteRequest);
+    if (createValidation.isPresent()) {
+      throw new RequestValidationException(
+          createValidation.get().getErrorKey(), createValidation.get().getMessage());
     }
 
     User user = getCurrentUser();
@@ -173,10 +174,10 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse patchNote(Long noteId, NoteRequest patch) {
-    Map<String, String> patchValidation = isNoteRequestValid(patch);
-    if (!patchValidation.isEmpty()) {
-      String key = patchValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, patchValidation.get(key));
+    Optional<InternalValidationException> patchValidation = isNoteRequestValid(patch);
+    if (patchValidation.isPresent()) {
+      throw new RequestValidationException(
+          patchValidation.get().getErrorKey(), patchValidation.get().getMessage());
     }
 
     User user = getCurrentUser();
@@ -670,35 +671,34 @@ public class NoteService {
     return savedUrl;
   }
 
-  private Map<String, String> isNoteRequestValid(NoteRequest request) {
-    Map<String, String> validationMap = new HashMap<>();
+  private Optional<InternalValidationException> isNoteRequestValid(NoteRequest request) {
+    try {
+      // Title
+      ValidationUtil.notNullNorBlank("title", request.title());
+      ValidationUtil.maxSize("title", request.title(), ValidationUtil.MAX_NOTE_TITLE_SIZE);
 
-    // Title
-    validationMap.putAll(ValidationUtil.notNullNorBlank("title", request.title()));
-    validationMap.putAll(ValidationUtil.maxSize("title", request.title(),
-        ValidationUtil.MAX_NOTE_TITLE_SIZE));
-
-    // Description
-    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
-    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
-        ValidationUtil.MAX_NOTE_CONTENT_SIZE));
-    
-    // URLs
-    if (!Objects.isNull(request.url()) && !request.url().isBlank()) {
-      validationMap.putAll(ValidationUtil.maxSize("url", request.url(),
-          ValidationUtil.MAX_URL_SIZE));
-      validationMap.putAll(ValidationUtil.url("url", request.url()));
-    }
-
-    // Tags
-    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
-      for (String tag : request.tags()) {
-        int idx = request.tags().indexOf(tag);
-        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
-            ValidationUtil.MAX_TAG_NAME_SIZE));
+      // Description
+      ValidationUtil.notNullNorBlank("description", request.description());
+      ValidationUtil.maxSize("description", request.description(),
+          ValidationUtil.MAX_NOTE_CONTENT_SIZE);
+      
+      // URLs
+      if (!Objects.isNull(request.url()) && !request.url().isBlank()) {
+        ValidationUtil.maxSize("url", request.url(), ValidationUtil.MAX_URL_SIZE);
+        ValidationUtil.url("url", request.url());
       }
-    }
 
-    return validationMap;
+      // Tags
+      if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+        for (String tag : request.tags()) {
+          int idx = request.tags().indexOf(tag);
+          ValidationUtil.maxSize("tag" + idx, tag, ValidationUtil.MAX_TAG_NAME_SIZE);
+        }
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 }

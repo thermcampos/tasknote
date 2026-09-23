@@ -8,6 +8,7 @@ import br.com.tasknoteapp.server.exception.BadThemeException;
 import br.com.tasknoteapp.server.exception.BadUuidException;
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
 import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
+import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
 import br.com.tasknoteapp.server.exception.RequestValidationException;
@@ -34,9 +35,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -113,10 +112,10 @@ public class AuthService {
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
 
-    Map<String, String> signUpValidation = isLoginRequestValid(newUser);
-    if (!signUpValidation.isEmpty()) {
-      String key = signUpValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, signUpValidation.get(key));
+    Optional<InternalValidationException> signUpValidation = isLoginRequestValid(newUser);
+    if (signUpValidation.isPresent()) {
+      throw new RequestValidationException(
+          signUpValidation.get().getErrorKey(), signUpValidation.get().getMessage());
     }
 
     if (findByEmail(newUser.email()).isPresent()) {
@@ -197,10 +196,10 @@ public class AuthService {
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
 
-    Map<String, String> signInValidation = isLoginRequestValid(login);
-    if (!signInValidation.isEmpty()) {
-      String key = signInValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, signInValidation.get(key));
+    Optional<InternalValidationException> signInValidation = isLoginRequestValid(login);
+    if (signInValidation.isPresent()) {
+      throw new RequestValidationException(
+          signInValidation.get().getErrorKey(), signInValidation.get().getMessage());
     }
 
     Optional<User> userOptional = findByEmail(login.email());
@@ -435,10 +434,11 @@ public class AuthService {
   public void confirmUserAccount(String identification) {
     logger.info("Confirming user email account");
 
-    Map<String, String> confirmationValidation = isEmailConfirmationRequestValid(identification);
-    if (!confirmationValidation.isEmpty()) {
-      String key = confirmationValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, confirmationValidation.get(key));
+    Optional<InternalValidationException> confirmationValidation =
+        isEmailConfirmationRequestValid(identification);
+    if (confirmationValidation.isPresent()) {
+      throw new RequestValidationException(
+          confirmationValidation.get().getErrorKey(), confirmationValidation.get().getMessage());
     }
 
     UUID uuid;
@@ -469,10 +469,11 @@ public class AuthService {
   public void resendEmailConfirmation(String email) {
     logger.info("Re-sending the confirmation email");
 
-    Map<String, String> resendValidation = isResendConfirmationRequestValid(email);
-    if (!resendValidation.isEmpty()) {
-      String key = resendValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, resendValidation.get(key));
+    Optional<InternalValidationException> resendValidation =
+        isResendConfirmationRequestValid(email);
+    if (resendValidation.isPresent()) {
+      throw new RequestValidationException(
+          resendValidation.get().getErrorKey(), resendValidation.get().getMessage());
     }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
@@ -498,10 +499,11 @@ public class AuthService {
   public void resetPasswordForUser(String email) {
     logger.info("Requesting password reset for email {}", email);
 
-    Map<String, String> resetValidation = isResendConfirmationRequestValid(email);
-    if (!resetValidation.isEmpty()) {
-      String key = resetValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, resetValidation.get(key));
+    Optional<InternalValidationException> resetValidation =
+        isResendConfirmationRequestValid(email);
+    if (resetValidation.isPresent()) {
+      throw new RequestValidationException(
+          resetValidation.get().getErrorKey(), resetValidation.get().getMessage());
     }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
@@ -534,10 +536,11 @@ public class AuthService {
   public void confirmResetPasswordForUser(PasswordResetRequest request) {
     logger.info("Saving new password for token {}", request.token());
 
-    Map<String, String> confirmValidation = isPasswordResetRequestValid(request);
-    if (!confirmValidation.isEmpty()) {
-      String key = confirmValidation.get(ValidationUtil.ERROR_KEY);
-      throw new RequestValidationException(key, confirmValidation.get(key));
+    Optional<InternalValidationException> confirmValidation =
+        isPasswordResetRequestValid(request);
+    if (confirmValidation.isPresent()) {
+      throw new RequestValidationException(
+          confirmValidation.get().getErrorKey(), confirmValidation.get().getMessage());
     }
 
     Optional<User> userOptional = userRepository.findByResetToken(request.token());
@@ -625,69 +628,75 @@ public class AuthService {
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }
 
-  private Map<String, String> isLoginRequestValid(LoginRequest request) {
-    Map<String, String> validationMap = new HashMap<>();
+  private Optional<InternalValidationException> isLoginRequestValid(LoginRequest request) {
+    try {
+      // Email
+      ValidationUtil.notNullNorBlank("email", request.email());
+      ValidationUtil.maxSize("email", request.email(), ValidationUtil.MAX_EMAIL_SIZE);
+      ValidationUtil.email("email", request.email());
 
-    // Email
-    validationMap.putAll(ValidationUtil.notNullNorBlank("email", request.email()));
-    validationMap.putAll(ValidationUtil.maxSize("email", request.email(),
-        ValidationUtil.MAX_EMAIL_SIZE));
-    validationMap.putAll(ValidationUtil.email("email", request.email()));
+      // Password
+      ValidationUtil.notNullNorBlank("password", request.password());
+      ValidationUtil.maxSize("password", request.password(), ValidationUtil.MAX_PASSWORD_SIZE);
+      
+      // PasswordAgain
+      if (!Objects.isNull(request.passwordAgain()) && !request.passwordAgain().isBlank()) {
+        ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+            ValidationUtil.MAX_PASSWORD_SIZE);
+      }
 
-    // Password
-    validationMap.putAll(ValidationUtil.notNullNorBlank("password", request.password()));
-    validationMap.putAll(ValidationUtil.maxSize("password", request.password(),
-        ValidationUtil.MAX_PASSWORD_SIZE));
-    
-    // PasswordAgain
-    if (!Objects.isNull(request.passwordAgain()) && !request.passwordAgain().isBlank()) {
-      validationMap.putAll(ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
-          ValidationUtil.MAX_PASSWORD_SIZE));
+      // Lang
+      if (!Objects.isNull(request.lang()) && !request.lang().isBlank()) {
+        ValidationUtil.maxSize("lang", request.lang(), ValidationUtil.MAX_LANG_SIZE);
+      }
+
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
     }
+  }
 
-    // Lang
-    if (!Objects.isNull(request.lang()) && !request.lang().isBlank()) {
-      validationMap.putAll(ValidationUtil.maxSize("lang", request.lang(),
-          ValidationUtil.MAX_LANG_SIZE));
+  private Optional<InternalValidationException> isEmailConfirmationRequestValid(
+      String identification) {
+    try {
+      ValidationUtil.notNullNorBlank("identification", identification);
+      ValidationUtil.maxSize("identification", identification, ValidationUtil.MAX_UUID_SIZE);
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
     }
-
-    return validationMap;
   }
 
-  private Map<String, String> isEmailConfirmationRequestValid(String identification) {
-    Map<String, String> validationMap = new HashMap<>();
-    validationMap.putAll(ValidationUtil.notNullNorBlank("identification", identification));
-    validationMap.putAll(ValidationUtil.maxSize("identification", identification,
-        ValidationUtil.MAX_UUID_SIZE));
-    return validationMap;
+  private Optional<InternalValidationException> isResendConfirmationRequestValid(String email) {
+    try {
+      ValidationUtil.notNullNorBlank("email", email);
+      ValidationUtil.email("email", email);
+      ValidationUtil.maxSize("email", email, ValidationUtil.MAX_EMAIL_SIZE);
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 
-  private Map<String, String> isResendConfirmationRequestValid(String email) {
-    Map<String, String> validationMap = new HashMap<>();
-    validationMap.putAll(ValidationUtil.notNullNorBlank("email", email));
-    validationMap.putAll(ValidationUtil.email("email", email));
-    validationMap.putAll(ValidationUtil.maxSize("email", email, ValidationUtil.MAX_EMAIL_SIZE));
-    return validationMap;
-  }
+  private Optional<InternalValidationException> isPasswordResetRequestValid(
+      PasswordResetRequest request) {
+    try {
+      // Token
+      ValidationUtil.notNullNorBlank("token", request.token());
+      ValidationUtil.maxSize("token", request.token(), ValidationUtil.MAX_TOKEN_SIZE);
 
-  private Map<String, String> isPasswordResetRequestValid(PasswordResetRequest request) {
-    Map<String, String> validationMap = new HashMap<>();
+      // Password
+      ValidationUtil.notNullNorBlank("password", request.password());
+      ValidationUtil.maxSize("password", request.password(), ValidationUtil.MAX_PASSWORD_SIZE);
 
-    // Token
-    validationMap.putAll(ValidationUtil.notNullNorBlank("token", request.token()));
-    validationMap.putAll(ValidationUtil.maxSize("token", request.token(),
-        ValidationUtil.MAX_TOKEN_SIZE));
+      // PasswordAgain
+      ValidationUtil.notNullNorBlank("passwordAgain", request.passwordAgain());
+      ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+          ValidationUtil.MAX_PASSWORD_SIZE);
 
-    // Password
-    validationMap.putAll(ValidationUtil.notNullNorBlank("password", request.password()));
-    validationMap.putAll(ValidationUtil.maxSize("password", request.password(),
-        ValidationUtil.MAX_PASSWORD_SIZE));
-
-    // PasswordAgain
-    validationMap.putAll(ValidationUtil.notNullNorBlank("passwordAgain", request.passwordAgain()));
-    validationMap.putAll(ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
-        ValidationUtil.MAX_PASSWORD_SIZE));
-
-    return validationMap;
+      return Optional.empty();
+    } catch (InternalValidationException ex) {
+      return Optional.of(ex);
+    }
   }
 }
