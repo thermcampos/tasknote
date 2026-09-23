@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Creating task no description"
+echo "1/8 Creating task no description"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -13,7 +13,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task blank description"
+echo "2/8 Creating task blank description"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -27,7 +27,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task big description size > 180"
+echo "3/8 Creating task big description size > 180"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -41,7 +41,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task big url size > 180"
+echo "4/8 Creating task big url size > 180"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -55,7 +55,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task invalid url"
+echo "5/8 Creating task invalid url"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -69,7 +69,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task big dueDate size > 10"
+echo "6/8 Creating task big dueDate size > 10"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -83,7 +83,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task wrong dueDate format"
+echo "7/8 Creating task wrong dueDate format"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -97,7 +97,7 @@ curl -X POST -s \
   }' | jq
 
 echo ""
-echo "Creating task big tag size > 20"
+echo "8/8 Creating task big tag size > 20"
 curl -X POST -s \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \

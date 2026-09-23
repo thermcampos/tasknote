@@ -214,6 +214,16 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.NoteService"
           ]
+        },
+        {
+          "name": "getAllNotes",
+          "parameterTypes": []
+        },
+        {
+          "name": "postNotes",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.NoteRequest"
+          ]
         }
       ]
     },
@@ -353,6 +363,18 @@
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
           ]
+        },
+        {
+          "name": "findAllByUserId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.Note"
+          ]
         }
       ]
     },
@@ -374,6 +396,18 @@
           "name": "<init>",
           "parameterTypes": [
             "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+          ]
+        },
+        {
+          "name": "findByNoteId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.NoteUrl"
           ]
         }
       ]
@@ -405,6 +439,13 @@
           ]
         },
         {
+          "name": "findAllByUserIdAndNoteIdInList",
+          "parameterTypes": [
+            "java.lang.Long",
+            "java.util.List"
+          ]
+        },
+        {
           "name": "findAllByUserIdAndTaskIdInList",
           "parameterTypes": [
             "java.lang.Long",
@@ -423,6 +464,13 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.String",
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "updateTagForNote",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.Tag",
             "java.lang.Long"
           ]
         }
@@ -590,6 +638,20 @@
       ]
     },
     {
+      "type": "br.com.tasknoteapp.server.request.NoteRequest",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.util.List"
+          ]
+        }
+      ]
+    },
+    {
       "type": "br.com.tasknoteapp.server.request.TaskRequest",
       "methods": [
         {
@@ -613,6 +675,47 @@
         },
         {
           "name": "fieldName",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.NoteResponse",
+      "methods": [
+        {
+          "name": "archived",
+          "parameterTypes": []
+        },
+        {
+          "name": "description",
+          "parameterTypes": []
+        },
+        {
+          "name": "id",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastUpdate",
+          "parameterTypes": []
+        },
+        {
+          "name": "shareToken",
+          "parameterTypes": []
+        },
+        {
+          "name": "shared",
+          "parameterTypes": []
+        },
+        {
+          "name": "tags",
+          "parameterTypes": []
+        },
+        {
+          "name": "title",
+          "parameterTypes": []
+        },
+        {
+          "name": "url",
           "parameterTypes": []
         }
       ]
@@ -823,6 +926,16 @@
             "br.com.tasknoteapp.server.repository.NoteUrlRepository",
             "br.com.tasknoteapp.server.repository.TagRepository"
           ]
+        },
+        {
+          "name": "createNote",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.NoteRequest"
+          ]
+        },
+        {
+          "name": "getAllNotes",
+          "parameterTypes": []
         }
       ]
     },
@@ -1543,9 +1656,6 @@
       "type": "java.lang.reflect.GenericDeclaration"
     },
     {
-      "type": "java.lang.reflect.Method"
-    },
-    {
       "type": "java.lang.reflect.ParameterizedType",
       "methods": [
         {
@@ -1756,12 +1866,6 @@
       "type": "java.sql.Wrapper"
     },
     {
-      "type": "java.time.LocalDate"
-    },
-    {
-      "type": "java.time.format.DateTimeFormatter"
-    },
-    {
       "type": "java.util.AbstractCollection"
     },
     {
@@ -1858,9 +1962,6 @@
       "type": "jdk.internal.misc.Unsafe"
     },
     {
-      "type": "jdk.internal.reflect.DirectMethodHandleAccessor"
-    },
-    {
       "type": "kotlin.Metadata"
     },
     {
@@ -1897,28 +1998,7 @@
       "type": "org.aopalliance.intercept.MethodInterceptor"
     },
     {
-      "type": "org.apache.catalina.authenticator.AuthenticatorBase"
-    },
-    {
-      "type": "org.apache.catalina.connector.CoyoteAdapter"
-    },
-    {
       "type": "org.apache.catalina.core.ApplicationContextFacade"
-    },
-    {
-      "type": "org.apache.catalina.core.ApplicationFilterChain"
-    },
-    {
-      "type": "org.apache.catalina.core.StandardContextValve"
-    },
-    {
-      "type": "org.apache.catalina.core.StandardEngineValve"
-    },
-    {
-      "type": "org.apache.catalina.core.StandardHostValve"
-    },
-    {
-      "type": "org.apache.catalina.core.StandardWrapperValve"
     },
     {
       "type": "org.apache.catalina.loader.JdbcLeakPrevention",
@@ -1946,9 +2026,6 @@
       ]
     },
     {
-      "type": "org.apache.catalina.valves.ErrorReportValve"
-    },
-    {
       "type": "org.apache.commons.dbcp2.BasicDataSource"
     },
     {
@@ -1971,9 +2048,6 @@
           "parameterTypes": []
         }
       ]
-    },
-    {
-      "type": "org.apache.coyote.AbstractProcessorLight"
     },
     {
       "type": "org.apache.coyote.AbstractProtocol",
@@ -2004,9 +2078,6 @@
       ]
     },
     {
-      "type": "org.apache.coyote.AbstractProtocol$ConnectionHandler"
-    },
-    {
       "type": "org.apache.coyote.UpgradeProtocol"
     },
     {
@@ -2020,9 +2091,6 @@
     },
     {
       "type": "org.apache.coyote.http11.Http11NioProtocol"
-    },
-    {
-      "type": "org.apache.coyote.http11.Http11Processor"
     },
     {
       "type": "org.apache.derby.jdbc.EmbeddedDriver"
@@ -2067,21 +2135,6 @@
     },
     {
       "type": "org.apache.tomcat.util.net.NioEndpoint"
-    },
-    {
-      "type": "org.apache.tomcat.util.net.NioEndpoint$SocketProcessor"
-    },
-    {
-      "type": "org.apache.tomcat.util.net.SocketProcessorBase"
-    },
-    {
-      "type": "org.apache.tomcat.util.threads.TaskThread$WrappingRunnable"
-    },
-    {
-      "type": "org.apache.tomcat.util.threads.ThreadPoolExecutor"
-    },
-    {
-      "type": "org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker"
     },
     {
       "type": "org.apache.tomcat.websocket.server.WsFilter"
@@ -2378,9 +2431,6 @@
       "type": "org.springframework.aop.framework.AopInfrastructureBean"
     },
     {
-      "type": "org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor"
-    },
-    {
       "type": "org.springframework.aop.framework.ProxyConfig",
       "methods": [
         {
@@ -2405,9 +2455,6 @@
           ]
         }
       ]
-    },
-    {
-      "type": "org.springframework.aop.framework.ReflectiveMethodInvocation"
     },
     {
       "type": "org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator"
@@ -2435,9 +2482,6 @@
     },
     {
       "type": "org.springframework.aop.support.AbstractPointcutAdvisor"
-    },
-    {
-      "type": "org.springframework.aop.support.AopUtils"
     },
     {
       "type": "org.springframework.aot.hint.annotation.Reflective"
@@ -5282,15 +5326,7 @@
       "type": "org.springframework.boot.webmvc.autoconfigure.error.AbstractErrorController"
     },
     {
-      "type": "org.springframework.boot.webmvc.autoconfigure.error.BasicErrorController",
-      "methods": [
-        {
-          "name": "error",
-          "parameterTypes": [
-            "jakarta.servlet.http.HttpServletRequest"
-          ]
-        }
-      ]
+      "type": "org.springframework.boot.webmvc.autoconfigure.error.BasicErrorController"
     },
     {
       "type": "org.springframework.boot.webmvc.autoconfigure.error.DefaultErrorViewResolver"
@@ -6119,9 +6155,6 @@
       "type": "org.springframework.security.web.FilterChainProxy"
     },
     {
-      "type": "org.springframework.security.web.FilterChainProxy$VirtualFilterChain"
-    },
-    {
       "type": "org.springframework.security.web.SecurityFilterChain"
     },
     {
@@ -6170,9 +6203,6 @@
       "type": "org.springframework.security.web.context.SecurityContextHolderFilter"
     },
     {
-      "type": "org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter"
-    },
-    {
       "type": "org.springframework.security.web.header.HeaderWriterFilter"
     },
     {
@@ -6186,9 +6216,6 @@
     },
     {
       "type": "org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter"
-    },
-    {
-      "type": "org.springframework.security.web.session.DisableEncodeUrlFilter"
     },
     {
       "type": "org.springframework.security.web.session.SessionManagementFilter"
@@ -6299,9 +6326,6 @@
     },
     {
       "type": "org.springframework.transaction.interceptor.TransactionInterceptor"
-    },
-    {
-      "type": "org.springframework.transaction.interceptor.TransactionInterceptor$1"
     },
     {
       "type": "org.springframework.transaction.support.AbstractPlatformTransactionManager"
@@ -6439,15 +6463,6 @@
       "type": "org.springframework.web.filter.CharacterEncodingFilter"
     },
     {
-      "type": "org.springframework.web.filter.CompositeFilter"
-    },
-    {
-      "type": "org.springframework.web.filter.CompositeFilter$VirtualFilterChain"
-    },
-    {
-      "type": "org.springframework.web.filter.CorsFilter"
-    },
-    {
       "type": "org.springframework.web.filter.DelegatingFilterProxy"
     },
     {
@@ -6476,9 +6491,6 @@
     },
     {
       "type": "org.springframework.web.method.support.CompositeUriComponentsContributor"
-    },
-    {
-      "type": "org.springframework.web.method.support.InvocableHandlerMethod"
     },
     {
       "type": "org.springframework.web.method.support.UriComponentsContributor"
@@ -6727,9 +6739,6 @@
     },
     {
       "type": "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
-    },
-    {
-      "type": "org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod"
     },
     {
       "type": "org.springframework.web.servlet.resource.ResourceUrlProvider"
