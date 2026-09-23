@@ -5,16 +5,17 @@ import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.User;
-import br.com.tasknoteapp.server.exception.InvalidNoteException;
 import br.com.tasknoteapp.server.exception.NoteArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotArchivedException;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.repository.NoteRepository;
 import br.com.tasknoteapp.server.repository.NoteUrlRepository;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,9 +121,10 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse createNote(NoteRequest noteRequest) {
-    Optional<String> patchError = isNoteRequestValid(noteRequest);
-    if (patchError.isPresent()) {
-      throw new InvalidNoteException(patchError.get());
+    Map<String, String> createValidation = isNoteRequestValid(noteRequest);
+    if (!createValidation.isEmpty()) {
+      String key = createValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, createValidation.get(key));
     }
 
     User user = getCurrentUser();
@@ -172,9 +173,10 @@ public class NoteService {
    */
   @Transactional
   public NoteResponse patchNote(Long noteId, NoteRequest patch) {
-    Optional<String> patchError = isNoteRequestValid(patch);
-    if (patchError.isPresent()) {
-      throw new InvalidNoteException(patchError.get());
+    Map<String, String> patchValidation = isNoteRequestValid(patch);
+    if (!patchValidation.isEmpty()) {
+      String key = patchValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, patchValidation.get(key));
     }
 
     User user = getCurrentUser();
@@ -668,28 +670,35 @@ public class NoteService {
     return savedUrl;
   }
 
-  private Optional<String> isNoteRequestValid(NoteRequest request) {
-    if (Objects.isNull(request.title()) || request.title().isBlank()) {
-      return Optional.of("Wrong or missing 'title' key and value.");
-    }
-    if (request.title().length() > 100) {
-      return Optional.of("Invalid value for 'title', length must be less or equal 100");
-    }
-    if (Objects.isNull(request.description()) || request.description().isBlank()) {
-      return Optional.of("Wrong or missing 'description' key and value.");
-    }
-    if (request.description().length() > 50000) {
-      return Optional.of("Invalid value for 'description', length must be less or equal 50000");
-    }
+  private Map<String, String> isNoteRequestValid(NoteRequest request) {
+    Map<String, String> validationMap = new HashMap<>();
+
+    // Title
+    validationMap.putAll(ValidationUtil.notNullNorBlank("title", request.title()));
+    validationMap.putAll(ValidationUtil.maxSize("title", request.title(),
+        ValidationUtil.MAX_NOTE_TITLE_SIZE));
+
+    // Description
+    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
+    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
+        ValidationUtil.MAX_NOTE_CONTENT_SIZE));
+    
+    // URLs
     if (!Objects.isNull(request.url()) && !request.url().isBlank()) {
-      if (request.url().length() > 200) {
-        return Optional.of("Invalid value for 'url', length must be less or equal 200");
-      }
-      Pattern pattern = Pattern.compile("^(https?://.*|#.*)?$");
-      if (!pattern.matcher(request.url()).matches()) {
-        return Optional.of("Invalid value for 'url', it needs to start with http or https");
+      validationMap.putAll(ValidationUtil.maxSize("url", request.url(),
+          ValidationUtil.MAX_URL_SIZE));
+      validationMap.putAll(ValidationUtil.url("url", request.url()));
+    }
+
+    // Tags
+    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+      for (String tag : request.tags()) {
+        int idx = request.tags().indexOf(tag);
+        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
+            ValidationUtil.MAX_TAG_NAME_SIZE));
       }
     }
-    return Optional.empty();
+
+    return validationMap;
   }
 }

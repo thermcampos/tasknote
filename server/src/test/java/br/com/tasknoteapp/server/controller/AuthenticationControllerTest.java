@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
-import br.com.tasknoteapp.server.exception.SignInException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.request.LoginRequest;
 import br.com.tasknoteapp.server.response.UserResponseWithToken;
 import br.com.tasknoteapp.server.service.AuthService;
@@ -77,9 +77,9 @@ class AuthenticationControllerTest {
   void signup_badEmailRequest_shouldFail() throws Exception {
     LoginRequest request =
         new LoginRequest("user@domain..com", "abcde123456", "abcde123456", "en");
-    final String token = "xaxbxcxdx1x2x3@A";
 
-    when(authService.signUpNewUser(request)).thenThrow(new SignInException("Invalid email"));
+    when(authService.signUpNewUser(request))
+        .thenThrow(new RequestValidationException("email", "Invalid email"));
 
     String jsonString =
         """

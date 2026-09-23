@@ -10,8 +10,8 @@ import br.com.tasknoteapp.server.exception.EmailAlreadyExistsException;
 import br.com.tasknoteapp.server.exception.EmailNotConfirmedException;
 import br.com.tasknoteapp.server.exception.InvalidCredentialsException;
 import br.com.tasknoteapp.server.exception.MaxLoginLimitAttemptException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.ResetExpiredException;
-import br.com.tasknoteapp.server.exception.SignInException;
 import br.com.tasknoteapp.server.exception.UserNotFoundException;
 import br.com.tasknoteapp.server.repository.UserPwdLimitRepository;
 import br.com.tasknoteapp.server.repository.UserRepository;
@@ -24,6 +24,7 @@ import br.com.tasknoteapp.server.util.AuthUtil;
 import br.com.tasknoteapp.server.util.SecurityUtil;
 import br.com.tasknoteapp.server.util.TokenUtil;
 import br.com.tasknoteapp.server.util.UuidUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,11 +34,12 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -111,9 +113,10 @@ public class AuthService {
   public UserResponseWithToken signUpNewUser(LoginRequest newUser) {
     logger.info("Signing up new user: {}", SecurityUtil.redactEmail(newUser.email()));
 
-    Optional<String> signInValidation = isLoginRequestValid(newUser, true);
-    if (signInValidation.isPresent()) {
-      throw new SignInException(signInValidation.get());
+    Map<String, String> signUpValidation = isLoginRequestValid(newUser);
+    if (!signUpValidation.isEmpty()) {
+      String key = signUpValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, signUpValidation.get(key));
     }
 
     if (findByEmail(newUser.email()).isPresent()) {
@@ -194,9 +197,10 @@ public class AuthService {
   public UserResponseWithToken signInUser(LoginRequest login) {
     logger.info("Signing in user: {}", SecurityUtil.redactEmail(login.email()));
 
-    Optional<String> signInValidation = isLoginRequestValid(login, false);
-    if (signInValidation.isPresent()) {
-      throw new SignInException(signInValidation.get());
+    Map<String, String> signInValidation = isLoginRequestValid(login);
+    if (!signInValidation.isEmpty()) {
+      String key = signInValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, signInValidation.get(key));
     }
 
     Optional<User> userOptional = findByEmail(login.email());
@@ -431,9 +435,10 @@ public class AuthService {
   public void confirmUserAccount(String identification) {
     logger.info("Confirming user email account");
 
-    Optional<String> confirmationMessage = isEmailConfirmationRequestValid(identification);
-    if (confirmationMessage.isPresent()) {
-      throw new SignInException(confirmationMessage.get());
+    Map<String, String> confirmationValidation = isEmailConfirmationRequestValid(identification);
+    if (!confirmationValidation.isEmpty()) {
+      String key = confirmationValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, confirmationValidation.get(key));
     }
 
     UUID uuid;
@@ -464,9 +469,10 @@ public class AuthService {
   public void resendEmailConfirmation(String email) {
     logger.info("Re-sending the confirmation email");
 
-    Optional<String> confirmationMessage = isResendConfirmationRequestValid(email);
-    if (confirmationMessage.isPresent()) {
-      throw new SignInException(confirmationMessage.get());
+    Map<String, String> resendValidation = isResendConfirmationRequestValid(email);
+    if (!resendValidation.isEmpty()) {
+      String key = resendValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, resendValidation.get(key));
     }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
@@ -492,9 +498,10 @@ public class AuthService {
   public void resetPasswordForUser(String email) {
     logger.info("Requesting password reset for email {}", email);
 
-    Optional<String> confirmationMessage = isResendConfirmationRequestValid(email);
-    if (confirmationMessage.isPresent()) {
-      throw new SignInException(confirmationMessage.get());
+    Map<String, String> resetValidation = isResendConfirmationRequestValid(email);
+    if (!resetValidation.isEmpty()) {
+      String key = resetValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, resetValidation.get(key));
     }
 
     Optional<User> userOptional = userRepository.findByEmail(email);
@@ -527,9 +534,10 @@ public class AuthService {
   public void confirmResetPasswordForUser(PasswordResetRequest request) {
     logger.info("Saving new password for token {}", request.token());
 
-    Optional<String> resetMessage = isPasswordResetRequestValid(request);
-    if (resetMessage.isPresent()) {
-      throw new SignInException(resetMessage.get());
+    Map<String, String> confirmValidation = isPasswordResetRequestValid(request);
+    if (!confirmValidation.isEmpty()) {
+      String key = confirmValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, confirmValidation.get(key));
     }
 
     Optional<User> userOptional = userRepository.findByResetToken(request.token());
@@ -617,57 +625,69 @@ public class AuthService {
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }
 
-  private Optional<String> isLoginRequestValid(LoginRequest request, boolean isSigningUp) {
-    if (Objects.isNull(request.email()) || request.email().isBlank()) {
-      return Optional.of("Wrong or missing 'email' key and value.");
-    }
-    Pattern emailPattern = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    if (!emailPattern.matcher(request.email()).matches()) {
-      return Optional.of("Invalid 'email' please review.");
-    }
-    if (Objects.isNull(request.password()) || request.password().isBlank()) {
-      return Optional.of("Wrong or missing 'password' key and value.");
-    }
-    if (isSigningUp) {
-      if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
-        return Optional.of("Wrong or missing 'passwordAgain' key and value.");
-      }
-      if (!request.password().equals(request.passwordAgain())) {
-        return Optional.of("Wrong password 'password' and 'passwordAgain' must match.");
-      }
-    }
-    return Optional.empty();
-  }
+  private Map<String, String> isLoginRequestValid(LoginRequest request) {
+    Map<String, String> validationMap = new HashMap<>();
 
-  private Optional<String> isEmailConfirmationRequestValid(String identification) {
-    if (Objects.isNull(identification) || identification.isBlank()) {
-      return Optional.of("Wrong or missing 'identification' key and value.");
-    }
+    // Email
+    validationMap.putAll(ValidationUtil.notNullNorBlank("email", request.email()));
+    validationMap.putAll(ValidationUtil.maxSize("email", request.email(),
+        ValidationUtil.MAX_EMAIL_SIZE));
+    validationMap.putAll(ValidationUtil.email("email", request.email()));
+
+    // Password
+    validationMap.putAll(ValidationUtil.notNullNorBlank("password", request.password()));
+    validationMap.putAll(ValidationUtil.maxSize("password", request.password(),
+        ValidationUtil.MAX_PASSWORD_SIZE));
     
-    return Optional.empty();
+    // PasswordAgain
+    if (!Objects.isNull(request.passwordAgain()) && !request.passwordAgain().isBlank()) {
+      validationMap.putAll(ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+          ValidationUtil.MAX_PASSWORD_SIZE));
+    }
+
+    // Lang
+    if (!Objects.isNull(request.lang()) && !request.lang().isBlank()) {
+      validationMap.putAll(ValidationUtil.maxSize("lang", request.lang(),
+          ValidationUtil.MAX_LANG_SIZE));
+    }
+
+    return validationMap;
   }
 
-  private Optional<String> isResendConfirmationRequestValid(String email) {
-    if (Objects.isNull(email) || email.isBlank()) {
-      return Optional.of("Wrong or missing 'email' key and value.");
-    }
-    Pattern emailPattern = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    if (!emailPattern.matcher(email).matches()) {
-      return Optional.of("Invalid 'email' please review.");
-    }
-    return Optional.empty();
+  private Map<String, String> isEmailConfirmationRequestValid(String identification) {
+    Map<String, String> validationMap = new HashMap<>();
+    validationMap.putAll(ValidationUtil.notNullNorBlank("identification", identification));
+    validationMap.putAll(ValidationUtil.maxSize("identification", identification,
+        ValidationUtil.MAX_UUID_SIZE));
+    return validationMap;
   }
 
-  private Optional<String> isPasswordResetRequestValid(PasswordResetRequest request) {
-    if (Objects.isNull(request.token()) || request.token().isBlank()) {
-      return Optional.of("Wrong or missing 'token' key and value.");
-    }
-    if (Objects.isNull(request.password()) || request.password().isBlank()) {
-      return Optional.of("Wrong or missing 'password' key and value.");
-    }
-    if (Objects.isNull(request.passwordAgain()) || request.passwordAgain().isBlank()) {
-      return Optional.of("Wrong or missing 'passwordAgain' key and value.");
-    }
-    return Optional.empty();
+  private Map<String, String> isResendConfirmationRequestValid(String email) {
+    Map<String, String> validationMap = new HashMap<>();
+    validationMap.putAll(ValidationUtil.notNullNorBlank("email", email));
+    validationMap.putAll(ValidationUtil.email("email", email));
+    validationMap.putAll(ValidationUtil.maxSize("email", email, ValidationUtil.MAX_EMAIL_SIZE));
+    return validationMap;
+  }
+
+  private Map<String, String> isPasswordResetRequestValid(PasswordResetRequest request) {
+    Map<String, String> validationMap = new HashMap<>();
+
+    // Token
+    validationMap.putAll(ValidationUtil.notNullNorBlank("token", request.token()));
+    validationMap.putAll(ValidationUtil.maxSize("token", request.token(),
+        ValidationUtil.MAX_TOKEN_SIZE));
+
+    // Password
+    validationMap.putAll(ValidationUtil.notNullNorBlank("password", request.password()));
+    validationMap.putAll(ValidationUtil.maxSize("password", request.password(),
+        ValidationUtil.MAX_PASSWORD_SIZE));
+
+    // PasswordAgain
+    validationMap.putAll(ValidationUtil.notNullNorBlank("passwordAgain", request.passwordAgain()));
+    validationMap.putAll(ValidationUtil.maxSize("passwordAgain", request.passwordAgain(),
+        ValidationUtil.MAX_PASSWORD_SIZE));
+
+    return validationMap;
   }
 }

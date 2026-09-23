@@ -6,7 +6,7 @@ import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
 import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
-import br.com.tasknoteapp.server.exception.InvalidTaskException;
+import br.com.tasknoteapp.server.exception.RequestValidationException;
 import br.com.tasknoteapp.server.exception.TaskNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.repository.TaskRepository;
@@ -15,6 +15,7 @@ import br.com.tasknoteapp.server.request.TaskPatchRequest;
 import br.com.tasknoteapp.server.request.TaskRequest;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,9 +120,10 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse createTask(TaskRequest taskRequest) {
-    Optional<String> taskError = isTaskRequestValid(taskRequest);
-    if (taskError.isPresent()) {
-      throw new InvalidTaskException(taskError.get());
+    Map<String, String> createValidation = isTaskRequestValid(taskRequest);
+    if (!createValidation.isEmpty()) {
+      String key = createValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, createValidation.get(key));
     }
 
     User user = getCurrentUser();
@@ -178,9 +179,10 @@ public class TaskService {
    */
   @Transactional
   public TaskResponse patchTask(Long taskId, TaskPatchRequest patchRequest) {
-    Optional<String> patchError = isTaskPatchRequestValid(patchRequest);
-    if (patchError.isPresent()) {
-      throw new InvalidTaskException(patchError.get());
+    Map<String, String> patchValidation = isTaskPatchRequestValid(patchRequest);
+    if (!patchValidation.isEmpty()) {
+      String key = patchValidation.get(ValidationUtil.ERROR_KEY);
+      throw new RequestValidationException(key, patchValidation.get(key));
     }
 
     User user = getCurrentUser();
@@ -511,51 +513,72 @@ public class TaskService {
     logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
   }
 
-  private Optional<String> isTaskPatchRequestValid(TaskPatchRequest request) {
-    if (Objects.isNull(request.description()) || request.description().isBlank()) {
-      return Optional.of("Wrong or missing 'description' key and value.");
-    }
-    if (request.description().length() > 2000) {
-      return Optional.of("Invalid value for 'description', length must be less or equal 2000");
-    }
+  private Map<String, String> isTaskPatchRequestValid(TaskPatchRequest request) {
+    Map<String, String> validationMap = new HashMap<>();
+    
+    // Description
+    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
+    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
+        ValidationUtil.MAX_TASK_NAME));
+    
+    // URLs
     if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
       for (String url : request.urls()) {
         int idx = request.urls().indexOf(url);
-        if (url.length() > 200) {
-          return Optional.of("Invalid value for 'url' at "
-              + idx + ", length must be less or equal 200");
-        }
-        Pattern pattern = Pattern.compile("^(https?://.*|#.*)?$");
-        if (!pattern.matcher(url).matches()) {
-          return Optional.of("Invalid value for 'url' at "
-              + idx + ", it needs to start with http or https");
-        }
+        validationMap.putAll(ValidationUtil.maxSize("url " + idx, url, 200));
+        validationMap.putAll(ValidationUtil.url("url " + idx, url));
       }
     }
-    return Optional.empty();
+
+    // DueDate
+    if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+      validationMap.putAll(ValidationUtil.maxSize("dueDate", request.dueDate(),
+          ValidationUtil.MAX_TASK_DUEDATE));
+    }
+
+    // Tags
+    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+      for (String tag : request.tags()) {
+        int idx = request.tags().indexOf(tag);
+        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
+            ValidationUtil.MAX_TAG_NAME_SIZE));
+      }
+    }
+
+    return validationMap;
   }
 
-  private Optional<String> isTaskRequestValid(TaskRequest request) {
-    if (Objects.isNull(request.description()) || request.description().isBlank()) {
-      return Optional.of("Wrong or missing 'description' key and value.");
-    }
-    if (request.description().length() > 2000) {
-      return Optional.of("Invalid value for 'description', length must be less or equal 2000");
-    }
+  private Map<String, String> isTaskRequestValid(TaskRequest request) {
+    Map<String, String> validationMap = new HashMap<>();
+
+    // Descrition
+    validationMap.putAll(ValidationUtil.notNullNorBlank("description", request.description()));
+    validationMap.putAll(ValidationUtil.maxSize("description", request.description(),
+        ValidationUtil.MAX_TASK_NAME));
+
+    // URLs
     if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
       for (String url : request.urls()) {
         int idx = request.urls().indexOf(url);
-        if (url.length() > 200) {
-          return Optional.of("Invalid value for 'url' at "
-              + idx + ", length must be less or equal 200");
-        }
-        Pattern pattern = Pattern.compile("^(https?://.*|#.*)?$");
-        if (!pattern.matcher(url).matches()) {
-          return Optional.of("Invalid value for 'url' at "
-              + idx + ", it needs to start with http or https");
-        }
+        validationMap.putAll(ValidationUtil.maxSize("url " + idx, url, 200));
+        validationMap.putAll(ValidationUtil.url("url " + idx, url));
       }
     }
-    return Optional.empty();
+
+    // DueDate
+    if (!Objects.isNull(request.dueDate()) && !request.dueDate().isEmpty()) {
+      validationMap.putAll(ValidationUtil.maxSize("dueDate", request.dueDate(),
+          ValidationUtil.MAX_TASK_DUEDATE));
+    }
+
+    // Tags
+    if (!Objects.isNull(request.tags()) && !request.tags().isEmpty()) {
+      for (String tag : request.tags()) {
+        int idx = request.tags().indexOf(tag);
+        validationMap.putAll(ValidationUtil.maxSize("tag" + idx, tag,
+            ValidationUtil.MAX_TAG_NAME_SIZE));
+      }
+    }
+    return validationMap;
   }
 }
