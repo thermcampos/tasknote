@@ -45,6 +45,23 @@ class HomeControllerTest {
   }
 
   @Test
+  @DisplayName("Get task tags with no tags found should succeed with empty list")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void getTasksTags_noTagsFound_shouldSucceed() throws Exception {
+    when(homeService.getTopTasksTag()).thenReturn(List.of());
+
+    mockMvc
+        .perform(
+            get("/rest/home/tasks/tags")
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", org.hamcrest.Matchers.empty()))
+        .andReturn();
+  }
+
+  @Test
   @DisplayName("Get task tags not authorized it should fail")
   void getTasksTags_notAuthorized_shouldFail() throws Exception {
     mockMvc

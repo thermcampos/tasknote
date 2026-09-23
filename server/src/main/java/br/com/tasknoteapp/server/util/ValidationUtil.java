@@ -64,7 +64,7 @@ public class ValidationUtil {
    * @return Map of tring String containing an ERROR_KEY key if present, or empty.
    */
   public static Map<String, String> maxSize(String field, String value, int maxSize) {
-    if (value.length() > 100) {
+    if (value.length() > maxSize) {
       return Map.of(
         ERROR_KEY, field,
         field, "size must be between 0 and " + maxSize
