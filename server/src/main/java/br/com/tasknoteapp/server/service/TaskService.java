@@ -517,8 +517,9 @@ public class TaskService {
   private Optional<InternalValidationException> isTaskPatchRequestValid(TaskPatchRequest request) {
     try {
       // Description
-      ValidationUtil.notNullNorBlank("description", request.description());
-      ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
+      if (!Objects.isNull(request.description()) && !request.description().isEmpty()) {
+        ValidationUtil.maxSize("description", request.description(), ValidationUtil.MAX_TASK_NAME);
+      }
       
       // URLs
       if (!Objects.isNull(request.urls()) && !request.urls().isEmpty()) {
