@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -15,8 +16,13 @@ public class TaskRepository {
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public TaskRepository(NamedParameterJdbcTemplate jdbcTemplate) {
+  private final long homeWindowMinutes;
+
+  public TaskRepository(
+      NamedParameterJdbcTemplate jdbcTemplate,
+      @Value ("${br.com.tasknote.server.home-window-minutes:1440}") long homeWindowMinutes) {
     this.jdbcTemplate = jdbcTemplate;
+    this.homeWindowMinutes = homeWindowMinutes;
   }
 
   /**
@@ -219,6 +225,82 @@ public class TaskRepository {
         .addValue("searchTerm", searchTerm);
 
     return jdbcTemplate.query(sql, params, new TaskRowMapper());
+  }
+
+  /**
+   * Find Tasks for the Home view: either the default window (recently touched or high-priority
+   * incomplete) or an unbounded search/tag query.
+   *
+   * @param userId The User ID to fetch by.
+   * @param searchTerm Optional text to search in description, tags and urls.
+   * @param tag Optional tag name to filter by ("untagged" matches tasks without tags).
+   * @param windowedOnly When true, restrict to the default window (last 24h or high-priority
+   *     incomplete).
+   * @return List of Tasks found.
+   */
+  public List<Task> findHomeTasks(
+      Long userId, String searchTerm, String tag, boolean windowedOnly) {
+    StringBuilder sql =
+        new StringBuilder(
+            """
+            SELECT DISTINCT t.id,
+              t.user_id,
+              t.description,
+              t.completed,
+              t.last_update,
+              t.due_date,
+              t.due_date_notify,
+              t.due_date_notify_sent,
+              t.high_priority
+            FROM tasknote.tasks t
+            LEFT JOIN tasknote.task_tags tt ON tt.task_id = t.id
+            LEFT JOIN tasknote.tags tg ON tg.id = tt.tag_id
+            LEFT JOIN tasknote.task_url tu ON tu.task_id = t.id
+            WHERE t.user_id = :userId
+            """);
+
+    MapSqlParameterSource params = new MapSqlParameterSource().addValue("userId", userId);
+
+    if (windowedOnly) {
+      sql.append(
+          """
+          \
+            AND (
+              t.last_update >= :windowStart
+              OR (t.high_priority = true AND t.completed = false)
+            )
+          """);
+      params.addValue("windowStart", LocalDateTime.now().minusMinutes(homeWindowMinutes));
+    } else {
+      if (searchTerm != null && !searchTerm.isBlank()) {
+        sql.append(
+            """
+            \
+              AND (
+                UPPER(t.description) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+                OR UPPER(tg.name) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+                OR UPPER(tu.url) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+              )
+            """);
+        params.addValue("searchTerm", searchTerm);
+      }
+      if (tag != null && !tag.isBlank()) {
+        if ("untagged".equals(tag)) {
+          sql.append(
+              """
+              \
+                AND NOT EXISTS (
+                  SELECT 1 FROM tasknote.task_tags tt2 WHERE tt2.task_id = t.id
+                )
+              """);
+        } else {
+          sql.append("\n  AND tg.name = :tag\n");
+          params.addValue("tag", tag);
+        }
+      }
+    }
+
+    return jdbcTemplate.query(sql.toString(), params, new TaskRowMapper());
   }
 
   class TaskRowMapper implements org.springframework.jdbc.core.RowMapper<Task> {

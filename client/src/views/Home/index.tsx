@@ -14,6 +14,7 @@ import {
 } from 'react-bootstrap';
 import { TaskResponse } from '../../types/TaskResponse';
 import { NoteResponse } from '../../types/NoteResponse';
+import { HomeItemsResponse } from '../../types/HomeItemsResponse';
 import api from '../../api-service/api';
 import ApiConfig from '../../api-service/apiConfig';
 import { handleDefaultLang } from '../../lang-service/LangHandler';
@@ -31,6 +32,7 @@ import TaskTag from '../../components/TaskTag';
 import NoteTitle from '../../components/NoteTitle';
 
 const OPEN_NOTE_ID_KEY = 'OPEN_NOTE_ID';
+const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Home page component.
@@ -53,8 +55,6 @@ function Home(): React.ReactNode {
   const [completedTasks, setCompletedTasks] = useState<TaskResponse[]>([]);
   const [notes, setNotes] = useState<NoteResponse[]>([]);
   const [archivedNotes, setArchivedNotes] = useState<NoteResponse[]>([]);
-  const [savedNotes, setSavedNotes] = useState<NoteResponse[]>([]);
-  const [savedTasks, setSavedTasks] = useState<TaskResponse[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'task' | 'note'; id: number } | null>(null);
 
@@ -90,7 +90,7 @@ function Home(): React.ReactNode {
   const toggleTaskCompleted = async (task: TaskResponse): Promise<void> => {
     try {
       await api.patchJSON(`${ApiConfig.tasksUrl}/${task.id}`, { completed: !task.completed });
-      await loadAllTasks();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -105,7 +105,7 @@ function Home(): React.ReactNode {
   const deleteTask = async (taskIdParam: number) => {
     try {
       await api.deleteNoContent(`${ApiConfig.tasksUrl}/${taskIdParam}`);
-      await loadAllTasks();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -120,7 +120,7 @@ function Home(): React.ReactNode {
   const deleteNote = async (noteIdParam: number) => {
     try {
       await api.deleteNoContent(`${ApiConfig.notesUrl}/${noteIdParam}`);
-      await loadAllNotes();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -185,7 +185,7 @@ function Home(): React.ReactNode {
   const archiveNote = async (noteId: number): Promise<void> => {
     try {
       await api.putJSON(`${ApiConfig.notesUrl}/${noteId}/archive`, {});
-      await loadAllNotes();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -200,7 +200,7 @@ function Home(): React.ReactNode {
   const restoreNote = async (noteId: number): Promise<void> => {
     try {
       await api.putJSON(`${ApiConfig.notesUrl}/${noteId}/restore`, {});
-      await loadAllNotes();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -220,7 +220,7 @@ function Home(): React.ReactNode {
     try {
       const action = note.shared ? 'unshare' : 'share';
       await api.putJSON(`${ApiConfig.notesUrl}/${note.id}/${action}`, {});
-      await loadAllNotes();
+      await loadItems(filterText, selectedOption);
     }
     catch (e) {
       handleError(e);
@@ -240,120 +240,45 @@ function Home(): React.ReactNode {
   };
 
   /**
-   * Apply filters to a given set of tasks and notes, updating displayed state.
+   * Build the home items URL for the given search text and filter option.
    *
-   * @param {string} text - The text to filter by.
-   * @param {string | undefined} radioFilter - The radio filter option.
-   * @param {TaskResponse[]} allTasks - The full list of tasks to filter from.
-   * @param {NoteResponse[]} allNotes - The full list of notes to filter from.
+   * @param {string} text - The search text.
+   * @param {string | undefined} option - The selected filter option.
+   * @returns {string} The items URL with query params, if any.
    */
-  const applyFilter = (text: string, radioFilter: string | undefined, allTasks: TaskResponse[], allNotes: NoteResponse[]): void => {
-    const activeTasks = allTasks.filter((task: TaskResponse) => !task.completed);
-    const doneTasks = allTasks.filter((task: TaskResponse) => task.completed);
-    const { active: activeNotes, archived: archivedNoteList } = partitionNotes(allNotes);
-
-    if (!text && (!radioFilter || radioFilter === 'everything')) {
-      setNotes([...activeNotes]);
-      setArchivedNotes([...archivedNoteList]);
-      setTasks([...activeTasks]);
-      setCompletedTasks([...doneTasks]);
-      return;
+  const buildItemsUrl = (text: string, option: string | undefined): string => {
+    const params = new URLSearchParams();
+    if (text && text.trim().length > 0) {
+      params.append('q', text.trim());
     }
-
-    const tagToFilter = radioFilter?.startsWith('radio_') ? radioFilter.substring(6) : '';
-
-    if (radioFilter && radioFilter === 'onlyTasks') {
-      setNotes([]);
-      setArchivedNotes([]);
+    if (option === 'onlyTasks') {
+      params.append('type', 'tasks');
     }
-    else {
-      let filteredNotes = activeNotes.filter((note: NoteResponse) => {
-        const anyTitleMatch = note.title.toLowerCase().includes(text.toLowerCase());
-        const anyContentMatch = note.description.toLowerCase().includes(text.toLowerCase());
-        const anyUrlMatch = note.url?.includes(text.toLowerCase());
-        const anyTagMatch = note.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()));
-        return anyTitleMatch || anyContentMatch || anyUrlMatch || anyTagMatch;
-      });
-
-      if (tagToFilter === 'untagged') {
-        filteredNotes = filteredNotes.filter((note: NoteResponse) => !note.tags || note.tags.length === 0);
-      }
-      else if (tagToFilter) {
-        filteredNotes = filteredNotes.filter((note: NoteResponse) => note.tags && note.tags.includes(tagToFilter));
-      }
-
-      let filteredArchivedNotes = archivedNoteList.filter((note: NoteResponse) => {
-        const anyTitleMatch = note.title.toLowerCase().includes(text.toLowerCase());
-        const anyContentMatch = note.description.toLowerCase().includes(text.toLowerCase());
-        const anyUrlMatch = note.url?.includes(text.toLowerCase());
-        const anyTagMatch = note.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()));
-        return anyTitleMatch || anyContentMatch || anyUrlMatch || anyTagMatch;
-      });
-
-      if (tagToFilter === 'untagged') {
-        filteredArchivedNotes = filteredArchivedNotes.filter((note: NoteResponse) => !note.tags || note.tags.length === 0);
-      }
-      else if (tagToFilter) {
-        filteredArchivedNotes = filteredArchivedNotes.filter((note: NoteResponse) => note.tags && note.tags.includes(tagToFilter));
-      }
-
-      setNotes([...filteredNotes]);
-      setArchivedNotes([...filteredArchivedNotes]);
+    else if (option === 'onlyNotes') {
+      params.append('type', 'notes');
     }
-
-    if (radioFilter && radioFilter === 'onlyNotes') {
-      setTasks([]);
-      setCompletedTasks([]);
+    else if (option && option.startsWith('radio_')) {
+      params.append('tag', option.substring(6));
     }
-    else {
-      let filteredTasks = activeTasks.filter((task: TaskResponse) => {
-        return task.description.toLowerCase().includes(text.toLowerCase())
-          || task.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()))
-          || task.urls.filter((url: string) => url.includes(text.toLowerCase())).length > 0;
-      });
-
-      if (tagToFilter === 'untagged') {
-        filteredTasks = filteredTasks.filter((task: TaskResponse) => !task.tags || task.tags.length === 0);
-      }
-      else if (tagToFilter) {
-        filteredTasks = filteredTasks.filter((task: TaskResponse) => task.tags && task.tags.includes(tagToFilter));
-      }
-
-      setTasks([...filteredTasks]);
-
-      let filteredCompletedTasks = doneTasks.filter((task: TaskResponse) => {
-        return task.description.toLowerCase().includes(text.toLowerCase())
-          || task.tags?.some(tag => tag.toLowerCase().includes(text.toLowerCase()))
-          || task.urls.filter((url: string) => url.includes(text.toLowerCase())).length > 0;
-      });
-
-      if (tagToFilter === 'untagged') {
-        filteredCompletedTasks = filteredCompletedTasks.filter((task: TaskResponse) => !task.tags || task.tags.length === 0);
-      }
-      else if (tagToFilter) {
-        filteredCompletedTasks = filteredCompletedTasks.filter((task: TaskResponse) => task.tags && task.tags.includes(tagToFilter));
-      }
-
-      setCompletedTasks([...filteredCompletedTasks]);
-    }
+    const queryString = params.toString();
+    return queryString
+      ? `${ApiConfig.homeUrl}/items?${queryString}`
+      : `${ApiConfig.homeUrl}/items`;
   };
 
   /**
-   * Filter notes by a given text.
+   * Load home items from the server for the current view: the default window,
+   * or the active search/tag query.
+   *
+   * @param {string} text - The search text.
+   * @param {string | undefined} option - The selected filter option.
    */
-  const filterTasksAndNotes = (text: string, radioFilter?: string): void => {
-    setFilterText(text);
-    applyFilter(text, radioFilter, savedTasks, savedNotes);
-  };
-
-  /**
-   * Load tasks from the server.
-   */
-  const loadAllTasks = async () => {
+  const loadItems = async (text: string, option: string | undefined): Promise<void> => {
     try {
-      const tasksFetched: TaskResponse[] = await api.getJSON(ApiConfig.tasksUrl);
-      const translated = translateTaskResponse(tasksFetched, i18n.language);
-      translated.sort((t1, t2) => {
+      const response: HomeItemsResponse = await api.getJSON(buildItemsUrl(text, option));
+
+      const translatedTasks = translateTaskResponse(response.tasks ?? [], i18n.language);
+      translatedTasks.sort((t1, t2) => {
         if (t1.completed === t2.completed) {
           if (t1.highPriority === t2.highPriority) {
             return 0;
@@ -368,21 +293,16 @@ function Home(): React.ReactNode {
         }
         return 1;
       });
-      setSavedTasks([...translated]);
-    }
-    catch (e) {
-      handleError(e);
-    }
-  };
 
-  /**
-   * Load notes from the server.
-   */
-  const loadAllNotes = async () => {
-    try {
-      const notesFetched: NoteResponse[] = await api.getJSON(ApiConfig.notesUrl);
-      notesFetched.sort((n1, n2) => (n1.id > n2.id) ? -1 : 1);
-      setSavedNotes([...notesFetched]);
+      const fetchedNotes = [...(response.notes ?? [])];
+      fetchedNotes.sort((n1, n2) => (n1.id > n2.id) ? -1 : 1);
+
+      setTasks(translatedTasks.filter((task: TaskResponse) => !task.completed));
+      setCompletedTasks(translatedTasks.filter((task: TaskResponse) => task.completed));
+
+      const { active, archived } = partitionNotes(fetchedNotes);
+      setNotes(active);
+      setArchivedNotes(archived);
     }
     catch (e) {
       handleError(e);
@@ -470,6 +390,20 @@ function Home(): React.ReactNode {
     return t('home_radio_everything');
   };
 
+  const isUnboundedView = (): boolean => {
+    return filterText.trim().length > 0 || selectedOption.startsWith('radio_');
+  };
+
+  const getWindowHintKey = (): string => {
+    if (selectedOption === 'onlyTasks') {
+      return 'home_window_hint_tasks';
+    }
+    if (selectedOption === 'onlyNotes') {
+      return 'home_window_hint_notes';
+    }
+    return 'home_window_hint';
+  };
+
   const getSelectedVariant = (): string => {
     if (selectedOption === 'everything') {
       return 'secondary';
@@ -485,20 +419,20 @@ function Home(): React.ReactNode {
 
   const handleOptionChange = (value: string): void => {
     setSelectedOption(value);
-    filterTasksAndNotes(filterText, value);
   };
 
   useEffect(() => {
     handleDefaultLang(user?.lang);
     setName(user?.name ?? 'User');
     loadTags();
-    loadAllTasks();
-    loadAllNotes();
   }, [user]);
 
   useEffect(() => {
-    applyFilter(filterText, selectedOption, savedTasks, savedNotes);
-  }, [savedTasks, savedNotes, filterText, selectedOption]);
+    const timer = setTimeout(() => {
+      void loadItems(filterText, selectedOption);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [filterText, selectedOption, user]);
 
   useEffect(() => {
     const openNoteId = localStorage.getItem(OPEN_NOTE_ID_KEY);
@@ -544,7 +478,7 @@ function Home(): React.ReactNode {
               placeholder={t('home_input_filter')}
               value={filterText}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                filterTasksAndNotes(e.target.value, selectedOption)}
+                setFilterText(e.target.value)}
               className="border-0"
               style={{
                 borderTopRightRadius: 0,
@@ -642,6 +576,12 @@ function Home(): React.ReactNode {
               </Dropdown.Menu>
             </Dropdown>
           </InputGroup>
+          <Form.Text
+            className="text-muted search-help-text"
+            data-testid="home-view-hint"
+          >
+            {isUnboundedView() ? t('home_search_hint') : t(getWindowHintKey())}
+          </Form.Text>
         </Col>
       </Row>
 

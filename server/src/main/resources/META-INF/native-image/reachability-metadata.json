@@ -203,6 +203,18 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.HomeService"
           ]
+        },
+        {
+          "name": "getHomeItems",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "getTasksTags",
+          "parameterTypes": []
         }
       ]
     },
@@ -214,10 +226,6 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.NoteService"
           ]
-        },
-        {
-          "name": "getAllNotes",
-          "parameterTypes": []
         },
         {
           "name": "postNotes",
@@ -244,12 +252,6 @@
         {
           "name": "<init>",
           "parameterTypes": []
-        },
-        {
-          "name": "handleBadRequestException",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.exception.BaseBadRequestException"
-          ]
         }
       ]
     },
@@ -261,10 +263,6 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.TaskService"
           ]
-        },
-        {
-          "name": "getAllTasks",
-          "parameterTypes": []
         },
         {
           "name": "postTasks",
@@ -281,6 +279,16 @@
           "name": "<init>",
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.AuthService"
+          ]
+        },
+        {
+          "name": "getCurrentUser",
+          "parameterTypes": []
+        },
+        {
+          "name": "patchUserInfo",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.UserPatchRequest"
           ]
         }
       ]
@@ -361,13 +369,17 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+            "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate",
+            "long"
           ]
         },
         {
-          "name": "findAllByUserId",
+          "name": "findHomeNotes",
           "parameterTypes": [
-            "java.lang.Long"
+            "java.lang.Long",
+            "java.lang.String",
+            "java.lang.String",
+            "boolean"
           ]
         },
         {
@@ -402,12 +414,6 @@
           "name": "findByNoteId",
           "parameterTypes": [
             "java.lang.Long"
-          ]
-        },
-        {
-          "name": "save",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.entity.NoteUrl"
           ]
         }
       ]
@@ -453,6 +459,12 @@
           ]
         },
         {
+          "name": "findAllTagNamesByUserId",
+          "parameterTypes": [
+            "java.lang.Long"
+          ]
+        },
+        {
           "name": "findByUserIdAndName",
           "parameterTypes": [
             "java.lang.Long",
@@ -471,6 +483,12 @@
           "name": "updateTagForNote",
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
+            "java.lang.Long"
+          ]
+        },
+        {
+          "name": "userHasUntaggedItems",
+          "parameterTypes": [
             "java.lang.Long"
           ]
         }
@@ -493,13 +511,17 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"
+            "org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate",
+            "long"
           ]
         },
         {
-          "name": "findAllByUserId",
+          "name": "findHomeTasks",
           "parameterTypes": [
-            "java.lang.Long"
+            "java.lang.Long",
+            "java.lang.String",
+            "java.lang.String",
+            "boolean"
           ]
         },
         {
@@ -534,12 +556,6 @@
           "name": "findAllById_taskId",
           "parameterTypes": [
             "java.lang.Long"
-          ]
-        },
-        {
-          "name": "saveAll",
-          "parameterTypes": [
-            "java.util.List"
           ]
         }
       ]
@@ -667,14 +683,31 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.response.FieldIssueResponse",
+      "type": "br.com.tasknoteapp.server.request.UserPatchRequest",
       "methods": [
         {
-          "name": "fieldMessage",
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.HomeItemsResponse",
+      "methods": [
+        {
+          "name": "notes",
           "parameterTypes": []
         },
         {
-          "name": "fieldName",
+          "name": "tasks",
           "parameterTypes": []
         }
       ]
@@ -721,6 +754,9 @@
       ]
     },
     {
+      "type": "br.com.tasknoteapp.server.response.NoteResponse[]"
+    },
+    {
       "type": "br.com.tasknoteapp.server.response.TaskResponse",
       "methods": [
         {
@@ -757,6 +793,50 @@
         },
         {
           "name": "urls",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.TaskResponse[]"
+    },
+    {
+      "type": "br.com.tasknoteapp.server.response.UserResponse",
+      "methods": [
+        {
+          "name": "admin",
+          "parameterTypes": []
+        },
+        {
+          "name": "createdAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "email",
+          "parameterTypes": []
+        },
+        {
+          "name": "gravatarImageUrl",
+          "parameterTypes": []
+        },
+        {
+          "name": "inactivatedAt",
+          "parameterTypes": []
+        },
+        {
+          "name": "lastLogin",
+          "parameterTypes": []
+        },
+        {
+          "name": "name",
+          "parameterTypes": []
+        },
+        {
+          "name": "theme",
+          "parameterTypes": []
+        },
+        {
+          "name": "userId",
           "parameterTypes": []
         }
       ]
@@ -807,19 +887,6 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.response.ValidationExceptionResponse",
-      "methods": [
-        {
-          "name": "getErrorMessage",
-          "parameterTypes": []
-        },
-        {
-          "name": "getFields",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "br.com.tasknoteapp.server.service.AppVersionService",
       "methods": [
         {
@@ -854,6 +921,16 @@
           "name": "findByEmail",
           "parameterTypes": [
             "java.lang.String"
+          ]
+        },
+        {
+          "name": "getCurrentUserResponse",
+          "parameterTypes": []
+        },
+        {
+          "name": "patchUserInfo",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.request.UserPatchRequest"
           ]
         },
         {
@@ -934,8 +1011,12 @@
           ]
         },
         {
-          "name": "getAllNotes",
-          "parameterTypes": []
+          "name": "getHomeNotes",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "boolean"
+          ]
         }
       ]
     },
@@ -970,8 +1051,12 @@
           ]
         },
         {
-          "name": "getAllTasks",
-          "parameterTypes": []
+          "name": "getHomeTasks",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "boolean"
+          ]
         }
       ]
     },
@@ -1888,9 +1973,6 @@
     },
     {
       "type": "java.util.ImmutableCollections$AbstractImmutableList"
-    },
-    {
-      "type": "java.util.ImmutableCollections$List12"
     },
     {
       "type": "java.util.ImmutableCollections$ListN"
@@ -6406,6 +6488,9 @@
       "type": "org.springframework.web.bind.annotation.RequestMethod[]"
     },
     {
+      "type": "org.springframework.web.bind.annotation.RequestParam"
+    },
+    {
       "type": "org.springframework.web.bind.annotation.ResponseBody"
     },
     {
@@ -7179,15 +7264,6 @@
       ]
     },
     {
-      "type": "sun.text.resources.FormatData"
-    },
-    {
-      "type": "sun.text.resources.FormatData_en"
-    },
-    {
-      "type": "sun.text.resources.JavaTimeSupplementary"
-    },
-    {
       "type": "sun.text.resources.cldr.FormatData"
     },
     {
@@ -7344,6 +7420,13 @@
       "type": {
         "proxy": [
           "org.springframework.web.bind.annotation.RequestMapping"
+        ]
+      }
+    },
+    {
+      "type": {
+        "proxy": [
+          "org.springframework.web.bind.annotation.RequestParam"
         ]
       }
     },
@@ -7733,6 +7816,9 @@
     },
     {
       "glob": "db/migration/V202609171142__drop_tag_from_notes_table.sql"
+    },
+    {
+      "glob": "db/migration/V202609241200__add_last_update_indexes.sql"
     },
     {
       "glob": "git.properties"

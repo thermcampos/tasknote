@@ -182,17 +182,55 @@ describe('Home Component', () => {
     </AuthContext.Provider>
   );
 
+  // Mock the backend /rest/home/items endpoint replicating search/tag/type semantics
+  const filterItems = (url: string) => {
+    const queryString = url.includes('?') ? url.substring(url.indexOf('?') + 1) : '';
+    const params = new URLSearchParams(queryString);
+    const q = (params.get('q') ?? '').toLowerCase();
+    const tag = params.get('tag');
+    const type = params.get('type');
+
+    let tasksResult = type === 'notes' ? [] : [...mockTasks];
+    let notesResult = type === 'tasks' ? [] : [...mockNotes];
+
+    if (q) {
+      tasksResult = tasksResult.filter(task =>
+        task.description.toLowerCase().includes(q)
+        || task.tags?.some(tagName => tagName.toLowerCase().includes(q))
+        || task.urls.some(url => url.includes(q)));
+      notesResult = notesResult.filter(note =>
+        note.title.toLowerCase().includes(q)
+        || note.description.toLowerCase().includes(q)
+        || note.url?.includes(q)
+        || note.tags?.some(tagName => tagName.toLowerCase().includes(q)));
+    }
+
+    if (tag === 'untagged') {
+      tasksResult = tasksResult.filter(task => !task.tags || task.tags.length === 0);
+      notesResult = notesResult.filter(note => !note.tags || note.tags.length === 0);
+    }
+    else if (tag) {
+      tasksResult = tasksResult.filter(task => task.tags && task.tags.includes(tag));
+      notesResult = notesResult.filter(note => note.tags && note.tags.includes(tag));
+    }
+
+    return Promise.resolve({ tasks: tasksResult, notes: notesResult });
+  };
+
+  const getItemsCalls = () =>
+    (api.getJSON as any).mock.calls.filter((call: any[]) =>
+      (call[0] as string).includes('home/items'));
+
   beforeEach(() => {
     // Reset mocks and setup default responses
     vi.clearAllMocks();
     localStorage.clear();
     (api.getJSON as any).mockImplementation((url: string) => {
-      if (url.includes('tags')) {
+      if (url.includes('tasks/tags')) {
         return Promise.resolve(mockTags);
-      } else if (url.includes('tasks')) {
-        return Promise.resolve(mockTasks);
-      } else if (url.includes('notes')) {
-        return Promise.resolve(mockNotes);
+      }
+      else if (url.includes('home/items')) {
+        return filterItems(url);
       }
       return Promise.resolve([]);
     });
@@ -218,10 +256,14 @@ describe('Home Component', () => {
 
     expect(screen.getByTestId('content-header')).toBeDefined();
     expect(screen.getByPlaceholderText('home_input_filter')).toBeDefined();
-    
-    // Check that API calls were made
-    expect(api.getJSON).toHaveBeenCalledTimes(3);
-    
+
+    // Wait for tags and windowed items to load
+    await waitFor(() => {
+      expect(api.getJSON).toHaveBeenCalledTimes(2);
+    });
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('tasks/tags'));
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('home/items'));
+
     // Wait for tasks and notes to render
     await waitFor(() => {
       expect(screen.getAllByTestId('task-title').length).toBe(2);
@@ -368,8 +410,8 @@ describe('Home Component', () => {
       expect.objectContaining({ completed: true })
     );
     
-    // Should reload tasks
-    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('tasks'));
+    // Should reload the current view
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('home/items'));
   });
 
   test('archives note', async () => {
@@ -405,8 +447,8 @@ describe('Home Component', () => {
       expect(api.putJSON).toHaveBeenCalledWith(expect.stringContaining('/notes/1/archive'), {});
     });
 
-    // Should reload notes
-    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('notes'));
+    // Should reload the current view
+    expect(api.getJSON).toHaveBeenCalledWith(expect.stringContaining('home/items'));
   });
 
   test('opens markdown modal when clicking on note tag', async () => {
@@ -652,6 +694,203 @@ describe('Home Component', () => {
 
     expect(localStorage.getItem('OPEN_NOTE_ID')).toBeNull();
   });
+  test('debounces search text into a single backend query', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(1);
+    });
+
+    const searchInput = screen.getByPlaceholderText('home_input_filter');
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'T' } });
+      fireEvent.change(searchInput, { target: { value: 'Ta' } });
+      fireEvent.change(searchInput, { target: { value: 'Task' } });
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(2);
+    });
+
+    // Only the final text should hit the backend
+    expect(getItemsCalls()[1][0]).toContain('q=Task');
+  });
+
+  test('clearing the search box re-fetches the default window', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(1);
+    });
+
+    const searchInput = screen.getByPlaceholderText('home_input_filter');
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'Task' } });
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(2);
+    });
+    expect(getItemsCalls()[1][0]).toContain('q=Task');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: '' } });
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(3);
+    });
+    // Default window: no query params
+    expect(getItemsCalls()[2][0]).not.toContain('?');
+
+    // Full windowed data is shown again
+    await waitFor(() => {
+      expect(screen.getAllByTestId('task-title').length).toBe(2);
+      expect(screen.getAllByTestId('note-title').length).toBe(2);
+    });
+  });
+
+  test('fires the backend query on mount when a filter is persisted', async () => {
+    localStorage.setItem('FILTER_TEXT', 'Task 1');
+    localStorage.setItem('FILTER_OPTION', 'onlyTasks');
+
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(1);
+    });
+
+    const url = getItemsCalls()[0][0] as string;
+    expect(url).toContain('q=Task');
+    expect(url).toContain('type=tasks');
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('task-title').length).toBe(1);
+      expect(screen.queryAllByTestId('note-title').length).toBe(0);
+    });
+  });
+
+  test('re-runs the active search query after a mutation', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('task-title').length).toBe(2);
+    });
+
+    const searchInput = screen.getByPlaceholderText('home_input_filter');
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'Task 1' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('task-title').length).toBe(1);
+    });
+
+    const callsBeforeMutation = getItemsCalls().length;
+
+    const dropdownToggles = screen.getAllByTestId('three-dots-icon');
+    await act(async () => {
+      fireEvent.click(dropdownToggles[0]);
+    });
+
+    const dropdownItems = screen.getAllByRole('button');
+    const markAsDoneButton = dropdownItems.find(
+      item => item.textContent === 'task_table_action_done'
+    );
+    await act(async () => {
+      fireEvent.click(markAsDoneButton!);
+    });
+
+    await waitFor(() => {
+      expect(getItemsCalls().length).toBe(callsBeforeMutation + 1);
+    });
+
+    // The refetch must keep the active search query
+    const lastUrl = getItemsCalls().at(-1)![0] as string;
+    expect(lastUrl).toContain('q=Task');
+  });
+
+  test('shows the window hint by default', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint');
+  });
+
+  test('shows the unbounded hint when searching or filtering by tag', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    const searchInput = screen.getByPlaceholderText('home_input_filter');
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'Task' } });
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_search_hint');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: '' } });
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint');
+
+    const dropdownToggle = screen.getByTestId('main-label-selector');
+    await act(async () => {
+      fireEvent.click(dropdownToggle);
+    });
+
+    const workTagOption = screen.getByRole('button', { name: /#work/i });
+    await act(async () => {
+      fireEvent.click(workTagOption);
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_search_hint');
+  });
+
+  test('matches the window hint to the type selection', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint');
+
+    const dropdownToggle = screen.getByTestId('main-label-selector');
+    await act(async () => {
+      fireEvent.click(dropdownToggle);
+    });
+
+    const onlyTasksOption = screen.getByRole('button', { name: /home_radio_tasks/i });
+    await act(async () => {
+      fireEvent.click(onlyTasksOption);
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint_tasks');
+
+    const onlyNotesOption = screen.getByRole('button', { name: /home_radio_notes/i });
+    await act(async () => {
+      fireEvent.click(onlyNotesOption);
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint_notes');
+
+    const everythingOption = screen.getByRole('button', { name: /home_radio_everything/i });
+    await act(async () => {
+      fireEvent.click(everythingOption);
+    });
+
+    expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint');
+  });
+
   /*
   test('getFirstRows properly formats note preview', async () => {
     await act(async () => {

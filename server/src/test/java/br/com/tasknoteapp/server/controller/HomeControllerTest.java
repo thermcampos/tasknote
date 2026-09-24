@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import br.com.tasknoteapp.server.response.HomeItemsResponse;
 import br.com.tasknoteapp.server.service.HomeService;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -67,6 +68,55 @@ class HomeControllerTest {
     mockMvc
         .perform(
             get("/rest/home/tasks/tags")
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get home items with no params should succeed")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void getHomeItems_noParams_shouldSucceed() throws Exception {
+    when(homeService.getHomeItems(null, null, null))
+        .thenReturn(new HomeItemsResponse(List.of(), List.of()));
+
+    mockMvc
+        .perform(
+            get("/rest/home/items")
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tasks", org.hamcrest.Matchers.empty()))
+        .andExpect(jsonPath("$.notes", org.hamcrest.Matchers.empty()))
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get home items with composed params should pass them to the service")
+  @WithMockUser(username = "user@domain.com", password = "abcde123456A@")
+  void getHomeItems_withParams_shouldSucceed() throws Exception {
+    when(homeService.getHomeItems("foo", "work", "tasks"))
+        .thenReturn(new HomeItemsResponse(List.of(), List.of()));
+
+    mockMvc
+        .perform(
+            get("/rest/home/items?q=foo&tag=work&type=tasks")
+                .with(csrf().asHeader())
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn();
+  }
+
+  @Test
+  @DisplayName("Get home items not authorized it should fail")
+  void getHomeItems_notAuthorized_shouldFail() throws Exception {
+    mockMvc
+        .perform(
+            get("/rest/home/items")
                 .with(csrf().asHeader())
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .accept(MediaType.APPLICATION_JSON))
