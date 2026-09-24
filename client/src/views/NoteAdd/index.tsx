@@ -6,11 +6,9 @@ import {
   Col,
   Container,
   Form,
-  InputGroup,
   ListGroup,
   Row
 } from 'react-bootstrap';
-import { Hash } from 'react-bootstrap-icons';
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { NoteResponse } from '../../types/NoteResponse';
@@ -28,8 +26,69 @@ interface NoteDraft {
   title: string;
   content: string;
   noteUrl: string;
-  tags: string[];
 }
+
+interface ParsedTagsFooter {
+  tags: string[];
+  bodyWithoutFooter: string;
+  footerLineIndex: number;
+}
+
+interface FooterCaretContext {
+  tokenStart: number;
+  query: string;
+}
+
+const TAGS_FOOTER_PATTERN = /^(tags:\s*)(.*)$/i;
+
+const parseTagsFooter = (content: string): ParsedTagsFooter | null => {
+  const lines = content.split('\n');
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i].replace(/\r$/, '');
+    if (line.trim() === '') continue;
+    const match = line.match(TAGS_FOOTER_PATTERN);
+    if (!match) return null;
+    const tags = match[2]
+      .split(',')
+      .map(token => token.trim().toLowerCase())
+      .filter((token, index, all) => token.length > 0 && all.indexOf(token) === index);
+    const bodyWithoutFooter = lines.slice(0, i).join('\n').replace(/\s+$/, '');
+    return { tags, bodyWithoutFooter, footerLineIndex: i };
+  }
+  return null;
+};
+
+const stripTagsFooter = (content: string): string => {
+  const parsed = parseTagsFooter(content);
+  return parsed ? parsed.bodyWithoutFooter : content;
+};
+
+const synthesizeTagsFooter = (content: string, tags: string[]): string => {
+  if (parseTagsFooter(content) || tags.length === 0) return content;
+  return `${content.replace(/\s+$/, '')}\n\ntags: ${tags.join(', ')}`;
+};
+
+const getFooterCaretContext = (content: string, caret: number): FooterCaretContext | null => {
+  const parsed = parseTagsFooter(content);
+  if (!parsed) return null;
+  const lines = content.split('\n');
+  let lineStart = 0;
+  for (let i = 0; i < parsed.footerLineIndex; i += 1) {
+    lineStart += lines[i].length + 1;
+  }
+  const line = lines[parsed.footerLineIndex].replace(/\r$/, '');
+  if (caret < lineStart || caret > lineStart + line.length) return null;
+  const match = line.match(TAGS_FOOTER_PATTERN);
+  if (!match) return null;
+  const caretInLine = caret - lineStart;
+  if (caretInLine < match[1].length) return null;
+  const beforeCaret = line.substring(match[1].length, caretInLine);
+  const tokenOffset = beforeCaret.lastIndexOf(',') + 1;
+  return {
+    tokenStart: lineStart + match[1].length + tokenOffset,
+    query: beforeCaret.substring(tokenOffset).trim().toLowerCase()
+  };
+};
 
 /**
  * NoteAdd component for adding and editing notes.
@@ -43,21 +102,31 @@ function NoteAdd(): React.ReactNode {
   const [noteTitle, setNoteTitle] = useState<string>('');
   const [noteContent, setNoteContent] = useState<string>('');
   const [noteUrl, setNoteUrl] = useState<string>('');
-  const [currentTag, setCurrentTag] = useState<string>('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [showTagDropdown, setShowTagDropdown] = useState<boolean>(false);
+  const [footerCtx, setFooterCtx] = useState<FooterCaretContext | null>(null);
+  const [showFooterDropdown, setShowFooterDropdown] = useState<boolean>(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
   const [action, setAction] = useState<NoteAction>('add');
   const [showPreviewMd, setShowPreviewMd] = useState<boolean>(false);
   const [draftBanner, setDraftBanner] = useState<boolean>(false);
   const { i18n, t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
-  const tagContainerRef = useRef<HTMLDivElement>(null);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+  const contentInputRef = useRef<HTMLTextAreaElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUserEdited = useRef<boolean>(false);
 
   const draftKey = params?.id ? `draft:note:edit:${params.id}` : 'draft:note:new';
+
+  const parsedFooter = parseTagsFooter(noteContent);
+  const footerTags = parsedFooter ? parsedFooter.tags : [];
+  const footerSuggestions = showFooterDropdown && footerCtx
+    ? tags
+        .filter(tag => tag.toLowerCase().includes(footerCtx.query))
+        .filter(tag => !footerTags.includes(tag.toLowerCase()))
+        .slice(0, 8)
+    : [];
 
   const loadTags = async (): Promise<void> => {
     try {
@@ -125,17 +194,17 @@ function NoteAdd(): React.ReactNode {
     setNoteTitle('');
     setNoteUrl('');
     setNoteContent('');
-    setCurrentTag('');
-    setSelectedTags([]);
+    setFooterCtx(null);
+    setShowFooterDropdown(false);
     setAction('add');
     setValidated(false);
   };
 
-  const saveDraft = (title: string, content: string, noteUrl: string, draftTags: string[]): void => {
+  const saveDraft = (title: string, content: string, noteUrl: string): void => {
     if (!hasUserEdited.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      const draft: NoteDraft = { title, content, noteUrl, tags: draftTags };
+      const draft: NoteDraft = { title, content, noteUrl };
       localStorage.setItem(draftKey, JSON.stringify(draft));
     }, 1500);
   };
@@ -153,7 +222,6 @@ function NoteAdd(): React.ReactNode {
       setNoteTitle(draft.title ?? '');
       setNoteContent(draft.content ?? '');
       setNoteUrl(draft.noteUrl ?? '');
-      setSelectedTags(draft.tags ?? []);
       setDraftBanner(true);
     }
     catch {
@@ -181,24 +249,61 @@ function NoteAdd(): React.ReactNode {
     }
   };
 
-  const addTag = (tagName: string): void => {
-    const normalized = tagName.trim().toLowerCase();
-    let newTags = [...selectedTags];
-    if (normalized && !selectedTags.includes(normalized)) {
-      newTags = [...selectedTags, normalized];
-      setSelectedTags(newTags);
-    }
-    hasUserEdited.current = true;
-    saveDraft(noteTitle, noteContent, noteUrl, newTags);
-    setCurrentTag('');
-    setShowTagDropdown(false);
+  const refreshFooterAutocomplete = (content: string, caret: number): void => {
+    const ctx = getFooterCaretContext(content, caret);
+    setFooterCtx(ctx);
+    setShowFooterDropdown(ctx !== null);
+    setHighlightedIndex(0);
   };
 
-  const removeTag = (tagToRemove: string): void => {
-    const newTags = selectedTags.filter(t => t !== tagToRemove);
-    setSelectedTags(newTags);
+  const acceptSuggestion = (suggestion: string): void => {
+    if (!footerCtx) return;
+    const rest = noteContent.substring(footerCtx.tokenStart);
+    const boundaries = [rest.indexOf(','), rest.indexOf('\n')].filter(index => index >= 0);
+    const tokenEnd = boundaries.length > 0
+      ? footerCtx.tokenStart + Math.min(...boundaries)
+      : noteContent.length;
+    const leadingWhitespace = noteContent
+      .substring(footerCtx.tokenStart, tokenEnd)
+      .match(/^\s*/)?.[0] ?? '';
+    const replacement = `${leadingWhitespace}${suggestion}`;
+    const newContent = noteContent.substring(0, footerCtx.tokenStart)
+      + replacement
+      + noteContent.substring(tokenEnd);
+    const newCaret = footerCtx.tokenStart + replacement.length;
     hasUserEdited.current = true;
-    saveDraft(noteTitle, noteContent, noteUrl, newTags);
+    setNoteContent(newContent);
+    saveDraft(noteTitle, newContent, noteUrl);
+    setTimeout(() => {
+      if (contentInputRef.current) {
+        contentInputRef.current.focus();
+        contentInputRef.current.setSelectionRange(newCaret, newCaret);
+        refreshFooterAutocomplete(newContent, newCaret);
+      }
+    }, 0);
+  };
+
+  const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (e.key === 'Escape') {
+      if (showFooterDropdown) {
+        e.preventDefault();
+        setShowFooterDropdown(false);
+      }
+      return;
+    }
+    if (!showFooterDropdown || footerSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev + 1) % footerSuggestions.length);
+    }
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => (prev - 1 + footerSuggestions.length) % footerSuggestions.length);
+    }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      acceptSuggestion(footerSuggestions[highlightedIndex]);
+    }
   };
 
   /**
@@ -214,20 +319,12 @@ function NoteAdd(): React.ReactNode {
       return false;
     }
 
-    const finalTags = [...selectedTags];
-    if (currentTag.trim()) {
-      const normalized = currentTag.trim().toLowerCase();
-      if (!finalTags.includes(normalized)) {
-        finalTags.push(normalized);
-      }
-    }
-
     const payload: NoteResponse = {
       id: action === 'edit' ? noteId : 0,
       title: noteTitle,
-      description: noteContent,
+      description: stripTagsFooter(noteContent),
       url: noteUrl,
-      tags: finalTags,
+      tags: parseTagsFooter(noteContent)?.tags ?? [],
       lastUpdate: '',
       shared: false,
       shareToken: null,
@@ -313,10 +410,7 @@ function NoteAdd(): React.ReactNode {
     if (noteData.url) {
       setNoteUrl(noteData.url);
     }
-    if (noteData.tags) {
-      setSelectedTags(noteData.tags);
-    }
-    setNoteContent(noteData.description);
+    setNoteContent(synthesizeTagsFooter(noteData.description, noteData.tags ?? []));
   };
 
   /**
@@ -345,8 +439,8 @@ function NoteAdd(): React.ReactNode {
     }
 
     const handleClickOutside = (event: MouseEvent): void => {
-      if (tagContainerRef.current && !tagContainerRef.current.contains(event.target as Node)) {
-        setShowTagDropdown(false);
+      if (contentAreaRef.current && !contentAreaRef.current.contains(event.target as Node)) {
+        setShowFooterDropdown(false);
       }
     };
 
@@ -414,7 +508,7 @@ function NoteAdd(): React.ReactNode {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setNoteTitle(e.target.value);
                         hasUserEdited.current = true;
-                        saveDraft(e.target.value, noteContent, noteUrl, selectedTags);
+                        saveDraft(e.target.value, noteContent, noteUrl);
                       }}
                     />
                   </Col>
@@ -431,91 +525,9 @@ function NoteAdd(): React.ReactNode {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setNoteUrl(e.target.value);
                         hasUserEdited.current = true;
-                        saveDraft(noteTitle, noteContent, e.target.value, selectedTags);
+                        saveDraft(noteTitle, noteContent, e.target.value);
                       }}
                     />
-                  </Col>
-                </Row>
-                <Row>
-                  <Col xs={12}>
-                    {/* Tag with suggestion dropdown */}
-                    <Form.Group className="mb-3" ref={tagContainerRef} style={{ position: 'relative' }}>
-                      <Form.Label>Tags</Form.Label>
-                      <InputGroup>
-                        <InputGroup.Text>
-                          <Hash />
-                        </InputGroup.Text>
-                        <Form.Control
-                          type="text"
-                          name="tag"
-                          placeholder="my-tag (Optional)"
-                          value={currentTag}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            setCurrentTag(e.target.value);
-                            setShowTagDropdown(true);
-                          }}
-                          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                            if (e.key === 'Enter' && currentTag.trim()) {
-                              e.preventDefault();
-                              addTag(currentTag);
-                            }
-                          }}
-                          onFocus={() => setShowTagDropdown(true)}
-                          autoComplete="off"
-                        />
-                      </InputGroup>
-                      <Form.Text className="text-muted">
-                        Type a tag and press Enter
-                      </Form.Text>
-                      <div className="mb-2 d-flex flex-wrap gap-1">
-                        {selectedTags.map(t => (
-                          <Badge
-                            key={t}
-                            bg="warning"
-                            text="dark"
-                            className="p-2 mt-3"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => removeTag(t)}
-                          >
-                            #
-                            {t}
-                            {' '}
-                            &times;
-                          </Badge>
-                        ))}
-                      </div>
-                      {showTagDropdown && tags.filter(t => t.toLowerCase().includes(currentTag.toLowerCase())).length > 0 && (
-                        <ListGroup
-                          style={{
-                            position: 'absolute',
-                            zIndex: 1000,
-                            width: '100%',
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                            left: 0
-                          }}
-                        >
-                          {tags
-                            .filter(t => t.toLowerCase().includes(currentTag.toLowerCase()))
-                            .map(t => (
-                              <ListGroup.Item
-                                key={t}
-                                action
-                                variant="warning"
-                                className="d-flex align-items-center gap-2"
-                                onMouseDown={(e: React.MouseEvent) => {
-                                  e.preventDefault();
-                                  addTag(t);
-                                }}
-                              >
-                                <i className="bi bi-tag"></i>
-                                #
-                                {t}
-                              </ListGroup.Item>
-                            ))}
-                        </ListGroup>
-                      )}
-                    </Form.Group>
                   </Col>
                 </Row>
 
@@ -529,23 +541,90 @@ function NoteAdd(): React.ReactNode {
                       </a>
                     </small>
                   </Form.Label>
-                  <Form.Control
-                    className="note-content-input"
-                    as="textarea"
-                    required={true}
-                    size="lg"
-                    rows={15}
-                    name="note_description"
-                    aria-describedby="noteDescriptionHelper"
-                    placeholder={t('note_form_content_placeholder')}
-                    value={noteContent}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                      setNoteContent(e.target.value);
-                      hasUserEdited.current = true;
-                      saveDraft(noteTitle, e.target.value, noteUrl, selectedTags);
-                    }}
-                    data-testid="note-content-input-area"
-                  />
+                  <div ref={contentAreaRef} style={{ position: 'relative' }}>
+                    <Form.Control
+                      className="note-content-input"
+                      as="textarea"
+                      required={true}
+                      size="lg"
+                      rows={15}
+                      name="note_description"
+                      aria-describedby="noteDescriptionHelper"
+                      placeholder={t('note_form_content_placeholder')}
+                      value={noteContent}
+                      ref={contentInputRef}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        setNoteContent(e.target.value);
+                        hasUserEdited.current = true;
+                        saveDraft(noteTitle, e.target.value, noteUrl);
+                        refreshFooterAutocomplete(
+                          e.target.value,
+                          e.target.selectionStart ?? e.target.value.length
+                        );
+                      }}
+                      onKeyDown={handleContentKeyDown}
+                      onClick={(e: React.MouseEvent<HTMLTextAreaElement>) => {
+                        refreshFooterAutocomplete(noteContent, e.currentTarget.selectionStart ?? 0);
+                      }}
+                      onKeyUp={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                        const caretKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+                        if (caretKeys.includes(e.key)) {
+                          refreshFooterAutocomplete(noteContent, e.currentTarget.selectionStart ?? 0);
+                        }
+                      }}
+                      data-testid="note-content-input-area"
+                    />
+                    {footerSuggestions.length > 0 && (
+                      <ListGroup
+                        data-testid="tag-suggestion-dropdown"
+                        style={{
+                          position: 'absolute',
+                          zIndex: 1000,
+                          width: '100%',
+                          maxHeight: '200px',
+                          overflowY: 'auto',
+                          left: 0,
+                          top: '100%'
+                        }}
+                      >
+                        {footerSuggestions.map((suggestion, index) => (
+                          <ListGroup.Item
+                            key={suggestion}
+                            action
+                            variant="warning"
+                            active={index === highlightedIndex}
+                            className="d-flex align-items-center gap-2"
+                            onMouseDown={(e: React.MouseEvent) => {
+                              e.preventDefault();
+                              acceptSuggestion(suggestion);
+                            }}
+                          >
+                            <i className="bi bi-tag"></i>
+                            #
+                            {suggestion}
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    )}
+                  </div>
+                  <Form.Text className="text-muted" id="noteDescriptionHelper">
+                    Add a final line `tags: a, b` to tag this note.
+                  </Form.Text>
+                  {footerTags.length > 0 && (
+                    <div className="mb-2 d-flex flex-wrap gap-1" data-testid="note-tags-preview">
+                      {footerTags.map(tag => (
+                        <Badge
+                          key={tag}
+                          bg="warning"
+                          text="dark"
+                          className="p-2 mt-3"
+                        >
+                          #
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </Form.Group>
 
                 <div className="d-flex justify-content-end gap-2 mt-3">
@@ -578,7 +657,8 @@ function NoteAdd(): React.ReactNode {
         show={showPreviewMd}
         onHide={handleCloseModal}
         title={noteTitle}
-        markdownText={noteContent}
+        markdownText={stripTagsFooter(noteContent)}
+        tags={footerTags}
         onSave={saveNote}
         saveButtonLabel={t('note_form_submit')}
       />

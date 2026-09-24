@@ -106,6 +106,7 @@ function Home(): React.ReactNode {
     try {
       await api.deleteNoContent(`${ApiConfig.tasksUrl}/${taskIdParam}`);
       await loadItems(filterText, selectedOption);
+      await loadTags();
     }
     catch (e) {
       handleError(e);
@@ -121,6 +122,7 @@ function Home(): React.ReactNode {
     try {
       await api.deleteNoContent(`${ApiConfig.notesUrl}/${noteIdParam}`);
       await loadItems(filterText, selectedOption);
+      await loadTags();
     }
     catch (e) {
       handleError(e);

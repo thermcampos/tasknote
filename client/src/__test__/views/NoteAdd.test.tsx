@@ -105,6 +105,7 @@ describe('NoteAdd Component', () => {
     // Reset mock between tests
     mockedUseSearchParams.mockReturnValue([new URLSearchParams(), vi.fn()]);
     mockedUseParams.mockReturnValue({});
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
@@ -200,7 +201,7 @@ describe('NoteAdd Component', () => {
       const noteContentInput = getByTestId('note-content-input-area') as HTMLAreaElement;
       expect(noteTitle.value).toBe(toEdit.title);
       expect(noteUrl.value).toBe(toEdit.url);
-      expect(noteContentInput.innerHTML).toBe(toEdit.description);
+      expect(noteContentInput.innerHTML).toBe(`${toEdit.description}\n\ntags: dev`);
     });
   });
 
@@ -228,7 +229,7 @@ describe('NoteAdd Component', () => {
       const noteContentInput = getByTestId('note-content-input-area') as HTMLAreaElement;
       expect(noteTitle.value).toBe(toClone.title);
       expect(noteUrl.value).toBe(toClone.url);
-      expect(noteContentInput.innerHTML).toBe(toClone.description);
+      expect(noteContentInput.innerHTML).toBe(`${toClone.description}\n\ntags: dev`);
     });
   });
 
@@ -244,6 +245,103 @@ describe('NoteAdd Component', () => {
       expect(noteTitle.value).toBe('');
       expect(noteUrl.value).toBe('');
       expect(noteContentInput.innerHTML).toBe('');
+    });
+  });
+
+  it('should parse the tags footer, strip it from the description and send tags on save', async () => {
+    const { getByLabelText, getByTestId, getByRole } = renderNoteAdd();
+    const titleInput = getByLabelText('note_form_title_label') as HTMLInputElement;
+    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+    const submitButton = getByRole('button', { name: 'note_form_submit' });
+
+    fireEvent.change(titleInput, { target: { value: 'Tagged Note' } });
+    fireEvent.change(noteContentInput, {
+      target: { value: 'Note content\n\nTags: Foo, bar , foo,,' }
+    });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, {
+        id: 0,
+        title: 'Tagged Note',
+        description: 'Note content',
+        url: '',
+        tags: ['foo', 'bar'],
+        lastUpdate: '',
+        shared: false,
+        shareToken: null,
+        archived: false
+      });
+    });
+  });
+
+  it('should save an untagged note when the footer has an empty value', async () => {
+    const { getByLabelText, getByTestId, getByRole } = renderNoteAdd();
+    const titleInput = getByLabelText('note_form_title_label') as HTMLInputElement;
+    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+    const submitButton = getByRole('button', { name: 'note_form_submit' });
+
+    fireEvent.change(titleInput, { target: { value: 'Untagged Note' } });
+    fireEvent.change(noteContentInput, { target: { value: 'Note content\n\ntags:' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, {
+        id: 0,
+        title: 'Untagged Note',
+        description: 'Note content',
+        url: '',
+        tags: [],
+        lastUpdate: '',
+        shared: false,
+        shareToken: null,
+        archived: false
+      });
+    });
+  });
+
+  it('should show live tag chips while typing the footer', async () => {
+    const { getByTestId, queryByTestId } = renderNoteAdd();
+    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+
+    expect(queryByTestId('note-tags-preview')).toBeNull();
+
+    fireEvent.change(noteContentInput, { target: { value: 'Content\n\ntags: dev, react' } });
+
+    await waitFor(() => {
+      const preview = getByTestId('note-tags-preview');
+      expect(preview.textContent).toContain('#dev');
+      expect(preview.textContent).toContain('#react');
+    });
+  });
+
+  it('should keep the server footer over note.tags when editing', async () => {
+    mockedUseParams.mockReturnValue({ id: '1' });
+
+    const toEdit: NoteResponse = {
+      id: 1,
+      title: 'Note one',
+      description: 'Description of note one\n\ntags: body-tag',
+      url: 'http://notes.domain.com',
+      tags: ['server-tag'],
+      lastUpdate: '3 minutes ago',
+      shared: false,
+      shareToken: null
+    };
+
+    vi.spyOn(api, 'getJSON').mockResolvedValue(toEdit);
+
+    const { getByTestId } = renderNoteAdd();
+
+    await waitFor(() => {
+      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+      expect(noteContentInput.innerHTML).toBe('Description of note one\n\ntags: body-tag');
+    });
+
+    await waitFor(() => {
+      const preview = getByTestId('note-tags-preview');
+      expect(preview.textContent).toContain('#body-tag');
+      expect(preview.textContent).not.toContain('#server-tag');
     });
   });
 });
