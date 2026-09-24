@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ```
 # Docker images
 - ghcr.io/thermcampos/tasknote/server:api-v2026.09.24.11
-- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.?
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.11
 ```
 
 ---
