@@ -3,6 +3,7 @@ package br.com.tasknoteapp.server.repository;
 import br.com.tasknoteapp.server.entity.Note;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -13,8 +14,13 @@ public class NoteRepository {
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
 
-  public NoteRepository(NamedParameterJdbcTemplate jdbcTemplate) {
+  private final long homeWindowMinutes;
+
+  public NoteRepository(
+      NamedParameterJdbcTemplate jdbcTemplate,
+      @Value ("${br.com.tasknote.server.home-window-minutes:1440}") long homeWindowMinutes) {
     this.jdbcTemplate = jdbcTemplate;
+    this.homeWindowMinutes = homeWindowMinutes;
   }
 
   /**
@@ -212,6 +218,75 @@ public class NoteRepository {
         .addValue("searchTerm", searchTerm);
 
     return jdbcTemplate.query(sql, params, new NoteRowMapper());
+  }
+
+  /**
+   * Find Notes for the Home view: either the default window (touched in the last 24h) or an
+   * unbounded search/tag query.
+   *
+   * @param userId The User ID to fetch by.
+   * @param searchTerm Optional text to search in title, description, url and tags.
+   * @param tag Optional tag name to filter by ("untagged" matches notes without tags).
+   * @param windowedOnly When true, restrict to notes touched in the last 24h.
+   * @return List of Notes found.
+   */
+  public List<Note> findHomeNotes(
+      Long userId, String searchTerm, String tag, boolean windowedOnly) {
+    StringBuilder sql =
+        new StringBuilder(
+            """
+            SELECT DISTINCT n.id,
+              n.user_id,
+              n.description,
+              n.title,
+              n.last_update,
+              n.shared,
+              n.share_token,
+              n.archived
+            FROM tasknote.notes n
+            LEFT JOIN tasknote.note_tags nt ON nt.note_id = n.id
+            LEFT JOIN tasknote.tags tg ON tg.id = nt.tag_id
+            LEFT JOIN tasknote.note_urls nu ON nu.note_id = n.id
+            WHERE n.user_id = :userId
+            """);
+
+    MapSqlParameterSource params = new MapSqlParameterSource().addValue("userId", userId);
+
+    if (windowedOnly) {
+      sql.append("\n  AND n.last_update >= :windowStart\n");
+      params.addValue(
+          "windowStart", java.time.LocalDateTime.now().minusMinutes(homeWindowMinutes));
+    } else {
+      if (searchTerm != null && !searchTerm.isBlank()) {
+        sql.append(
+            """
+            \
+              AND (
+                UPPER(n.title) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+                OR UPPER(n.description) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+                OR UPPER(nu.url) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+                OR UPPER(tg.name) LIKE UPPER(CONCAT('%', :searchTerm, '%'))
+              )
+            """);
+        params.addValue("searchTerm", searchTerm);
+      }
+      if (tag != null && !tag.isBlank()) {
+        if ("untagged".equals(tag)) {
+          sql.append(
+              """
+              \
+                AND NOT EXISTS (
+                  SELECT 1 FROM tasknote.note_tags nt2 WHERE nt2.note_id = n.id
+                )
+              """);
+        } else {
+          sql.append("\n  AND tg.name = :tag\n");
+          params.addValue("tag", tag);
+        }
+      }
+    }
+
+    return jdbcTemplate.query(sql.toString(), params, new NoteRowMapper());
   }
 
   class NoteRowMapper implements org.springframework.jdbc.core.RowMapper<Note> {

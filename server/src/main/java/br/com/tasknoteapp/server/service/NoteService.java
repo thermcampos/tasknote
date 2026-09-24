@@ -89,6 +89,26 @@ public class NoteService {
   }
 
   /**
+   * Get notes for the Home view, either the default window or an unbounded search/tag query.
+   *
+   * @param searchTerm Optional text to search in title, description, url and tags.
+   * @param tag Optional tag name to filter by ("untagged" matches notes without tags).
+   * @param windowedOnly When true, restrict to notes touched in the last 24h.
+   * @return {@link List} of {@link NoteResponse} with found records or an empty list.
+   */
+  @Transactional
+  public List<NoteResponse> getHomeNotes(String searchTerm, String tag, boolean windowedOnly) {
+    User user = getCurrentUser();
+
+    logger.info("Get home notes to user ID {}, windowed: {}", user.getId(), windowedOnly);
+
+    List<Note> notes = noteRepository.findHomeNotes(user.getId(), searchTerm, tag, windowedOnly);
+    logger.info("{} home notes found!", notes.size());
+
+    return buildNoteResponse(notes, user.getId());
+  }
+
+  /**
    * Get a note by its id.
    *
    * @param noteId The note id in the database.

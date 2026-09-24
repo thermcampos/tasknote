@@ -311,6 +311,54 @@ public class TagRepository {
   }
 
   /**
+   * Find all distinct tag names for a User ID.
+   *
+   * @param userId The User ID to fetch by.
+   * @return List of distinct tag names.
+   */
+  public List<String> findAllTagNamesByUserId(Long userId) {
+    String sql =
+        """
+        SELECT DISTINCT name
+        FROM tasknote.tags
+        WHERE user_id = :userId
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("userId", userId);
+
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("name"));
+  }
+
+  /**
+   * Check if the user has any task or note without tags.
+   *
+   * @param userId The User ID to check by.
+   * @return true if there is at least one untagged task or note, false otherwise.
+   */
+  public boolean userHasUntaggedItems(Long userId) {
+    String sql =
+        """
+        SELECT EXISTS (
+          SELECT 1 FROM tasknote.tasks t
+          WHERE t.user_id = :userId
+            AND NOT EXISTS (SELECT 1 FROM tasknote.task_tags tt WHERE tt.task_id = t.id)
+        ) OR EXISTS (
+          SELECT 1 FROM tasknote.notes n
+          WHERE n.user_id = :userId
+            AND NOT EXISTS (SELECT 1 FROM tasknote.note_tags nt WHERE nt.note_id = n.id)
+        ) AS has_untagged
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("userId", userId);
+
+    Boolean hasUntagged = jdbcTemplate.queryForObject(sql, params, Boolean.class);
+
+    return Boolean.TRUE.equals(hasUntagged);
+  }
+
+  /**
    * Deletes all orphaned tags given a User ID (deleting from
    * both Notes and Tasks).
    * 

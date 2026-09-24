@@ -2,6 +2,7 @@ package br.com.tasknoteapp.server.service;
 
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.repository.TagRepository;
+import br.com.tasknoteapp.server.response.HomeItemsResponse;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
@@ -19,9 +20,13 @@ public class HomeService {
 
   private static final Logger logger = LoggerFactory.getLogger(HomeService.class);
 
+  private static final String UNTAGGED = "untagged";
+
   private final TaskService taskService;
 
   private final NoteService noteService;
+
+  private final TagRepository tagRepository;
 
   private final AuthService authService;
 
@@ -44,6 +49,7 @@ public class HomeService {
       AuthUtil authUtil) {
     this.taskService = taskService;
     this.noteService = noteService;
+    this.tagRepository = tagRepository;
     this.authService = authService;
     this.authUtil = authUtil;
   }
@@ -57,19 +63,10 @@ public class HomeService {
     User user = getCurrentUser();
     logger.info("Getting all tags for user ID {}", user.getId());
 
-    List<TaskResponse> tasks = taskService.getTasksByFilter("all");
-    List<NoteResponse> notes = noteService.getAllNotes();
+    Set<String> tagSet = new HashSet<>(tagRepository.findAllTagNamesByUserId(user.getId()));
 
-    Set<String> tagSet = new HashSet<>();
-    tasks.forEach((t) -> tagSet.addAll(t.tags()));
-    notes.forEach((n) -> tagSet.addAll(n.tags()));
-
-    boolean hasUntagged =
-        tasks.stream().anyMatch(task -> task.tags().isEmpty())
-            || notes.stream().anyMatch(note -> note.tags().isEmpty());
-
-    if (hasUntagged) {
-      tagSet.add("untagged");
+    if (tagRepository.userHasUntaggedItems(user.getId())) {
+      tagSet.add(UNTAGGED);
     }
 
     List<String> tags = tagSet
@@ -80,6 +77,43 @@ public class HomeService {
     logger.info("Found {} tags", tags.size());
 
     return tags;
+  }
+
+  /**
+   * Get the Home items payload. Without search or tag filters it returns the default window
+   * (items touched in the last 24h plus high-priority incomplete tasks); with filters it runs an
+   * unbounded query composing all params with AND semantics.
+   *
+   * @param searchTerm Optional text to search by.
+   * @param tag Optional tag name to filter by ("untagged" matches items without tags).
+   * @param type Optional item type: all, tasks or notes.
+   * @return {@link HomeItemsResponse} with the tasks and notes found.
+   */
+  public HomeItemsResponse getHomeItems(String searchTerm, String tag, String type) {
+    User user = getCurrentUser();
+    logger.info(
+        "Getting home items for user ID {}, q: {}, tag: {}, type: {}",
+        user.getId(), searchTerm, tag, type);
+
+    boolean hasSearch = searchTerm != null && !searchTerm.isBlank();
+    boolean hasTag = tag != null && !tag.isBlank();
+    boolean windowed = !hasSearch && !hasTag;
+
+    boolean includeTasks = type == null || type.isBlank() || "all".equals(type)
+        || "tasks".equals(type);
+    boolean includeNotes = type == null || type.isBlank() || "all".equals(type)
+        || "notes".equals(type);
+
+    List<TaskResponse> tasks =
+        includeTasks
+            ? taskService.getHomeTasks(searchTerm, tag, windowed)
+            : List.of();
+    List<NoteResponse> notes =
+        includeNotes
+            ? noteService.getHomeNotes(searchTerm, tag, windowed)
+            : List.of();
+
+    return new HomeItemsResponse(tasks, notes);
   }
 
   private User getCurrentUser() {

@@ -296,6 +296,26 @@ public class TaskService {
   }
 
   /**
+   * Get tasks for the Home view, either the default window or an unbounded search/tag query.
+   *
+   * @param searchTerm Optional text to search in description, tags and urls.
+   * @param tag Optional tag name to filter by ("untagged" matches tasks without tags).
+   * @param windowedOnly When true, restrict to the default window (last 24h or high-priority
+   *     incomplete).
+   * @return {@link List} of {@link TaskResponse} with found records or an empty list.
+   */
+  @Transactional
+  public List<TaskResponse> getHomeTasks(String searchTerm, String tag, boolean windowedOnly) {
+    User user = getCurrentUser();
+    logger.info("Get home tasks to user ID {}, windowed: {}", user.getId(), windowedOnly);
+
+    List<Task> tasks = taskRepository.findHomeTasks(user.getId(), searchTerm, tag, windowedOnly);
+    logger.info("{} home tasks found!", tasks.size());
+
+    return buildTaskResponse(tasks, user.getId());
+  }
+
+  /**
    * Get tasks by a given filter.
    *
    * @param filter The filter to get the tasks.
