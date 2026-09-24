@@ -511,3 +511,8 @@ p.search-result-item-title {
 .dropdown-item.active .badge {
   box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
+
+.search-help-text {
+  margin-left: 5px;
+  font-size: 0.8rem;
+}

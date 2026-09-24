@@ -577,7 +577,7 @@ function Home(): React.ReactNode {
             </Dropdown>
           </InputGroup>
           <Form.Text
-            className="text-muted"
+            className="text-muted search-help-text"
             data-testid="home-view-hint"
           >
             {isUnboundedView() ? t('home_search_hint') : t(getWindowHintKey())}
