@@ -530,7 +530,7 @@ function NoteAdd(): React.ReactNode {
                     </small>
                   </Form.Label>
                   <Form.Control
-                    className="font-size-14"
+                    className="note-content-input"
                     as="textarea"
                     required={true}
                     size="lg"
