@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Badge from 'react-bootstrap/Badge';
 import Modal from 'react-bootstrap/Modal';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -11,6 +12,7 @@ type Props = {
   onHide: () => void;
   onSave?: () => Promise<boolean>;
   saveButtonLabel?: string;
+  tags?: string[];
 };
 
 /**
@@ -72,6 +74,16 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
               : (
                   <Markdown remarkPlugins={[remarkGfm]}>{props.markdownText}</Markdown>
                 )}
+            {props.tags && props.tags.length > 0 && (
+              <div className="d-flex flex-wrap gap-1 mt-3" data-testid="modal-tags-preview">
+                {props.tags.map(tag => (
+                  <Badge key={tag} bg="warning" text="dark" className="p-2">
+                    #
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </Modal.Body>
           <Modal.Footer className="d-flex flex-wrap gap-2 justify-content-end">
             <button

@@ -11,14 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Home page now displays only the last 24 items. [Issue 79](https://github.com/thermcampos/tasknote/issues/79)
+- Notes tags now lives in the note document body. [Issue 75](https://github.com/thermcampos/tasknote/issues/75)
 
 ### Fixed
 - iOS screen zoomming in when typing notes. [PR 81](https://github.com/thermcampos/tasknote/pull/81)
+- After deleting tags and notes tags could be outdated. [Squeezed in PR 82](https://github.com/thermcampos/tasknote/pull/82)
 
 ```
 # Docker images
 - ghcr.io/thermcampos/tasknote/server:api-v2026.09.24.11
-- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.10
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.?
 ```
 
 ---

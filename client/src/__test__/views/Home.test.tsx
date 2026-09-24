@@ -221,6 +221,10 @@ describe('Home Component', () => {
     (api.getJSON as any).mock.calls.filter((call: any[]) =>
       (call[0] as string).includes('home/items'));
 
+  const getTagsCalls = () =>
+    (api.getJSON as any).mock.calls.filter((call: any[]) =>
+      (call[0] as string).includes('tasks/tags'));
+
   beforeEach(() => {
     // Reset mocks and setup default responses
     vi.clearAllMocks();
@@ -889,6 +893,79 @@ describe('Home Component', () => {
     });
 
     expect(screen.getByTestId('home-view-hint').textContent).toBe('home_window_hint');
+  });
+
+  test('re-fetches tags after deleting a task', async () => {
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('task-title').length).toBe(2);
+    });
+
+    expect(getTagsCalls().length).toBe(1);
+
+    const dropdownToggles = screen.getAllByTestId('three-dots-icon');
+    await act(async () => {
+      fireEvent.click(dropdownToggles[0]);
+    });
+
+    const dropdownItems = screen.getAllByRole('button');
+    const deleteButton = dropdownItems.find(
+      item => item.textContent === 'task_table_action_delete'
+    );
+    await act(async () => {
+      fireEvent.click(deleteButton!);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-delete-button'));
+    });
+
+    await waitFor(() => {
+      expect(api.deleteNoContent).toHaveBeenCalled();
+      expect(getTagsCalls().length).toBe(2);
+    });
+  });
+
+  test('re-fetches tags after deleting an archived note', async () => {
+    (api.getJSON as any).mockImplementation((url: string) => {
+      if (url.includes('tasks/tags')) {
+        return Promise.resolve(mockTags);
+      }
+      else if (url.includes('home/items')) {
+        return Promise.resolve({ tasks: [], notes: [{ ...mockNotes[0], archived: true }] });
+      }
+      return Promise.resolve([]);
+    });
+
+    await act(async () => {
+      renderHome();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('archived-note-dropdown-menu-1')).toBeDefined();
+    });
+
+    expect(getTagsCalls().length).toBe(1);
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('archived-note-dropdown-menu-1'));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('archived-note-dropdown-delete-item-1'));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-delete-button'));
+    });
+
+    await waitFor(() => {
+      expect(api.deleteNoContent).toHaveBeenCalled();
+      expect(getTagsCalls().length).toBe(2);
+    });
   });
 
   /*
