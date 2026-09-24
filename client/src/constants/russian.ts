@@ -117,6 +117,7 @@ const ruTranslations = {
   delete_modal_confirm: 'Удалить',
 
   note_form_title: 'Добавить примечание',
+  note_form_untitled: 'Заметка без названия',
   note_form_title_label: 'Заголовок',
   note_form_title_placeholder: 'Введите название заметки',
   note_form_content_label: 'Примечание к содержанию',

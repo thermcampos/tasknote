@@ -117,6 +117,7 @@ const esTranslations = {
   delete_modal_confirm: 'Eliminar',
 
   note_form_title: 'Añadir nota',
+  note_form_untitled: 'Nota sin título',
   note_form_title_label: 'Título',
   note_form_title_placeholder: 'Introduce el título de la nota',
   note_form_content_label: 'Contenido de la nota',

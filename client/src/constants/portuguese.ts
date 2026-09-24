@@ -117,6 +117,7 @@ const ptBrTranslations = {
   delete_modal_confirm: 'Excluir',
 
   note_form_title: 'Adicionar nota',
+  note_form_untitled: 'Nota sem título',
   note_form_title_label: 'Título',
   note_form_title_placeholder: 'Digite o título da nota',
   note_form_content_label: 'Conteúdo da nota',
