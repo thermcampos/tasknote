@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Home page now displays only the last 24 items. [Issue 79](https://github.com/thermcampos/tasknote/issues/79)
 
+### Fixed
+- iOS screen zoomming in when typing notes. [PR 81](https://github.com/thermcampos/tasknote/pull/81)
+
 ```
 # Docker images
 - ghcr.io/thermcampos/tasknote/server:api-v2026.09.24.11
-- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.9
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.10
 ```
 
 ---
