@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-24
+
+### Changed
+- Home page now displays only the last 24 items. [Issue 79](https://github.com/thermcampos/tasknote/issues/79)
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/server:api-v2026.09.24.?
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.24.?
+```
+
+---
+
 ## 2026-09-23
 
 ### Changed
