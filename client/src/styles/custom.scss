@@ -217,6 +217,32 @@ a:hover, .btn-link:hover {
   }
 }
 
+.note-form-input {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+  color: inherit;
+}
+
+.note-form-input:focus {
+  background-color: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.note-form-title-input {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.note-form-meta-input {
+  font-size: 14px;
+  color: var(--bs-secondary-color);
+}
+
 .task-note-external-link {
   margin-left: 0.5rem;
 }
