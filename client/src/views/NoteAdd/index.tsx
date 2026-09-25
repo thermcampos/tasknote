@@ -13,10 +13,12 @@ import api from '../../api-service/api';
 import ApiConfig from '../../api-service/apiConfig';
 import { translateServerResponse } from '../../utils/TranslatorUtils';
 import { parseNoteDocument } from '../../utils/noteDocumentParser';
-import ModalMarkdown from '../../components/ModalMarkdown';
 import AlertError from '../../components/AlertError';
 import ContentHeader from '../../components/ContentHeader';
 import NoteForm from '../../components/NoteForm';
+import { MarkdownEditorHandle } from '../../components/MarkdownEditor';
+
+const MAX_NOTE_CONTENT_SIZE = 50000;
 
 type NoteAction = 'add' | 'edit';
 
@@ -45,12 +47,13 @@ function NoteAdd(): React.ReactNode {
   const [showTagDropdown, setShowTagDropdown] = useState<boolean>(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
   const [action, setAction] = useState<NoteAction>('add');
-  const [showPreviewMd, setShowPreviewMd] = useState<boolean>(false);
   const [draftBanner, setDraftBanner] = useState<boolean>(false);
+  const [editorSeed, setEditorSeed] = useState<string>('');
+  const [editorKey, setEditorKey] = useState<number>(0);
   const { i18n, t } = useTranslation();
   const params = useParams();
   const navigate = useNavigate();
-  const bodyInputRef = useRef<HTMLTextAreaElement>(null);
+  const bodyEditorRef = useRef<MarkdownEditorHandle>(null);
   const tagContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasUserEdited = useRef<boolean>(false);
@@ -122,13 +125,19 @@ function NoteAdd(): React.ReactNode {
     return false;
   };
 
+  const replaceEditorBody = (value: string): void => {
+    setBody(value);
+    setEditorSeed(value);
+    setEditorKey(key => key + 1);
+  };
+
   /**
    * Resets the input fields to their default values.
    */
   const resetInputs = () => {
     setNoteId(0);
     setTitle('');
-    setBody('');
+    replaceEditorBody('');
     setNoteUrl('');
     setSelectedTags([]);
     setCurrentTag('');
@@ -194,7 +203,7 @@ function NoteAdd(): React.ReactNode {
       }
       localStorage.setItem(draftKey, JSON.stringify(migrated));
       setTitle(migrated.title);
-      setBody(migrated.content);
+      replaceEditorBody(migrated.content);
       setNoteUrl(migrated.noteUrl);
       setSelectedTags(migrated.tags);
       setDraftBanner(true);
@@ -312,6 +321,16 @@ function NoteAdd(): React.ReactNode {
       return false;
     }
 
+    if (body.length > MAX_NOTE_CONTENT_SIZE) {
+      setErrorMessage(
+        translateServerResponse(
+          `Note content exceeds the maximum size of ${MAX_NOTE_CONTENT_SIZE} characters`,
+          i18n.language
+        )
+      );
+      return false;
+    }
+
     const finalTags = [...selectedTags];
     const pendingTag = currentTag.trim().toLowerCase();
     if (pendingTag && !finalTags.includes(pendingTag)) {
@@ -406,26 +425,10 @@ function NoteAdd(): React.ReactNode {
   const setNoteFromServer = (noteData: NoteResponse) => {
     setNoteId(noteData.id);
     setTitle(noteData.title);
-    setBody(noteData.description);
+    replaceEditorBody(noteData.description);
     setNoteUrl(noteData.url ?? '');
     setSelectedTags(noteData.tags ?? []);
   };
-
-  /**
-   * Display the Markdown text in Markdown format on a modal.
-   *
-   * @param {React.MouseEvent<Element, MouseEvent>} e The mouse click event.
-   */
-  const previewMarkdown = (e: React.MouseEvent<Element, MouseEvent>): void => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowPreviewMd(title.length + body.length > 0);
-  };
-
-  /**
-   * Closes the Markdown preview modal.
-   */
-  const handleCloseModal = (): void => setShowPreviewMd(false);
 
   useEffect(() => {
     loadTags();
@@ -489,14 +492,16 @@ function NoteAdd(): React.ReactNode {
               <NoteForm
                 validated={validated}
                 title={title}
-                body={body}
+                bodyDefaultValue={editorSeed}
+                bodyEditorKey={editorKey}
+                bodyLength={body.length}
                 url={noteUrl}
                 selectedTags={selectedTags}
                 currentTag={currentTag}
                 tagSuggestions={tagSuggestions}
                 highlightedIndex={highlightedIndex}
                 submitLabel={t('note_form_submit')}
-                bodyInputRef={bodyInputRef}
+                bodyEditorRef={bodyEditorRef}
                 tagContainerRef={tagContainerRef}
                 onTitleChange={handleTitleChange}
                 onBodyChange={handleBodyChange}
@@ -506,7 +511,6 @@ function NoteAdd(): React.ReactNode {
                 onTagFocus={() => setShowTagDropdown(true)}
                 onAddTag={addTag}
                 onRemoveTag={removeTag}
-                onPreviewMarkdown={previewMarkdown}
                 onSubmit={handleSubmit}
                 onCancel={() => {
                   clearDraft();
@@ -518,16 +522,6 @@ function NoteAdd(): React.ReactNode {
           </Card>
         </Col>
       </Row>
-
-      <ModalMarkdown
-        show={showPreviewMd}
-        onHide={handleCloseModal}
-        title={title.trim()}
-        markdownText={body}
-        tags={selectedTags}
-        onSave={saveNote}
-        saveButtonLabel={t('note_form_submit')}
-      />
     </Container>
   );
 }
