@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-25
+
+### Changed
+- Notes title and URLs moved to inside the note body. [Issue 83](https://github.com/thermcampos/tasknote/issues/83)
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.25.12
+```
+---
+
 ## 2026-09-24
 
 ### Changed
