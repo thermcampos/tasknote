@@ -64,18 +64,11 @@ describe('Notes Management', () => {
     it('displays the add note form', () => {
       cy.contains('Add Note').should('be.visible');
       cy.get('input[name="note_title"]').should('be.visible');
-      cy.get('textarea[name="note_description"]').should('be.visible');
+      cy.get('[data-testid="note-markdown-editor"] .ProseMirror').should('be.visible');
       cy.contains('button', 'Save note').should('be.visible');
     });
 
     it('shows a validation error when submitted without a title', () => {
-      cy.contains('button', 'Save note').click();
-
-      cy.get('.alert-danger').should('be.visible');
-    });
-
-    it('shows a validation error when submitted without content', () => {
-      cy.get('input[name="note_title"]').type('A note title');
       cy.contains('button', 'Save note').click();
 
       cy.get('.alert-danger').should('be.visible');
@@ -100,11 +93,46 @@ describe('Notes Management', () => {
       cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
 
       cy.get('input[name="note_title"]').type('New note');
-      cy.get('textarea[name="note_description"]').type('Some content');
+      cy.get('[data-testid="note-markdown-editor"] .ProseMirror').type('Some content');
       cy.contains('button', 'Save note').click();
 
       cy.wait('@createNote');
       cy.url().should('include', '/home');
+    });
+
+    it('renders markdown live while typing and saves plain markdown', () => {
+      cy.intercept('POST', /\/rest\/notes/, {
+        statusCode: 201,
+        body: {
+          id: 11,
+          title: 'Live markdown',
+          description: '',
+          url: null,
+          tags: [],
+          lastUpdate: '',
+          shared: false,
+          shareToken: null
+        }
+      }).as('createMarkdownNote');
+
+      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
+      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+
+      cy.get('input[name="note_title"]').type('Live markdown');
+      cy.get('[data-testid="note-markdown-editor"] .ProseMirror')
+        .type('# Quarterly goals{enter}Some **bold** text{enter}- first item');
+
+      cy.get('[data-testid="note-markdown-editor"] h1').should('contain.text', 'Quarterly goals');
+      cy.get('[data-testid="note-markdown-editor"] strong').should('contain.text', 'bold');
+      cy.get('[data-testid="note-markdown-editor"] li').should('contain.text', 'first item');
+
+      cy.contains('button', 'Save note').click();
+
+      cy.wait('@createMarkdownNote')
+        .its('request.body.description')
+        .should('contain', '# Quarterly goals')
+        .and('contain', '**bold**')
+        .and('contain', '- first item');
     });
 
     it('shows an error alert when the API returns an error on create', () => {
@@ -114,7 +142,7 @@ describe('Notes Management', () => {
       }).as('createNoteFail');
 
       cy.get('input[name="note_title"]').type('Failing note');
-      cy.get('textarea[name="note_description"]').type('Some content');
+      cy.get('[data-testid="note-markdown-editor"] .ProseMirror').type('Some content');
       cy.contains('button', 'Save note').click();
 
       cy.wait('@createNoteFail');
@@ -147,7 +175,8 @@ describe('Notes Management', () => {
 
     it('pre-fills the form with the existing note data', () => {
       cy.get('input[name="note_title"]').should('have.value', 'Meeting notes');
-      cy.get('textarea[name="note_description"]').should('have.value', 'Discuss quarterly goals');
+      cy.get('[data-testid="note-markdown-editor"] .ProseMirror')
+        .should('contain.text', 'Discuss quarterly goals');
     });
 
     it('updates the note and navigates to home on success', () => {

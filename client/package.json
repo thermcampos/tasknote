@@ -13,6 +13,8 @@
   "repository": "https://lightroasted.vps-kinghost.net/rmcampos/tasknote",
   "private": true,
   "dependencies": {
+    "@milkdown/kit": "^7.22.2",
+    "@milkdown/react": "^7.22.2",
     "@popperjs/core": "^2.11.8",
     "@types/node": "^26.6.1",
     "@types/react-dom": "^19.3.0",

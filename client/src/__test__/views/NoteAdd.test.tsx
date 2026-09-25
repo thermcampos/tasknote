@@ -11,6 +11,26 @@ import ApiConfig from '../../api-service/apiConfig';
 import { NoteResponse } from '../../types/NoteResponse';
 import SidebarContext from '../../context/SidebarContext';
 
+// Mock the Milkdown editor: ProseMirror is exercised separately in
+// MarkdownEditor.test.tsx; here a textarea stand-in keeps the same contract.
+const { editorFocusMock } = vi.hoisted(() => ({ editorFocusMock: vi.fn() }));
+
+vi.mock('../../components/MarkdownEditor', async () => {
+  const React = await import('react');
+  return {
+    default: React.forwardRef(({ defaultValue, onChange }: any, ref: any) => {
+      React.useImperativeHandle(ref, () => ({ focus: editorFocusMock }));
+      return (
+        <textarea
+          data-testid="note-content-input-area"
+          defaultValue={defaultValue}
+          onChange={(e: any) => onChange(e.target.value)}
+        />
+      );
+    })
+  };
+});
+
 // Mock the entire api module
 vi.mock('../../api-service/api', () => ({
   default: {
@@ -228,33 +248,40 @@ describe('NoteAdd Component', () => {
   it('should move focus to the body when pressing Enter in the title', async () => {
     const { getByTestId } = renderNoteAdd();
     const titleInput = getByTestId('note-title-input') as HTMLInputElement;
-    const bodyInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
 
     titleInput.focus();
     fireEvent.keyDown(titleInput, { key: 'Enter' });
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(bodyInput);
+      expect(editorFocusMock).toHaveBeenCalled();
     });
   });
 
-  it('should hide the url and tags from the markdown preview', async () => {
-    const { getByText, getByTestId } = renderNoteAdd();
+  it('should show a character counter only when approaching the size limit', async () => {
+    const { getByTestId, queryByTestId } = renderNoteAdd();
+    const bodyInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
 
-    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'My Title' } });
-    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Body text' } });
-    fireEvent.change(getByTestId('note-url-input'), { target: { value: 'https://example.com' } });
-    fireEvent.click(getByText('Preview Markdown'));
+    expect(queryByTestId('note-body-char-count')).toBeNull();
 
-    await waitFor(() => {
-      expect(getByTestId('modal-header-title').textContent).toBe('My Title');
-    });
-
-    fireEvent.click(getByTestId('modal-source-button'));
+    fireEvent.change(bodyInput, { target: { value: 'a'.repeat(45001) } });
 
     await waitFor(() => {
-      expect(getByTestId('markdown-source-view').textContent).toBe('Body text');
+      expect(getByTestId('note-body-char-count').textContent).toContain('45001');
     });
+  });
+
+  it('should block save when the body exceeds the maximum size', async () => {
+    const { getByTestId, getByText, getByRole } = renderNoteAdd();
+    const submitButton = getByRole('button', { name: 'note_form_submit' });
+
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'Too Big' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'a'.repeat(50001) } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(getByText(/exceeds the maximum size/)).toBeDefined();
+    });
+    expect(api.postJSON).not.toHaveBeenCalled();
   });
 
   it('should render text based on new contentHeader component', async () => {
@@ -482,6 +509,35 @@ describe('NoteAdd Component', () => {
     await waitFor(() => {
       expect(getByTestId('note-tags-preview').textContent).toContain('#dev');
       expect(tagsInput.value).toBe('');
+    });
+  });
+
+  it('should keep a legacy tags footer as plain body content when editing', async () => {
+    mockedUseParams.mockReturnValue({ id: '1' });
+
+    const toEdit: NoteResponse = {
+      id: 1,
+      title: 'Note one',
+      description: 'Description of note one\n\ntags: body-tag',
+      url: 'http://notes.domain.com',
+      tags: ['server-tag'],
+      lastUpdate: '3 minutes ago',
+      shared: false,
+      shareToken: null
+    };
+
+    vi.spyOn(api, 'getJSON').mockResolvedValue(toEdit);
+
+    const { getByTestId } = renderNoteAdd();
+
+    await waitFor(() => {
+      const bodyInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+      expect(bodyInput.value).toBe('Description of note one\n\ntags: body-tag');
+    });
+
+    await waitFor(() => {
+      const preview = getByTestId('note-tags-preview');
+      expect(preview.textContent).toContain('#server-tag');
     });
   });
 

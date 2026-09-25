@@ -1,18 +1,24 @@
 import React from 'react';
 import { Badge, Form, ListGroup } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import MarkdownEditor, { MarkdownEditorHandle } from '../MarkdownEditor';
+
+const MAX_NOTE_CONTENT_SIZE = 50000;
+const CHAR_COUNT_VISIBLE_FROM = 45000;
 
 interface NoteFormProps {
   validated: boolean;
   title: string;
-  body: string;
+  bodyDefaultValue: string;
+  bodyEditorKey: number;
+  bodyLength: number;
   url: string;
   selectedTags: string[];
   currentTag: string;
   tagSuggestions: string[];
   highlightedIndex: number;
   submitLabel: string;
-  bodyInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  bodyEditorRef: React.RefObject<MarkdownEditorHandle | null>;
   tagContainerRef: React.RefObject<HTMLDivElement | null>;
   onTitleChange: (value: string) => void;
   onBodyChange: (value: string) => void;
@@ -22,7 +28,6 @@ interface NoteFormProps {
   onTagFocus: () => void;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
-  onPreviewMarkdown: (e: React.MouseEvent<Element, MouseEvent>) => void;
   onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
@@ -38,14 +43,16 @@ interface NoteFormProps {
 function NoteForm({
   validated,
   title,
-  body,
+  bodyDefaultValue,
+  bodyEditorKey,
+  bodyLength,
   url,
   selectedTags,
   currentTag,
   tagSuggestions,
   highlightedIndex,
   submitLabel,
-  bodyInputRef,
+  bodyEditorRef,
   tagContainerRef,
   onTitleChange,
   onBodyChange,
@@ -55,7 +62,6 @@ function NoteForm({
   onTagFocus,
   onAddTag,
   onRemoveTag,
-  onPreviewMarkdown,
   onSubmit,
   onCancel
 }: NoteFormProps): React.ReactNode {
@@ -81,7 +87,7 @@ function NoteForm({
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              bodyInputRef.current?.focus();
+              bodyEditorRef.current?.focus();
             }
           }}
           data-testid="note-title-input"
@@ -89,24 +95,23 @@ function NoteForm({
       </Form.Group>
 
       <Form.Group controlId="form_noteDescription">
-        <div className="d-flex justify-content-end">
-          <small>
-            <a href="#" onClick={onPreviewMarkdown}>
-              Preview Markdown
-            </a>
-          </small>
-        </div>
-        <Form.Control
-          className="note-form-input note-content-input"
-          as="textarea"
-          rows={15}
-          name="note_description"
+        <MarkdownEditor
+          key={bodyEditorKey}
+          ref={bodyEditorRef}
+          defaultValue={bodyDefaultValue}
           placeholder={t('note_form_content_placeholder')}
-          value={body}
-          ref={bodyInputRef}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onBodyChange(e.target.value)}
-          data-testid="note-content-input-area"
+          onChange={onBodyChange}
         />
+        {bodyLength > CHAR_COUNT_VISIBLE_FROM && (
+          <Form.Text
+            className={bodyLength > MAX_NOTE_CONTENT_SIZE ? 'text-danger' : 'text-muted'}
+            data-testid="note-body-char-count"
+          >
+            {bodyLength}
+            {' / '}
+            {MAX_NOTE_CONTENT_SIZE}
+          </Form.Text>
+        )}
       </Form.Group>
 
       <Form.Group controlId="form_noteUrl" className="mt-2">
