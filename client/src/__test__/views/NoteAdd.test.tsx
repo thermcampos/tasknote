@@ -108,24 +108,21 @@ describe('NoteAdd Component', () => {
     vi.clearAllMocks();
   });
 
-  it('should render the NoteAdd component without title and url inputs', async () => {
+  it('should render the hybrid form with title, body, url and tags inputs and no labels', async () => {
     let result: any;
     await act(async () => {
       result = renderNoteAdd();
     });
-    const { getByText, queryByLabelText } = result;
+    const { getByTestId, getByText, queryByLabelText } = result;
     expect(getByText('note_form_untitled')).toBeDefined();
-    expect(getByText('note_form_content_label')).toBeDefined();
+    expect(getByTestId('note-title-input')).toBeDefined();
+    expect(getByTestId('note-content-input-area')).toBeDefined();
+    expect(getByTestId('note-url-input')).toBeDefined();
+    expect(getByTestId('note-tags-input')).toBeDefined();
     expect(getByText('note_form_submit')).toBeDefined();
     expect(queryByLabelText('note_form_title_label')).toBeNull();
+    expect(queryByLabelText('note_form_content_label')).toBeNull();
     expect(queryByLabelText('task_form_url_label')).toBeNull();
-  });
-
-  it('should show the helper text mentioning title line, url line and tags footer', async () => {
-    const { getByText } = renderNoteAdd();
-    expect(getByText(/The first line is the note title/)).toBeDefined();
-    expect(getByText(/url: <url>/)).toBeDefined();
-    expect(getByText(/tags: a, b/)).toBeDefined();
   });
 
   it('should show error message when form is invalid', async () => {
@@ -139,12 +136,12 @@ describe('NoteAdd Component', () => {
     });
   });
 
-  it('should block save when the first line is blank', async () => {
+  it('should block save when the title is blank even with a body', async () => {
     const { getByText, getByTestId, getByRole } = renderNoteAdd();
     const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, { target: { value: '\nBody without a title' } });
+    fireEvent.change(noteContentInput, { target: { value: 'Body without a title' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -153,17 +150,17 @@ describe('NoteAdd Component', () => {
     expect(api.postJSON).not.toHaveBeenCalled();
   });
 
-  it('should add a new note deriving title from the first line', async () => {
+  it('should add a new note from the split fields', async () => {
     mockedUseSearchParams.mockReturnValue([
       new URLSearchParams('backTo=home'),
       vi.fn(),
     ]);
 
     const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, { target: { value: 'New Note\n\nNote content' } });
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'New Note' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Note content' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -182,80 +179,71 @@ describe('NoteAdd Component', () => {
     });
   });
 
-  it('should strip markdown heading markers from the title line', async () => {
+  it('should use the title verbatim without stripping markdown markers', async () => {
     const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, { target: { value: '# My Title\n\nBody' } });
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: '# My Title' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Body' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, expect.objectContaining({
-        title: 'My Title',
+        title: '# My Title',
         description: 'Body'
       }));
     });
   });
 
-  it('should parse the url line case-insensitively and strip it from the description', async () => {
+  it('should send the url input value with the note', async () => {
     const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, {
-      target: { value: 'Titled\nURL: https://example.com/page, extra\n\nBody\n\ntags: dev' }
-    });
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'Titled' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Body' } });
+    fireEvent.change(getByTestId('note-url-input'), { target: { value: 'https://example.com/page' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, expect.objectContaining({
         title: 'Titled',
         url: 'https://example.com/page',
-        description: 'Body',
-        tags: ['dev']
+        description: 'Body'
       }));
     });
   });
 
-  it('should use the first url line when multiple are present', async () => {
-    const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-    const submitButton = getByRole('button', { name: 'note_form_submit' });
-
-    fireEvent.change(noteContentInput, {
-      target: { value: 'Titled\nurl: https://first\nurl: https://second\n\nBody' }
-    });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, expect.objectContaining({
-        url: 'https://first',
-        description: 'url: https://second\n\nBody'
-      }));
-    });
-  });
-
-  it('should update the card title live with the normalized first line', async () => {
+  it('should update the card title live with the title input', async () => {
     const { getByText, getByTestId } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
 
     expect(getByText('note_form_untitled')).toBeDefined();
 
-    fireEvent.change(noteContentInput, { target: { value: '## Live Title\n\nBody' } });
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'Live Title' } });
 
     await waitFor(() => {
       expect(getByText('Live Title')).toBeDefined();
     });
   });
 
-  it('should hide the title, url and tags lines from the markdown preview', async () => {
-    const { getByText, getByTestId } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+  it('should move focus to the body when pressing Enter in the title', async () => {
+    const { getByTestId } = renderNoteAdd();
+    const titleInput = getByTestId('note-title-input') as HTMLInputElement;
+    const bodyInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
 
-    fireEvent.change(noteContentInput, {
-      target: { value: 'My Title\nurl: https://example.com\n\nBody text\n\ntags: dev' }
+    titleInput.focus();
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(bodyInput);
     });
+  });
+
+  it('should hide the url and tags from the markdown preview', async () => {
+    const { getByText, getByTestId } = renderNoteAdd();
+
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'My Title' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Body text' } });
+    fireEvent.change(getByTestId('note-url-input'), { target: { value: 'https://example.com' } });
     fireEvent.click(getByText('Preview Markdown'));
 
     await waitFor(() => {
@@ -283,7 +271,7 @@ describe('NoteAdd Component', () => {
     expect(getByText('Them')).toBeDefined();
   });
 
-  it('should render a note to edit with title and url synthesized into the body', async () => {
+  it('should render a note to edit with title, url and tags in their own fields', async () => {
     mockedUseParams.mockReturnValue({ id: '1' });
 
     const toEdit: NoteResponse = {
@@ -302,10 +290,17 @@ describe('NoteAdd Component', () => {
     const { getByTestId } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.innerHTML).toBe(
-        'Note one\nurl: http://notes.domain.com\n\nDescription of note one\n\ntags: dev'
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Note one');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe(
+        'Description of note one'
       );
+      expect((getByTestId('note-url-input') as HTMLInputElement).value).toBe(
+        'http://notes.domain.com'
+      );
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('note-tags-preview').textContent).toContain('#dev');
     });
   });
 
@@ -328,8 +323,7 @@ describe('NoteAdd Component', () => {
     const { getByTestId, getByRole } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.innerHTML).toContain('Note one');
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Note one');
     });
 
     fireEvent.click(getByRole('button', { name: 'note_form_submit' }));
@@ -368,9 +362,12 @@ describe('NoteAdd Component', () => {
     const { getByTestId } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.innerHTML).toBe(
-        'Old title\nurl: http://notes.domain.com\n\nOld description\n\ntags: dev'
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Old title');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe(
+        'Old description'
+      );
+      expect((getByTestId('note-url-input') as HTMLInputElement).value).toBe(
+        'http://notes.domain.com'
       );
     });
 
@@ -383,21 +380,35 @@ describe('NoteAdd Component', () => {
     const { getByTestId } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.innerHTML).toBe('');
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe('');
     });
 
     window.history.pushState({}, '', '/');
   });
 
-  it('should parse the tags footer, strip it from the description and send tags on save', async () => {
+  it('should commit a tag chip with Enter and send tags on save', async () => {
     const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, {
-      target: { value: 'Tagged Note\n\nNote content\n\nTags: Foo, bar , foo,,' }
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'Tagged Note' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Note content' } });
+
+    const tagsInput = getByTestId('note-tags-input') as HTMLInputElement;
+    fireEvent.change(tagsInput, { target: { value: 'Foo' } });
+    fireEvent.keyDown(tagsInput, { key: 'Enter' });
+    fireEvent.change(tagsInput, { target: { value: 'bar' } });
+    fireEvent.keyDown(tagsInput, { key: 'Enter' });
+    fireEvent.change(tagsInput, { target: { value: 'foo' } });
+    fireEvent.keyDown(tagsInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      const preview = getByTestId('note-tags-preview');
+      expect(preview.textContent).toContain('#foo');
+      expect(preview.textContent).toContain('#bar');
+      expect(preview.textContent).not.toContain('#Foo');
     });
+
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -415,89 +426,78 @@ describe('NoteAdd Component', () => {
     });
   });
 
-  it('should save an untagged note when the footer has an empty value', async () => {
+  it('should commit a pending tag left in the input on save', async () => {
     const { getByTestId, getByRole } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
     const submitButton = getByRole('button', { name: 'note_form_submit' });
 
-    fireEvent.change(noteContentInput, { target: { value: 'Untagged Note\n\nNote content\n\ntags:' } });
+    fireEvent.change(getByTestId('note-title-input'), { target: { value: 'Pending Tag' } });
+    fireEvent.change(getByTestId('note-content-input-area'), { target: { value: 'Body' } });
+    fireEvent.change(getByTestId('note-tags-input'), { target: { value: 'dev' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, {
-        id: 0,
-        title: 'Untagged Note',
-        description: 'Note content',
-        url: '',
-        tags: [],
-        lastUpdate: '',
-        shared: false,
-        shareToken: null,
-        archived: false
-      });
+      expect(api.postJSON).toHaveBeenCalledWith(ApiConfig.notesUrl, expect.objectContaining({
+        tags: ['dev']
+      }));
     });
   });
 
-  it('should show live tag chips while typing the footer', async () => {
-    const { getByTestId, queryByTestId } = renderNoteAdd();
-    const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
+  it('should remove a tag chip when clicking it', async () => {
+    const { getByTestId, getByText, queryByTestId } = renderNoteAdd();
 
-    expect(queryByTestId('note-tags-preview')).toBeNull();
-
-    fireEvent.change(noteContentInput, { target: { value: 'Content\n\ntags: dev, react' } });
+    const tagsInput = getByTestId('note-tags-input') as HTMLInputElement;
+    fireEvent.change(tagsInput, { target: { value: 'dev' } });
+    fireEvent.keyDown(tagsInput, { key: 'Enter' });
 
     await waitFor(() => {
-      const preview = getByTestId('note-tags-preview');
-      expect(preview.textContent).toContain('#dev');
-      expect(preview.textContent).toContain('#react');
+      expect(getByTestId('note-tags-preview').textContent).toContain('#dev');
+    });
+
+    fireEvent.click(getByText(/#dev/));
+
+    await waitFor(() => {
+      expect(queryByTestId('note-tags-preview')).toBeNull();
     });
   });
 
-  it('should keep the server footer over note.tags when editing', async () => {
-    mockedUseParams.mockReturnValue({ id: '1' });
+  it('should show tag suggestions and accept one on click', async () => {
+    vi.spyOn(api, 'getJSON').mockResolvedValue(['dev', 'design']);
 
-    const toEdit: NoteResponse = {
-      id: 1,
-      title: 'Note one',
-      description: 'Description of note one\n\ntags: body-tag',
-      url: 'http://notes.domain.com',
-      tags: ['server-tag'],
-      lastUpdate: '3 minutes ago',
-      shared: false,
-      shareToken: null
-    };
-
-    vi.spyOn(api, 'getJSON').mockResolvedValue(toEdit);
-
-    const { getByTestId } = renderNoteAdd();
+    const { getByTestId, getByText } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.innerHTML).toBe(
-        'Note one\nurl: http://notes.domain.com\n\nDescription of note one\n\ntags: body-tag'
-      );
+      expect(api.getJSON).toHaveBeenCalled();
     });
 
+    const tagsInput = getByTestId('note-tags-input') as HTMLInputElement;
+    fireEvent.focus(tagsInput);
+    fireEvent.change(tagsInput, { target: { value: 'de' } });
+
     await waitFor(() => {
-      const preview = getByTestId('note-tags-preview');
-      expect(preview.textContent).toContain('#body-tag');
-      expect(preview.textContent).not.toContain('#server-tag');
+      expect(getByTestId('tag-suggestion-dropdown')).toBeDefined();
+    });
+
+    fireEvent.mouseDown(getByText('#dev'));
+
+    await waitFor(() => {
+      expect(getByTestId('note-tags-preview').textContent).toContain('#dev');
+      expect(tagsInput.value).toBe('');
     });
   });
 
-  it('should restore a content-only draft', async () => {
+  it('should restore a legacy content-only draft into the split fields', async () => {
     localStorage.setItem('draft:note:new', JSON.stringify({ content: 'Draft Title\n\nDraft body' }));
 
     const { getByTestId, getByText } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.value).toBe('Draft Title\n\nDraft body');
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Draft Title');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe('Draft body');
     });
     expect(getByText(/Draft restored/)).toBeDefined();
   });
 
-  it('should migrate an old-shaped draft into the content once', async () => {
+  it('should migrate an old-shaped draft into the split fields once', async () => {
     localStorage.setItem(
       'draft:note:new',
       JSON.stringify({ title: 'Old Title', content: 'Old body', noteUrl: 'http://x.com' })
@@ -506,11 +506,32 @@ describe('NoteAdd Component', () => {
     const { getByTestId } = renderNoteAdd();
 
     await waitFor(() => {
-      const noteContentInput = getByTestId('note-content-input-area') as HTMLTextAreaElement;
-      expect(noteContentInput.value).toBe('Old Title\nurl: http://x.com\n\nOld body');
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Old Title');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe('Old body');
+      expect((getByTestId('note-url-input') as HTMLInputElement).value).toBe('http://x.com');
     });
 
     const stored = JSON.parse(localStorage.getItem('draft:note:new')!);
-    expect(stored).toEqual({ content: 'Old Title\nurl: http://x.com\n\nOld body' });
+    expect(stored).toEqual({
+      title: 'Old Title',
+      content: 'Old body',
+      noteUrl: 'http://x.com',
+      tags: []
+    });
+  });
+
+  it('should restore a new-shaped draft as-is', async () => {
+    localStorage.setItem(
+      'draft:note:new',
+      JSON.stringify({ title: 'Draft', content: 'Body', noteUrl: '', tags: ['dev'] })
+    );
+
+    const { getByTestId } = renderNoteAdd();
+
+    await waitFor(() => {
+      expect((getByTestId('note-title-input') as HTMLInputElement).value).toBe('Draft');
+      expect((getByTestId('note-content-input-area') as HTMLTextAreaElement).value).toBe('Body');
+      expect(getByTestId('note-tags-preview').textContent).toContain('#dev');
+    });
   });
 });
