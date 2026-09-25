@@ -384,7 +384,7 @@ function NoteAdd(): React.ReactNode {
     if (saved) {
       clearDraft();
       resetInputs();
-      navigate('/home');
+      navigate('/home', { state: { refreshHome: true } });
     }
 
     return saved;
