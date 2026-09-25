@@ -15,7 +15,6 @@ import { NoteResponse } from '../../types/NoteResponse';
 import api from '../../api-service/api';
 import ApiConfig from '../../api-service/apiConfig';
 import { translateServerResponse } from '../../utils/TranslatorUtils';
-import FormInput from '../../components/FormInput';
 import ModalMarkdown from '../../components/ModalMarkdown';
 import AlertError from '../../components/AlertError';
 import ContentHeader from '../../components/ContentHeader';
@@ -23,9 +22,19 @@ import ContentHeader from '../../components/ContentHeader';
 type NoteAction = 'add' | 'edit';
 
 interface NoteDraft {
-  title: string;
   content: string;
-  noteUrl: string;
+}
+
+interface LegacyNoteDraft {
+  title?: string;
+  content: string;
+  noteUrl?: string;
+}
+
+interface ParsedNoteDocument {
+  title: string;
+  url: string;
+  body: string;
 }
 
 interface ParsedTagsFooter {
@@ -58,14 +67,46 @@ const parseTagsFooter = (content: string): ParsedTagsFooter | null => {
   return null;
 };
 
-const stripTagsFooter = (content: string): string => {
-  const parsed = parseTagsFooter(content);
-  return parsed ? parsed.bodyWithoutFooter : content;
-};
-
 const synthesizeTagsFooter = (content: string, tags: string[]): string => {
   if (parseTagsFooter(content) || tags.length === 0) return content;
   return `${content.replace(/\s+$/, '')}\n\ntags: ${tags.join(', ')}`;
+};
+
+const URL_LINE_PATTERN = /^url:\s*(.*)$/i;
+
+const normalizeTitleLine = (line: string): string => line.replace(/^#+\s+/, '').trim();
+
+const parseNoteDocument = (content: string): ParsedNoteDocument => {
+  const lines = content.split('\n');
+  const title = lines.length > 0 ? normalizeTitleLine(lines[0].replace(/\r$/, '')) : '';
+  const footer = parseTagsFooter(content);
+  const footerLineIndex = footer ? footer.footerLineIndex : lines.length;
+  let url = '';
+  let urlLineIndex = -1;
+  for (let i = 1; i < footerLineIndex; i += 1) {
+    const match = lines[i].replace(/\r$/, '').match(URL_LINE_PATTERN);
+    if (match) {
+      urlLineIndex = i;
+      url = match[1].split(/[\s,]+/).filter(token => token.length > 0)[0] ?? '';
+      break;
+    }
+  }
+  const body = lines
+    .slice(1, footerLineIndex)
+    .filter((_, index) => index + 1 !== urlLineIndex)
+    .join('\n')
+    .replace(/^\s+/, '')
+    .replace(/\s+$/, '');
+  return { title, url, body };
+};
+
+const synthesizeNoteDocument = (noteData: NoteResponse): string => {
+  const headerLines = [noteData.title];
+  if (noteData.url) {
+    headerLines.push(`url: ${noteData.url}`);
+  }
+  const body = synthesizeTagsFooter(noteData.description, noteData.tags ?? []);
+  return `${headerLines.join('\n')}\n\n${body}`;
 };
 
 const getFooterCaretContext = (content: string, caret: number): FooterCaretContext | null => {
@@ -99,9 +140,7 @@ function NoteAdd(): React.ReactNode {
   const [validated, setValidated] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [noteId, setNoteId] = useState<number>(0);
-  const [noteTitle, setNoteTitle] = useState<string>('');
   const [noteContent, setNoteContent] = useState<string>('');
-  const [noteUrl, setNoteUrl] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [footerCtx, setFooterCtx] = useState<FooterCaretContext | null>(null);
   const [showFooterDropdown, setShowFooterDropdown] = useState<boolean>(false);
@@ -119,6 +158,7 @@ function NoteAdd(): React.ReactNode {
 
   const draftKey = params?.id ? `draft:note:edit:${params.id}` : 'draft:note:new';
 
+  const parsedDocument = parseNoteDocument(noteContent);
   const parsedFooter = parseTagsFooter(noteContent);
   const footerTags = parsedFooter ? parsedFooter.tags : [];
   const footerSuggestions = showFooterDropdown && footerCtx
@@ -191,8 +231,6 @@ function NoteAdd(): React.ReactNode {
    */
   const resetInputs = () => {
     setNoteId(0);
-    setNoteTitle('');
-    setNoteUrl('');
     setNoteContent('');
     setFooterCtx(null);
     setShowFooterDropdown(false);
@@ -200,11 +238,11 @@ function NoteAdd(): React.ReactNode {
     setValidated(false);
   };
 
-  const saveDraft = (title: string, content: string, noteUrl: string): void => {
+  const saveDraft = (content: string): void => {
     if (!hasUserEdited.current) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      const draft: NoteDraft = { title, content, noteUrl };
+      const draft: NoteDraft = { content };
       localStorage.setItem(draftKey, JSON.stringify(draft));
     }, 1500);
   };
@@ -218,10 +256,18 @@ function NoteAdd(): React.ReactNode {
     const raw = localStorage.getItem(draftKey);
     if (!raw) return;
     try {
-      const draft: NoteDraft = JSON.parse(raw);
-      setNoteTitle(draft.title ?? '');
-      setNoteContent(draft.content ?? '');
-      setNoteUrl(draft.noteUrl ?? '');
+      const draft: LegacyNoteDraft = JSON.parse(raw);
+      let content = draft.content ?? '';
+      if (typeof draft.title === 'string' || typeof draft.noteUrl === 'string') {
+        const headerLines = [draft.title ?? ''];
+        if (draft.noteUrl) {
+          headerLines.push(`url: ${draft.noteUrl}`);
+        }
+        content = `${headerLines.join('\n')}\n\n${content}`;
+        const migrated: NoteDraft = { content };
+        localStorage.setItem(draftKey, JSON.stringify(migrated));
+      }
+      setNoteContent(content);
       setDraftBanner(true);
     }
     catch {
@@ -273,7 +319,7 @@ function NoteAdd(): React.ReactNode {
     const newCaret = footerCtx.tokenStart + replacement.length;
     hasUserEdited.current = true;
     setNoteContent(newContent);
-    saveDraft(noteTitle, newContent, noteUrl);
+    saveDraft(newContent);
     setTimeout(() => {
       if (contentInputRef.current) {
         contentInputRef.current.focus();
@@ -314,17 +360,17 @@ function NoteAdd(): React.ReactNode {
   const saveNote = async (): Promise<boolean> => {
     setValidated(true);
 
-    if (!noteTitle.trim() || !noteContent.trim()) {
+    if (!parsedDocument.title || !noteContent.trim()) {
       setErrorMessage(translateServerResponse('Please fill in all the fields', i18n.language));
       return false;
     }
 
     const payload: NoteResponse = {
       id: action === 'edit' ? noteId : 0,
-      title: noteTitle,
-      description: stripTagsFooter(noteContent),
-      url: noteUrl,
-      tags: parseTagsFooter(noteContent)?.tags ?? [],
+      title: parsedDocument.title,
+      description: parsedDocument.body,
+      url: parsedDocument.url,
+      tags: parsedFooter?.tags ?? [],
       lastUpdate: '',
       shared: false,
       shareToken: null,
@@ -406,11 +452,7 @@ function NoteAdd(): React.ReactNode {
 
   const setNoteFromServer = (noteData: NoteResponse) => {
     setNoteId(noteData.id);
-    setNoteTitle(noteData.title);
-    if (noteData.url) {
-      setNoteUrl(noteData.url);
-    }
-    setNoteContent(synthesizeTagsFooter(noteData.description, noteData.tags ?? []));
+    setNoteContent(synthesizeNoteDocument(noteData));
   };
 
   /**
@@ -465,7 +507,7 @@ function NoteAdd(): React.ReactNode {
         <Col xs={12}>
           <Card>
             <Card.Body>
-              <Card.Title>{t('note_form_title')}</Card.Title>
+              <Card.Title>{parsedDocument.title || t('note_form_untitled')}</Card.Title>
 
               <AlertError
                 errorMessage={errorMessage}
@@ -494,43 +536,6 @@ function NoteAdd(): React.ReactNode {
                 onSubmit={handleSubmit}
                 autoComplete="off"
               >
-                <Row>
-                  <Col xs={12} md={6} xxl={6}>
-                    {/* Note title */}
-                    <FormInput
-                      labelText={t('note_form_title_label')}
-                      iconName="JournalCheck"
-                      required={true}
-                      type="text"
-                      name="note_title"
-                      placeholder={t('note_form_title_placeholder')}
-                      value={noteTitle}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setNoteTitle(e.target.value);
-                        hasUserEdited.current = true;
-                        saveDraft(e.target.value, noteContent, noteUrl);
-                      }}
-                    />
-                  </Col>
-                  <Col xs={12} md={6} xxl={6}>
-                    {/* Note URL */}
-                    <FormInput
-                      labelText={t('task_form_url_label')}
-                      iconName="At"
-                      required={false}
-                      type="text"
-                      name="url"
-                      placeholder={t('task_form_url_placeholder')}
-                      value={noteUrl}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        setNoteUrl(e.target.value);
-                        hasUserEdited.current = true;
-                        saveDraft(noteTitle, noteContent, e.target.value);
-                      }}
-                    />
-                  </Col>
-                </Row>
-
                 <Form.Group controlId="form_noteDescription">
                   <Form.Label>
                     {t('note_form_content_label')}
@@ -556,7 +561,7 @@ function NoteAdd(): React.ReactNode {
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                         setNoteContent(e.target.value);
                         hasUserEdited.current = true;
-                        saveDraft(noteTitle, e.target.value, noteUrl);
+                        saveDraft(e.target.value);
                         refreshFooterAutocomplete(
                           e.target.value,
                           e.target.selectionStart ?? e.target.value.length
@@ -608,7 +613,7 @@ function NoteAdd(): React.ReactNode {
                     )}
                   </div>
                   <Form.Text className="text-muted" id="noteDescriptionHelper">
-                    Add a final line `tags: a, b` to tag this note.
+                    {'The first line is the note title. To link a URL to this note, add a line `url: <url>` before the tags. Add a final line `tags: a, b` to tag this note.'}
                   </Form.Text>
                   {footerTags.length > 0 && (
                     <div className="mb-2 d-flex flex-wrap gap-1" data-testid="note-tags-preview">
@@ -656,8 +661,8 @@ function NoteAdd(): React.ReactNode {
       <ModalMarkdown
         show={showPreviewMd}
         onHide={handleCloseModal}
-        title={noteTitle}
-        markdownText={stripTagsFooter(noteContent)}
+        title={parsedDocument.title}
+        markdownText={parsedDocument.body}
         tags={footerTags}
         onSave={saveNote}
         saveButtonLabel={t('note_form_submit')}

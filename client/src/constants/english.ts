@@ -117,6 +117,7 @@ const enTranslations = {
   delete_modal_confirm: 'Delete',
 
   note_form_title: 'Add note',
+  note_form_untitled: 'Untitled note',
   note_form_title_label: 'Title',
   note_form_title_placeholder: 'Enter the note title',
   note_form_content_label: 'Note content',
