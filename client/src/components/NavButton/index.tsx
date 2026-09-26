@@ -8,6 +8,7 @@ interface Props {
   children: React.ReactElement;
   className: string;
   onClick: () => void;
+  title?: string;
 }
 
 /**
@@ -26,6 +27,7 @@ function NavButton(props: React.PropsWithChildren<Props>): React.ReactElement {
     <a
       href="#"
       className={props.className}
+      title={props.title}
       onClick={(e) => {
         e.preventDefault();
         props.onClick();

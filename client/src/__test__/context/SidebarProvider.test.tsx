@@ -10,12 +10,15 @@ import SidebarContext, { SidebarContextData } from '../../context/SidebarContext
 const ConsumerComponent: React.FC = () => {
   const {
     currentPage,
-    setNewPage
+    setNewPage,
+    isCollapsed,
+    toggleCollapsed
   } = useContext<SidebarContextData>(SidebarContext);
 
   return (
     <div>
       <div data-testid="page">{currentPage}</div>
+      <div data-testid="collapsed">{String(isCollapsed)}</div>
       <button
         data-testid="setPage"
         onClick={() => {
@@ -23,6 +26,14 @@ const ConsumerComponent: React.FC = () => {
         }}
       >
         Change page
+      </button>
+      <button
+        data-testid="toggleCollapsed"
+        onClick={() => {
+          toggleCollapsed();
+        }}
+      >
+        Toggle collapsed
       </button>
     </div>
   );
@@ -32,6 +43,7 @@ describe('SidebarProvider', () => {
   // Reset DOM and mocks for each test.
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -62,5 +74,52 @@ describe('SidebarProvider', () => {
     await waitFor(() =>
       expect(getByTestId('page').textContent).toBe('/home')
     );
+  });
+
+  it('should default to expanded when nothing is persisted', () => {
+    const { getByTestId } = render(
+      <SidebarProvider>
+        <ConsumerComponent />
+      </SidebarProvider>
+    );
+
+    expect(getByTestId('collapsed').textContent).toBe('false');
+  });
+
+  it('should initialize collapsed state from localStorage', () => {
+    localStorage.setItem('SIDEBAR_COLLAPSED', 'true');
+    const { getByTestId } = render(
+      <SidebarProvider>
+        <ConsumerComponent />
+      </SidebarProvider>
+    );
+
+    expect(getByTestId('collapsed').textContent).toBe('true');
+  });
+
+  it('should toggle collapsed state and persist it to localStorage', async () => {
+    const { getByTestId } = render(
+      <SidebarProvider>
+        <ConsumerComponent />
+      </SidebarProvider>
+    );
+
+    await act(async () => {
+      userEvent.click(getByTestId('toggleCollapsed'));
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('collapsed').textContent).toBe('true');
+      expect(localStorage.getItem('SIDEBAR_COLLAPSED')).toBe('true');
+    });
+
+    await act(async () => {
+      userEvent.click(getByTestId('toggleCollapsed'));
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('collapsed').textContent).toBe('false');
+      expect(localStorage.getItem('SIDEBAR_COLLAPSED')).toBe('false');
+    });
   });
 });

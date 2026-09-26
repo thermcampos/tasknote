@@ -15,6 +15,10 @@
     margin-left: 276px; /* Same as sidebar width */
     padding: 30px;
   }
+
+  .main-content.content-sidebar-collapsed {
+    margin-left: 64px; /* Same as collapsed sidebar rail width */
+  }
 }
 
 /* On small screens, content takes full width by default */

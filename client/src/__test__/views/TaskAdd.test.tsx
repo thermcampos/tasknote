@@ -59,7 +59,9 @@ const authContextMock = {
 
 const sidebarContextMock = {
   currentPage: '/home',
-  setNewPage: vi.fn()
+  setNewPage: vi.fn(),
+  isCollapsed: false,
+  toggleCollapsed: vi.fn()
 };
 
 describe('TaskAdd Component', () => {

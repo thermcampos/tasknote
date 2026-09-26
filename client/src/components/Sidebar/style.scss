@@ -10,7 +10,59 @@
   height: 100vh;
   overflow-y: auto;
   z-index: 2;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, width 0.3s ease;
+}
+
+/* Desktop collapse toggle */
+.sidebar-collapse-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  padding: 0.25rem 0.5rem;
+  color: var(--bs-body-color);
+  border: none;
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Desktop collapsed rail */
+@media (min-width: 992px) {
+  .sidebar-collapsed {
+    width: 64px;
+
+    .sidebar-collapse-toggle {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .sidebar-header {
+      margin-left: 0;
+      margin-top: 60px;
+      text-align: center;
+    }
+
+    .sidebar-header img {
+      width: 32px;
+      height: 32px;
+      margin-right: 0;
+    }
+
+    .header-spacer {
+      display: none;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      justify-content: center;
+    }
+
+    .sidebar-nav svg {
+      margin-right: 0;
+    }
+  }
 }
 
 /* Mobile sidebar positioning - hidden by default */

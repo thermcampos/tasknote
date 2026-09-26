@@ -7,7 +7,7 @@ import SidebarContext from '../../context/SidebarContext';
 import NavButton from '../NavButton';
 import { env } from '../../env';
 import './style.scss';
-import { BoxArrowRight, InfoCircleFill, PersonFill, StarFill } from 'react-bootstrap-icons';
+import { BoxArrowRight, ChevronDoubleRight, InfoCircleFill, Link45deg, List, PersonFill, StarFill } from 'react-bootstrap-icons';
 
 interface Props {
   isMobileOpen: boolean;
@@ -21,7 +21,7 @@ interface Props {
  */
 function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
   const { signOut, user } = useContext(AuthContext);
-  const { currentPage, setNewPage } = useContext(SidebarContext);
+  const { currentPage, setNewPage, isCollapsed, toggleCollapsed } = useContext(SidebarContext);
   const [lastSeen, setLastSeen] = useState('');
   const { t } = useTranslation();
   const build = `Build: ${env.VITE_BUILD}`;
@@ -78,44 +78,53 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
         <i className="bi bi-list"></i>
       </button>
 
-      <div className={`d-flex flex-column vh-100 sidebar ${props.isMobileOpen ? 'sidebar-mobile-open' : ''}`}>
+      <div className={`d-flex flex-column vh-100 sidebar ${props.isMobileOpen ? 'sidebar-mobile-open' : ''} ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <button
+          className="d-none d-lg-flex btn sidebar-collapse-toggle"
+          onClick={toggleCollapsed}
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <ChevronDoubleRight /> : <List />}
+        </button>
+
         <div className="sidebar-header plus-jakarta-sans-bold">
           <img src={`https://gravatar.com/avatar/${user?.gravatarImageUrl}.jpg`} alt="User icon" />
-          <span className="header-username">{user?.name ? user?.name : 'User'}</span>
+          {!isCollapsed && <span className="header-username">{user?.name ? user?.name : 'User'}</span>}
         </div>
 
         <div className="header-spacer"></div>
 
         <Nav className="flex-column p-3 plus-jakarta-sans-thin">
-          <NavLink to="/home" className="mb-2" onClick={() => setNewPage('/home')}>
+          <NavLink to="/home" className="mb-2" title={isCollapsed ? 'Home' : undefined} onClick={() => setNewPage('/home')}>
             <div className={`sidebar-nav ${isHomeSelected()}`}>
               <StarFill />
-              Home
+              {!isCollapsed && 'Home'}
             </div>
           </NavLink>
-          <NavLink to="/account" className="mb-2" onClick={() => setNewPage('/account')}>
+          <NavLink to="/account" className="mb-2" title={isCollapsed ? t('footer_my_account') : undefined} onClick={() => setNewPage('/account')}>
             <div className={`sidebar-nav ${currentPage === '/account' ? 'selected' : ''}`}>
               <PersonFill />
-              {t('footer_my_account')}
+              {!isCollapsed && t('footer_my_account')}
             </div>
           </NavLink>
-          <NavLink to="/about" className="mb-2" onClick={() => setNewPage('/about')}>
+          <NavLink to="/about" className="mb-2" title={isCollapsed ? t('home_nav_about') : undefined} onClick={() => setNewPage('/about')}>
             <div className={`sidebar-nav ${currentPage === '/about' ? 'selected' : ''}`}>
               <InfoCircleFill />
-              {t('home_nav_about')}
+              {!isCollapsed && t('home_nav_about')}
             </div>
           </NavLink>
-          <NavButton className="mb-2" onClick={() => logout()}>
+          <NavButton className="mb-2" title={isCollapsed ? t('logout') : undefined} onClick={() => logout()}>
             <div className="sidebar-nav">
               <BoxArrowRight />
-              {t('logout')}
+              {!isCollapsed && t('logout')}
             </div>
           </NavButton>
         </Nav>
 
         {/* Footer at the bottom */}
         <div className="mt-auto text-center text-muted py-3">
-          {lastSeen && (
+          {!isCollapsed && lastSeen && (
             <div>
               <small>{t('sidebar_last_seen', { time: lastSeen })}</small>
             </div>
@@ -126,8 +135,9 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
             target="_blank"
             rel="noopener noreferrer"
             className="footer-link"
+            title={isCollapsed ? build : undefined}
           >
-            <small>{build}</small>
+            {isCollapsed ? <Link45deg /> : <small>{build}</small>}
           </a>
         </div>
       </div>

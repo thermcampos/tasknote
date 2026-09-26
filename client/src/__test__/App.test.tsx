@@ -15,7 +15,9 @@ vi.mock('../api-service/api');
 
 const sidebarContextMock = {
   currentPage: '/home',
-  setNewPage: vi.fn()
+  setNewPage: vi.fn(),
+  isCollapsed: false,
+  toggleCollapsed: vi.fn()
 };
 
 const filterContextMock = {
