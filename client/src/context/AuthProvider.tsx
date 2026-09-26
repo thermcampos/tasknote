@@ -6,6 +6,7 @@ import api from '../api-service/api';
 import ApiConfig from '../api-service/apiConfig';
 import { UserResponse } from '../types/UserResponse';
 import { UserRegistration } from '../types/UserRegistration';
+import { clearHomeCache } from '../utils/HomeCache';
 
 interface Props {
   children: React.ReactNode;
@@ -111,6 +112,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
     localStorage.removeItem(API_TOKEN);
     localStorage.removeItem(REDIRECT_PATH);
     localStorage.removeItem(USER_DATA);
+    clearHomeCache();
   };
 
   useEffect(() => {
@@ -127,6 +129,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
         setSigned(false);
         setUser(undefined);
         localStorage.clear();
+        clearHomeCache();
       });
     }, TWENTY_FIVE_MINUTES);
     return () => clearInterval(intervalId);

@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2026-09-25
 
+### Added
+- Cache to Home to avoid fetching content when not neeedd. [PR 86](https://github.com/thermcampos/tasknote/pull/86)
+
 ### Changed
 - Notes title and URLs moved to inside the note body. [Issue 83](https://github.com/thermcampos/tasknote/issues/83)
 - Notes works with live MD renderer, similar to Notion. [PR 88](https://github.com/thermcampos/tasknote/pull/88)
 
 ```
 # Docker images
-- ghcr.io/thermcampos/tasknote/client:app-v2026.09.25.13
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.25.16
 ```
 ---
 
