@@ -8,6 +8,7 @@ import api from '../../api-service/api';
 import { TaskResponse } from '../../types/TaskResponse';
 import { NoteResponse } from '../../types/NoteResponse';
 import Home from '../../views/Home';
+import { clearHomeCache } from '../../utils/HomeCache';
 
 // filepath: client/src/views/Home/index.test.tsx
 
@@ -40,6 +41,7 @@ vi.mock('../../utils/TranslatorUtils', () => ({
 }));
 
 vi.mock('react-router', () => ({
+  useLocation: () => ({ state: null }),
   NavLink: ({ to, children }: { to: string, children: React.ReactNode }) => (
     <a href={to} data-testid={`navlink-${to}`}>{children}</a>
   )
@@ -227,6 +229,7 @@ describe('Home Component', () => {
 
   beforeEach(() => {
     // Reset mocks and setup default responses
+    clearHomeCache();
     vi.clearAllMocks();
     localStorage.clear();
     (api.getJSON as any).mockImplementation((url: string) => {

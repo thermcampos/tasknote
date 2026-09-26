@@ -273,7 +273,7 @@ function TaskAdd(): React.ReactNode {
         clearDraft();
         form.reset();
         resetInputs();
-        navigate('/home');
+        navigate('/home', { state: { refreshHome: true } });
       }
     }
     else if (action === 'edit') {
@@ -294,7 +294,7 @@ function TaskAdd(): React.ReactNode {
         clearDraft();
         form.reset();
         resetInputs();
-        navigate('/home');
+        navigate('/home', { state: { refreshHome: true } });
       }
     }
   };

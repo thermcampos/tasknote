@@ -24,12 +24,18 @@ import FilterContext from '../../context/FilterContext';
 import ContentHeader from '../../components/ContentHeader';
 import AlertError from '../../components/AlertError';
 import { CheckSquare, JournalText, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import ModalMarkdown from '../../components/ModalMarkdown';
 import TaskTitle from '../../components/TaskTitle';
 import TaskTimeLeft from '../../components/TaskTimeLeft';
 import TaskTag from '../../components/TaskTag';
 import NoteTitle from '../../components/NoteTitle';
+import {
+  cacheHomeItems,
+  cacheHomeTags,
+  getCachedHomeItems,
+  getCachedHomeTags
+} from '../../utils/HomeCache';
 
 const OPEN_NOTE_ID_KEY = 'OPEN_NOTE_ID';
 const SEARCH_DEBOUNCE_MS = 300;
@@ -45,6 +51,9 @@ function Home(): React.ReactNode {
   const { user } = useContext(AuthContext);
   const { filterText, selectedOption, setFilterText, setSelectedOption } = useContext(FilterContext);
   const { i18n, t } = useTranslation();
+  const location = useLocation();
+  const refreshAfterSave
+    = (location.state as { refreshHome?: boolean } | null)?.refreshHome === true;
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [name, setName] = useState<string>(user?.name ? user?.name : 'User');
@@ -72,10 +81,21 @@ function Home(): React.ReactNode {
     }
   };
 
-  const loadTags = async (): Promise<void> => {
+  const loadTags = async (forceRefresh = false): Promise<void> => {
+    if (!forceRefresh && user) {
+      const cachedTags = getCachedHomeTags(user.userId);
+      if (cachedTags) {
+        setTags(cachedTags);
+        return;
+      }
+    }
+
     try {
       const response: string[] = await api.getJSON(`${ApiConfig.homeUrl}/tasks/tags`);
       setTags(response);
+      if (user) {
+        cacheHomeTags(user.userId, response);
+      }
     }
     catch (e) {
       handleError(e);
@@ -106,7 +126,7 @@ function Home(): React.ReactNode {
     try {
       await api.deleteNoContent(`${ApiConfig.tasksUrl}/${taskIdParam}`);
       await loadItems(filterText, selectedOption);
-      await loadTags();
+      await loadTags(true);
     }
     catch (e) {
       handleError(e);
@@ -122,7 +142,7 @@ function Home(): React.ReactNode {
     try {
       await api.deleteNoContent(`${ApiConfig.notesUrl}/${noteIdParam}`);
       await loadItems(filterText, selectedOption);
-      await loadTags();
+      await loadTags(true);
     }
     catch (e) {
       handleError(e);
@@ -275,40 +295,60 @@ function Home(): React.ReactNode {
    * @param {string} text - The search text.
    * @param {string | undefined} option - The selected filter option.
    */
-  const loadItems = async (text: string, option: string | undefined): Promise<void> => {
+  const loadItems = async (
+    text: string,
+    option: string | undefined,
+    forceRefresh = true
+  ): Promise<void> => {
+    const itemsUrl = buildItemsUrl(text, option);
+    if (!forceRefresh && user) {
+      const cachedItems = getCachedHomeItems(user.userId, itemsUrl);
+      if (cachedItems) {
+        updateHomeItems(cachedItems);
+        return;
+      }
+    }
+
     try {
-      const response: HomeItemsResponse = await api.getJSON(buildItemsUrl(text, option));
+      const response: HomeItemsResponse = await api.getJSON(itemsUrl);
+      if (user) {
+        cacheHomeItems(user.userId, itemsUrl, response);
+      }
 
-      const translatedTasks = translateTaskResponse(response.tasks ?? [], i18n.language);
-      translatedTasks.sort((t1, t2) => {
-        if (t1.completed === t2.completed) {
-          if (t1.highPriority === t2.highPriority) {
-            return 0;
-          }
-          if (t1.highPriority) {
-            return -1;
-          }
-          return 1;
-        }
-        if (t1.completed) {
-          return -1;
-        }
-        return 1;
-      });
-
-      const fetchedNotes = [...(response.notes ?? [])];
-      fetchedNotes.sort((n1, n2) => (n1.id > n2.id) ? -1 : 1);
-
-      setTasks(translatedTasks.filter((task: TaskResponse) => !task.completed));
-      setCompletedTasks(translatedTasks.filter((task: TaskResponse) => task.completed));
-
-      const { active, archived } = partitionNotes(fetchedNotes);
-      setNotes(active);
-      setArchivedNotes(archived);
+      updateHomeItems(response);
     }
     catch (e) {
       handleError(e);
     }
+  };
+
+  const updateHomeItems = (response: HomeItemsResponse): void => {
+    const translatedTasks = translateTaskResponse(response.tasks ?? [], i18n.language);
+    translatedTasks.sort((t1, t2) => {
+      if (t1.completed === t2.completed) {
+        if (t1.highPriority === t2.highPriority) {
+          return 0;
+        }
+        if (t1.highPriority) {
+          return -1;
+        }
+        return 1;
+      }
+      if (t1.completed) {
+        return -1;
+      }
+      return 1;
+    });
+
+    const fetchedNotes = [...(response.notes ?? [])];
+    fetchedNotes.sort((n1, n2) => (n1.id > n2.id) ? -1 : 1);
+
+    setTasks(translatedTasks.filter((task: TaskResponse) => !task.completed));
+    setCompletedTasks(translatedTasks.filter((task: TaskResponse) => task.completed));
+
+    const { active, archived } = partitionNotes(fetchedNotes);
+    setNotes(active);
+    setArchivedNotes(archived);
   };
 
   const cleanText = (text: string): string => {
@@ -426,15 +466,15 @@ function Home(): React.ReactNode {
   useEffect(() => {
     handleDefaultLang(user?.lang);
     setName(user?.name ?? 'User');
-    loadTags();
-  }, [user]);
+    void loadTags(refreshAfterSave);
+  }, [user, refreshAfterSave]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      void loadItems(filterText, selectedOption);
+      void loadItems(filterText, selectedOption, refreshAfterSave);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [filterText, selectedOption, user]);
+  }, [filterText, selectedOption, user, refreshAfterSave]);
 
   useEffect(() => {
     const openNoteId = localStorage.getItem(OPEN_NOTE_ID_KEY);
