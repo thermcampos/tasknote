@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-27
+
+### Fixed
+- Logout cache cleaning. [PR 89](https://github.com/thermcampos/tasknote/pull/89)
+
+---
+
 ## 2026-09-25
 
 ### Added
