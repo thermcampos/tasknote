@@ -24,7 +24,7 @@ import FilterContext from '../../context/FilterContext';
 import ContentHeader from '../../components/ContentHeader';
 import AlertError from '../../components/AlertError';
 import { CheckSquare, JournalText, ThreeDotsVertical } from 'react-bootstrap-icons';
-import { NavLink, useLocation } from 'react-router';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 import ModalMarkdown from '../../components/ModalMarkdown';
 import TaskTitle from '../../components/TaskTitle';
 import TaskTimeLeft from '../../components/TaskTimeLeft';
@@ -52,8 +52,10 @@ function Home(): React.ReactNode {
   const { filterText, selectedOption, setFilterText, setSelectedOption } = useContext(FilterContext);
   const { i18n, t } = useTranslation();
   const location = useLocation();
-  const refreshAfterSave
-    = (location.state as { refreshHome?: boolean } | null)?.refreshHome === true;
+  const navigate = useNavigate();
+  const [refreshAfterSave] = useState(
+    () => (location.state as { refreshHome?: boolean } | null)?.refreshHome === true
+  );
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [name, setName] = useState<string>(user?.name ? user?.name : 'User');
@@ -462,6 +464,12 @@ function Home(): React.ReactNode {
   const handleOptionChange = (value: string): void => {
     setSelectedOption(value);
   };
+
+  useEffect(() => {
+    if (refreshAfterSave) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [refreshAfterSave, navigate, location.pathname]);
 
   useEffect(() => {
     handleDefaultLang(user?.lang);

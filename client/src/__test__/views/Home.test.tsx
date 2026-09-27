@@ -41,7 +41,8 @@ vi.mock('../../utils/TranslatorUtils', () => ({
 }));
 
 vi.mock('react-router', () => ({
-  useLocation: () => ({ state: null }),
+  useLocation: () => ({ state: null, pathname: '/home' }),
+  useNavigate: () => vi.fn(),
   NavLink: ({ to, children }: { to: string, children: React.ReactNode }) => (
     <a href={to} data-testid={`navlink-${to}`}>{children}</a>
   )

@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-27
+
+### Fixed
+- Logout cache cleaning. [PR 89](https://github.com/thermcampos/tasknote/pull/89)
+
+---
+
 ## 2026-09-25
+
+### Added
+- Cache to Home to avoid fetching content when not neeedd. [PR 86](https://github.com/thermcampos/tasknote/pull/86)
 
 ### Changed
 - Notes title and URLs moved to inside the note body. [Issue 83](https://github.com/thermcampos/tasknote/issues/83)
@@ -15,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ```
 # Docker images
-- ghcr.io/thermcampos/tasknote/client:app-v2026.09.25.13
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.25.16
 ```
 ---
 
