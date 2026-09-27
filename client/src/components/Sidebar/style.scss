@@ -31,6 +31,7 @@
 @media (min-width: 992px) {
   .sidebar-collapsed {
     width: 64px;
+    overflow-x: hidden;
 
     .sidebar-collapse-toggle {
       right: auto;
@@ -62,6 +63,11 @@
     .sidebar-nav svg {
       margin-right: 0;
     }
+  }
+
+  .sidebar.sidebar-collapsed a {
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 

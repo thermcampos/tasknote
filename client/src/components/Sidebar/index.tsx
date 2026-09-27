@@ -95,7 +95,7 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
 
         <div className="header-spacer"></div>
 
-        <Nav className="flex-column p-3 plus-jakarta-sans-thin">
+        <Nav className={`flex-column plus-jakarta-sans-thin ${isCollapsed ? 'p-0' : 'p-3'}`}>
           <NavLink to="/home" className="mb-2" title={isCollapsed ? 'Home' : undefined} onClick={() => setNewPage('/home')}>
             <div className={`sidebar-nav ${isHomeSelected()}`}>
               <StarFill />
