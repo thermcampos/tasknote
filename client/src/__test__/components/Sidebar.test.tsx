@@ -28,16 +28,18 @@ const authContextMock = {
 
 const sidebarContextMock = {
   currentPage: '/home',
-  setNewPage: vi.fn()
+  setNewPage: vi.fn(),
+  isCollapsed: false,
+  toggleCollapsed: vi.fn()
 };
 
 describe('Sidebar Component', () => {
-  const renderSidebar = () => {
+  const renderSidebar = (sidebarValue = sidebarContextMock) => {
     return render(
       <MemoryRouter>
         <AuthContext.Provider value={authContextMock}>
           <I18nextProvider i18n={i18n}>
-            <SidebarContext.Provider value={sidebarContextMock}>
+            <SidebarContext.Provider value={sidebarValue}>
               <Sidebar isMobileOpen={false} setIsMobileOpen={vi.fn()} />
             </SidebarContext.Provider>
           </I18nextProvider>
@@ -63,6 +65,52 @@ describe('Sidebar Component', () => {
     const dashboardElement = getByText('Home').closest('.sidebar-nav');
     expect(dashboardElement).not.toBeNull();
     expect(dashboardElement!.classList.contains('selected')).toBe(true);
+  });
+
+  it('should call toggleCollapsed when the collapse button is clicked', () => {
+    const toggleCollapsed = vi.fn();
+    const { getByLabelText } = renderSidebar({ ...sidebarContextMock, toggleCollapsed });
+    fireEvent.click(getByLabelText('Collapse sidebar'));
+    expect(toggleCollapsed).toHaveBeenCalled();
+  });
+});
+
+describe('Sidebar collapsed rail', () => {
+  const collapsedContextMock = {
+    ...sidebarContextMock,
+    isCollapsed: true
+  };
+
+  const renderCollapsedSidebar = () => {
+    return render(
+      <MemoryRouter>
+        <AuthContext.Provider value={authContextMock}>
+          <I18nextProvider i18n={i18n}>
+            <SidebarContext.Provider value={collapsedContextMock}>
+              <Sidebar isMobileOpen={false} setIsMobileOpen={vi.fn()} />
+            </SidebarContext.Provider>
+          </I18nextProvider>
+        </AuthContext.Provider>
+      </MemoryRouter>
+    );
+  };
+
+  it('should render the rail without labels when collapsed', () => {
+    const { container, queryByText } = renderCollapsedSidebar();
+    expect(container.querySelector('.sidebar-collapsed')).not.toBeNull();
+    expect(queryByText('Ricardo')).toBeNull();
+    expect(queryByText('Logout')).toBeNull();
+  });
+
+  it('should expose native title tooltips on nav items when collapsed', () => {
+    const { getByTitle } = renderCollapsedSidebar();
+    expect(getByTitle('Home')).toBeDefined();
+    expect(getByTitle('Logout')).toBeDefined();
+  });
+
+  it('should label the toggle as expand when collapsed', () => {
+    const { getByLabelText } = renderCollapsedSidebar();
+    expect(getByLabelText('Expand sidebar').getAttribute('aria-expanded')).toBe('false');
   });
 });
 

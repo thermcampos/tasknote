@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 2026-09-27
 
+### Added
+- Collapse function to left panel. [PR 90](https://github.com/thermcampos/tasknote/pull/90)
+
 ### Fixed
 - Logout cache cleaning. [PR 89](https://github.com/thermcampos/tasknote/pull/89)
 

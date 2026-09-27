@@ -90,7 +90,7 @@ function TestApp() {
   return (
     <AuthContext.Provider value={authValue}>
       <FilterProvider>
-        <SidebarContext.Provider value={{ currentPage: '/home', setNewPage: vi.fn() }}>
+        <SidebarContext.Provider value={{ currentPage: '/home', setNewPage: vi.fn(), isCollapsed: false, toggleCollapsed: vi.fn() }}>
           <MemoryRouter initialEntries={['/home']}>
             <NavigateToForm />
             <Routes>
