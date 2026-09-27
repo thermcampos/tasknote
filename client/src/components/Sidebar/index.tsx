@@ -7,7 +7,7 @@ import SidebarContext from '../../context/SidebarContext';
 import NavButton from '../NavButton';
 import { env } from '../../env';
 import './style.scss';
-import { BoxArrowRight, ChevronDoubleRight, InfoCircleFill, Link45deg, List, PersonFill, StarFill } from 'react-bootstrap-icons';
+import { BoxArrowRight, ChevronDoubleLeft, ChevronDoubleRight, InfoCircleFill, Link45deg, PersonFill, StarFill } from 'react-bootstrap-icons';
 
 interface Props {
   isMobileOpen: boolean;
@@ -85,7 +85,7 @@ function Sidebar(props: React.PropsWithChildren<Props>): React.ReactNode {
           aria-expanded={!isCollapsed}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? <ChevronDoubleRight /> : <List />}
+          {isCollapsed ? <ChevronDoubleRight /> : <ChevronDoubleLeft />}
         </button>
 
         <div className="sidebar-header plus-jakarta-sans-bold">
