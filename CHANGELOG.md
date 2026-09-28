@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Docker base images for server and client [Issue 77](https://github.com/thermcampos/tasknote/issues/77)
 
+### Fixed
+- Long-open tab expires and fails silently. [Issue 93](https://github.com/thermcampos/tasknote/issues/93)
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.28.19
+- ghcr.io/thermcampos/tasknote/server:api-v2026.09.28.13
+```
+
 ---
 
 ## 2026-09-27
