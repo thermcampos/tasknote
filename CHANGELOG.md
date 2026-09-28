@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-09-28
+
+### Changed
+- Docker base images for server and client [Issue 77](https://github.com/thermcampos/tasknote/issues/77)
+
+---
+
 ## 2026-09-27
 
 ### Added
@@ -15,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Logout cache cleaning. [PR 89](https://github.com/thermcampos/tasknote/pull/89)
 
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.09.27.17
+```
 ---
 
 ## 2026-09-25
