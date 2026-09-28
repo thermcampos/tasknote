@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AuthContext, { AuthContextData } from './AuthContext';
 import { API_TOKEN, REDIRECT_PATH, USER_DATA } from '../app-constants/app-constants';
 import { SignInResponse } from '../types/SigninResponse';
-import api from '../api-service/api';
+import api, { setUnauthorizedHandler } from '../api-service/api';
 import ApiConfig from '../api-service/apiConfig';
 import { UserResponse } from '../types/UserResponse';
 import { UserRegistration } from '../types/UserRegistration';
@@ -36,11 +36,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
       else if (e) {
         console.warn(e);
       }
-      // Clear stored client id and name
-      localStorage.clear();
-      localStorage.setItem(REDIRECT_PATH, pathname);
-      setUser(undefined);
-      setSigned(false);
+      handleSessionExpired(pathname);
     }
     return undefined;
   };
@@ -115,6 +111,18 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
     clearHomeCache();
   };
 
+  const handleSessionExpired = (pathname: string): void => {
+    signOut();
+    if (pathname) {
+      localStorage.setItem(REDIRECT_PATH, pathname);
+    }
+  };
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => handleSessionExpired(window.location.pathname));
+    return () => setUnauthorizedHandler(undefined);
+  }, []);
+
   useEffect(() => {
     checkCurrentAuthUser(window.location.pathname)
       .catch(e => console.error(e))
@@ -123,16 +131,43 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }: Pro
 
   useEffect(() => {
     if (!signed) return;
+
     const TWENTY_FIVE_MINUTES = 25 * 60 * 1000;
-    const intervalId = setInterval(() => {
+    const WAKE_REFRESH_THROTTLE = 60 * 1000;
+    let lastWakeRefreshAt = 0;
+
+    const refreshSession = () => {
       checkCurrentAuthUser(window.location.pathname).catch(() => {
-        setSigned(false);
-        setUser(undefined);
-        localStorage.clear();
-        clearHomeCache();
+        handleSessionExpired(window.location.pathname);
       });
-    }, TWENTY_FIVE_MINUTES);
-    return () => clearInterval(intervalId);
+    };
+
+    // Timers do not fire while the machine sleeps or the tab is frozen, so
+    // revalidate the session as soon as the user comes back to the tab.
+    const refreshOnWake = () => {
+      const now = Date.now();
+      if (now - lastWakeRefreshAt < WAKE_REFRESH_THROTTLE) return;
+      lastWakeRefreshAt = now;
+      refreshSession();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshOnWake();
+      }
+    };
+
+    const intervalId = setInterval(refreshSession, TWENTY_FIVE_MINUTES);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', refreshOnWake);
+    window.addEventListener('online', refreshOnWake);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', refreshOnWake);
+      window.removeEventListener('online', refreshOnWake);
+    };
   }, [signed]);
 
   const updateUser = (userUpdated: UserResponse): void => {

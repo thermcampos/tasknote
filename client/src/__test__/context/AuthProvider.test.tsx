@@ -5,8 +5,8 @@ import { render, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AuthProvider from '../../context/AuthProvider';
 import AuthContext, { AuthContextData } from '../../context/AuthContext';
-import api from '../../api-service/api';
-import { API_TOKEN, USER_DATA } from '../../app-constants/app-constants';
+import api, { setUnauthorizedHandler } from '../../api-service/api';
+import { API_TOKEN, REDIRECT_PATH, USER_DATA } from '../../app-constants/app-constants';
 import ApiConfig from '../../api-service/apiConfig';
 
 // Mock the API service methods.
@@ -350,5 +350,92 @@ describe('AuthProvider', () => {
       expect(localStorage.getItem(API_TOKEN)).toBe('refresh-token');
       expect(localStorage.getItem(USER_DATA)).toContain('Refreshed User');
     });
+  });
+
+  const setupSignedInSession = async () => {
+    const fakeTokenResponse = { token: 'refresh-token' };
+    const fakeCurrentUser = {
+      userId: '789',
+      name: 'Refreshed User',
+      email: 'refreshed@example.com',
+      admin: false,
+      createdAt: new Date().toISOString(),
+      gravatarImageUrl: 'http://dummyimage.com',
+      lang: 'en',
+      lastLogin: new Date().toISOString()
+    };
+
+    vi.spyOn(api, 'getJSON').mockImplementation(async (url: string) => {
+      if (url === ApiConfig.refreshTokenUrl) {
+        return fakeTokenResponse;
+      }
+      if (url === ApiConfig.currentUserUrl) {
+        return fakeCurrentUser;
+      }
+      return undefined;
+    });
+    localStorage.setItem(API_TOKEN, 'dummy');
+
+    const renderResult = render(
+      <AuthProvider>
+        <ConsumerComponent />
+      </AuthProvider>
+    );
+
+    await waitFor(() =>
+      expect(renderResult.getByTestId('signed').textContent).toBe('true')
+    );
+    return renderResult;
+  };
+
+  const refreshTokenCalls = () =>
+    vi.mocked(api.getJSON).mock.calls.filter(call => call[0] === ApiConfig.refreshTokenUrl);
+
+  it('should sign out and preserve the redirect path when a request is rejected as unauthorized', async () => {
+    const { getByTestId } = await setupSignedInSession();
+
+    const registered = vi.mocked(setUnauthorizedHandler).mock.calls.at(-1)?.[0];
+    expect(registered).toBeTypeOf('function');
+
+    act(() => {
+      registered!();
+    });
+
+    await waitFor(() =>
+      expect(getByTestId('signed').textContent).toBe('false')
+    );
+    expect(getByTestId('user').textContent).toBe('none');
+    expect(localStorage.getItem(API_TOKEN)).toBeNull();
+    expect(localStorage.getItem(REDIRECT_PATH)).toBe(window.location.pathname);
+  });
+
+  it('should refresh the session when the window regains focus', async () => {
+    await setupSignedInSession();
+    const callsBefore = refreshTokenCalls().length;
+
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await waitFor(() =>
+      expect(refreshTokenCalls().length).toBeGreaterThan(callsBefore)
+    );
+    expect(localStorage.getItem(API_TOKEN)).toBe('refresh-token');
+  });
+
+  it('should sign out when the session refresh fails after wake', async () => {
+    const { getByTestId } = await setupSignedInSession();
+
+    vi.mocked(api.getJSON).mockRejectedValue(new Error('Unauthorized'));
+
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await waitFor(() =>
+      expect(getByTestId('signed').textContent).toBe('false')
+    );
+    expect(localStorage.getItem(API_TOKEN)).toBeNull();
+    expect(localStorage.getItem(REDIRECT_PATH)).toBe(window.location.pathname);
   });
 });
