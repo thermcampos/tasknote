@@ -9,7 +9,7 @@ tasks:
 
   docker-build-api:
     desc: Build the tasknote-api prod-ready docker image, tagging it as candidate
-    cmd: cd server && ./mvnw -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/thermcampos/tasknote/server:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
+    cmd: cd server && ./mvnw -Pnative -DskipTests spring-boot:build-image -Dspring-boot.build-image.imageName=ghcr.io/thermcampos/tasknote/server:latest -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.560
 
   db-up:
     desc: Starts Postgres database container

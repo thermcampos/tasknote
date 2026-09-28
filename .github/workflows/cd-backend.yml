@@ -44,7 +44,7 @@ jobs:
         run: |
           ./mvnw -Pnative -DskipTests spring-boot:build-image \
             -Dspring-boot.build-image.imageName=${{ env.DOCKER_IMAGE }}:latest \
-            -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.505
+            -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.560
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4.6.0
