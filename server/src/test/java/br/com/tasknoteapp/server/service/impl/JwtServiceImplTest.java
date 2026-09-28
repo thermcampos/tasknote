@@ -188,6 +188,99 @@ class JwtServiceImplTest {
     assertFalse(valid, "Token issued before password change should be invalid");
   }
 
+  @Test
+  void validateTokenForRefresh_shouldReturnTrueForValidToken() {
+    User user = new User();
+    user.setId(testUserId);
+    user.setEmail(testEmail);
+    user.setAdmin(false);
+    user.setName(testName);
+    String token = jwtService.generateToken(user);
+
+    when(userDetails.getUsername()).thenReturn(testEmail);
+    boolean valid = jwtService.validateTokenForRefresh(token, userDetails);
+
+    assertTrue(valid);
+  }
+
+  @Test
+  void validateTokenForRefresh_shouldReturnTrueForRecentlyExpiredToken() {
+    long now = System.currentTimeMillis();
+    String expiredToken = buildToken(testEmail, now - 3_600_000, now - 1_800_000);
+
+    when(userDetails.getUsername()).thenReturn(testEmail);
+    boolean valid = jwtService.validateTokenForRefresh(expiredToken, userDetails);
+
+    assertTrue(valid, "Token expired 30 minutes ago should be refreshable within grace period");
+  }
+
+  @Test
+  void validateTokenForRefresh_shouldReturnFalseForTokenExpiredBeyondGracePeriod() {
+    long now = System.currentTimeMillis();
+    long thirteenHours = 13L * 60 * 60 * 1000;
+    String expiredToken =
+        buildToken(testEmail, now - thirteenHours - 1_800_000, now - thirteenHours);
+
+    when(userDetails.getUsername()).thenReturn(testEmail);
+    boolean valid = jwtService.validateTokenForRefresh(expiredToken, userDetails);
+
+    assertFalse(valid, "Token expired beyond the grace period should not be refreshable");
+  }
+
+  @Test
+  void validateTokenForRefresh_shouldReturnFalseForDifferentUser() {
+    long now = System.currentTimeMillis();
+    String expiredToken = buildToken(testEmail, now - 3_600_000, now - 1_800_000);
+
+    UserDetails differentUser = mock(UserDetails.class);
+    when(differentUser.getUsername()).thenReturn("different@example.com");
+
+    boolean valid = jwtService.validateTokenForRefresh(expiredToken, differentUser);
+
+    assertFalse(valid);
+  }
+
+  @Test
+  void validateTokenForRefresh_shouldReturnFalseIfTokenIssuedBeforeLastPasswordChange() {
+    long now = System.currentTimeMillis();
+    String expiredToken = buildToken(testEmail, now - 3_600_000, now - 1_800_000);
+
+    User user = new User();
+    user.setId(testUserId);
+    user.setEmail(testEmail);
+    user.setAdmin(false);
+    user.setName(testName);
+    user.setLastPasswordChange(LocalDateTime.now().minusMinutes(10));
+
+    boolean valid = jwtService.validateTokenForRefresh(expiredToken, user);
+
+    assertFalse(valid, "Token issued before the last password change should not be refreshable");
+  }
+
+  @Test
+  void validateTokenForRefresh_shouldReturnFalseForTamperedToken() {
+    String tamperedToken =
+        buildToken(testEmail, System.currentTimeMillis() - 3_600_000,
+            System.currentTimeMillis() - 1_800_000)
+            + "tampered";
+
+    when(userDetails.getUsername()).thenReturn(testEmail);
+    boolean valid = jwtService.validateTokenForRefresh(tamperedToken, userDetails);
+
+    assertFalse(valid);
+  }
+
+  private String buildToken(String subject, long issuedAtMillis, long expirationMillis) {
+    return Jwts.builder()
+        .issuer("Java-API")
+        .subject(subject)
+        .issuedAt(new Date(issuedAtMillis))
+        .expiration(new Date(expirationMillis))
+        .claims(Map.of())
+        .signWith(getKey())
+        .compact();
+  }
+
   private Claims extractClaims(String token) {
     return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token).getPayload();
   }

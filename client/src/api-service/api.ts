@@ -1,5 +1,19 @@
 import { API_TOKEN } from '../app-constants/app-constants';
 
+type UnauthorizedHandler = () => void;
+
+let unauthorizedHandler: UnauthorizedHandler | undefined;
+
+/**
+ * Registers a callback invoked when an authenticated request is rejected with 401 or 403.
+ * Pass `undefined` to unregister.
+ *
+ * @param {UnauthorizedHandler | undefined} handler The callback to invoke on auth failures.
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | undefined): void {
+  unauthorizedHandler = handler;
+}
+
 /**
  * Retrieves the API token from local storage.
  *
@@ -50,7 +64,7 @@ function handleError(httpStatusCode: number) {
   throw new Error('Unknown error');
 }
 
-async function handleResponse(response: Response) {
+async function handleResponse(response: Response, authenticated: boolean = true) {
   // Successful responses
   if (response?.ok) {
     const codesToIgnore: number[] = [204];
@@ -62,6 +76,9 @@ async function handleResponse(response: Response) {
 
   // Error responses
   if (response) {
+    if (authenticated && (response.status === 401 || response.status === 403)) {
+      unauthorizedHandler?.();
+    }
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
@@ -89,12 +106,12 @@ const api = {
 
   getJSONNoAuth: async (url: string) => {
     const response = await fetch(url, getRequestInit('GET', {}, false));
-    return handleResponse(response);
+    return handleResponse(response, false);
   },
 
   postJSON: async (url: string, payload: object) => {
     const response = await fetch(url, getRequestInit('POST', payload, isAddAuth(url)));
-    return handleResponse(response);
+    return handleResponse(response, isAddAuth(url));
   },
 
   patchJSON: async (url: string, payload: object) => {
@@ -104,7 +121,7 @@ const api = {
 
   putJSON: async (url: string, payload: object) => {
     const response = await fetch(url, getRequestInit('PUT', payload, isAddAuth(url)));
-    return handleResponse(response);
+    return handleResponse(response, isAddAuth(url));
   },
 
   deleteNoContent: async (url: string) => {

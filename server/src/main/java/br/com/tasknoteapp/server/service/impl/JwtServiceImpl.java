@@ -3,10 +3,12 @@ package br.com.tasknoteapp.server.service.impl;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.service.JwtService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -28,6 +30,10 @@ class JwtServiceImpl implements JwtService {
   private static final long SECOND = 1000;
   private static final long MINUTE = SECOND * 60;
   private static final long EXPIRATION_TIME = MINUTE * 30;
+
+  // How long after expiration a token may still be exchanged for a new one on the refresh
+  // endpoint, so sleep/wake or frozen tabs do not force a full re-login.
+  private static final Duration REFRESH_GRACE_PERIOD = Duration.ofHours(12);
   private final SecretKey key;
 
   public JwtServiceImpl(@Value("${br.com.tasknote.server.jwt-secret}") String secretKey) {
@@ -98,8 +104,26 @@ class JwtServiceImpl implements JwtService {
   public boolean validateTokenAndUser(String token, UserDetails user) {
     final String email = user.getUsername();
     boolean basicValid = !isTokenExpired(token) && email.equals(getEmailFromToken(token));
+    return basicValid && isIssuedAfterLastPasswordChange(token, user);
+  }
 
-    if (basicValid && user instanceof User userEntity) {
+  @Override
+  public boolean validateTokenForRefresh(String token, UserDetails user) {
+    final String email = user.getUsername();
+    if (!email.equals(getEmailFromToken(token))) {
+      return false;
+    }
+
+    LocalDateTime expiration = extractExpiration(token);
+    boolean withinGracePeriod =
+        expiration != null
+            && expiration.isAfter(LocalDateTime.now().minus(REFRESH_GRACE_PERIOD));
+
+    return withinGracePeriod && isIssuedAfterLastPasswordChange(token, user);
+  }
+
+  private boolean isIssuedAfterLastPasswordChange(String token, UserDetails user) {
+    if (user instanceof User userEntity) {
       LocalDateTime iat = extractIssuedAt(token);
       if (iat != null && userEntity.getLastPasswordChange() != null) {
         // Token must be issued after or at the same time as last password change
@@ -107,8 +131,7 @@ class JwtServiceImpl implements JwtService {
         return !iat.isBefore(userEntity.getLastPasswordChange());
       }
     }
-
-    return basicValid;
+    return true;
   }
 
   private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -120,6 +143,9 @@ class JwtServiceImpl implements JwtService {
     try {
       return Optional.of(
           Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+    } catch (ExpiredJwtException e) {
+      // Signature is still valid: expose the claims so callers can decide about grace periods.
+      return Optional.of(e.getClaims());
     } catch (JwtException e) {
       return Optional.empty();
     }

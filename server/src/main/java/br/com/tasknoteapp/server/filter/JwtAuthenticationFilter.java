@@ -21,6 +21,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+  private static final String REFRESH_PATH = "/rest/user-sessions/refresh";
+
   private final UserService userService;
 
   private final JwtService jwtService;
@@ -67,7 +69,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     UserDetails user = userService.userDetailsService().loadUserByUsername(email);
 
-    if (!jwtService.validateTokenAndUser(jwtToken, user)) {
+    boolean valid = jwtService.validateTokenAndUser(jwtToken, user);
+
+    // Allow a recently expired token to be exchanged only on the refresh endpoint, so a
+    // waking or previously frozen tab can resume its session without a full re-login.
+    if (!valid && REFRESH_PATH.equals(requestPath)) {
+      valid = jwtService.validateTokenForRefresh(jwtToken, user);
+    }
+
+    if (!valid) {
       throw new ServletException("Invalid token for user");
     }
 
