@@ -913,7 +913,7 @@
             "org.springframework.security.authentication.AuthenticationManager",
             "br.com.tasknoteapp.server.util.AuthUtil",
             "br.com.tasknoteapp.server.repository.UserPwdLimitRepository",
-            "br.com.tasknoteapp.server.service.MailgunEmailService",
+            "br.com.tasknoteapp.server.service.ResendEmailService",
             "org.springframework.core.env.Environment"
           ]
         },
@@ -977,7 +977,7 @@
       "type": "br.com.tasknoteapp.server.service.JwtService"
     },
     {
-      "type": "br.com.tasknoteapp.server.service.MailgunEmailService",
+      "type": "br.com.tasknoteapp.server.service.ResendEmailService",
       "methods": [
         {
           "name": "<init>",
@@ -7476,6 +7476,9 @@
       "glob": "META-INF/build-info.properties"
     },
     {
+      "glob": "email-templates/*.html"
+    },
+    {
       "glob": "META-INF/resources/index.html"
     },
     {
@@ -7671,7 +7674,7 @@
       "glob": "br/com/tasknoteapp/server/service/JwtService.class"
     },
     {
-      "glob": "br/com/tasknoteapp/server/service/MailgunEmailService.class"
+      "glob": "br/com/tasknoteapp/server/service/ResendEmailService.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/service/NoteService.class"

@@ -36,7 +36,7 @@ services:
       POSTGRES_PASSWORD: default
       CORS_ALLOWED_ORIGINS: http://localhost:5000, http://tasknote-web:5000, https://flattop-depth-dropper.ngrok-free.dev
       SECURITY_KEY: this-is-a-very-long-security-key-for-dev
-      MAILGUN_APIKEY: invalid-api-key-only-placeholder
+      RESEND_APIKEY: invalid-api-key-only-placeholder
     ports:
       - "8585:8585"
       - "5005:5005"

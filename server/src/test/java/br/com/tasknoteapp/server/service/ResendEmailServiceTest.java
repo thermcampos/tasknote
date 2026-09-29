@@ -1,5 +1,8 @@
 package br.com.tasknoteapp.server.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -7,18 +10,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.com.tasknoteapp.server.entity.User;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-/** Test class for MailgunEmailService using RestClient. */
+/** Test class for ResendEmailService using RestClient. */
 @ExtendWith(MockitoExtension.class)
-class MailgunEmailServiceTest {
+class ResendEmailServiceTest {
 
   @Mock private RestClient restClient;
   @Mock private RestClient.Builder restClientBuilder;
@@ -26,7 +31,7 @@ class MailgunEmailServiceTest {
   @Mock private RestClient.RequestBodySpec requestBodySpec;
   @Mock private RestClient.ResponseSpec responseSpec;
 
-  private MailgunEmailService mailgunEmailService;
+  private ResendEmailService resendEmailService;
 
   @BeforeEach
   void setUp() {
@@ -39,8 +44,7 @@ class MailgunEmailServiceTest {
     String domain = "domain.com";
     String sender = "no-reply@domain.com";
     String target = "development";
-    mailgunEmailService =
-        new MailgunEmailService(apiKey, domain, sender, target, restClientBuilder);
+    resendEmailService = new ResendEmailService(apiKey, domain, sender, target, restClientBuilder);
   }
 
   private void setupMockChain() {
@@ -51,6 +55,12 @@ class MailgunEmailServiceTest {
     when(requestBodySpec.retrieve()).thenReturn(responseSpec);
   }
 
+  private ResendEmailRequest captureEmailRequest() {
+    ArgumentCaptor<ResendEmailRequest> captor = ArgumentCaptor.forClass(ResendEmailRequest.class);
+    verify(requestBodySpec, times(1)).body(captor.capture());
+    return captor.getValue();
+  }
+
   @Test
   void testSendResetPassword() {
     User user = new User();
@@ -59,10 +69,19 @@ class MailgunEmailServiceTest {
 
     setupMockChain();
 
-    mailgunEmailService.sendResetPassword(user);
+    resendEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
+    verify(requestBodyUriSpec, times(1)).uri("/emails");
     verify(responseSpec, times(1)).toBodilessEntity();
+
+    ResendEmailRequest request = captureEmailRequest();
+    assertEquals("TaskNote App <no-reply@domain.com>", request.from());
+    assertEquals("test@example.com", request.to().getFirst());
+    assertEquals("TaskNote App password reset", request.subject());
+    assertNull(request.cc());
+    assertTrue(
+        request.html().contains("http://localhost:5000/finish-reset-password?token=reset-token"));
   }
 
   @Test
@@ -72,24 +91,39 @@ class MailgunEmailServiceTest {
 
     setupMockChain();
 
-    mailgunEmailService.sendPasswordResetConfirmation(user);
+    resendEmailService.sendPasswordResetConfirmation(user);
 
     verify(restClient, times(1)).post();
     verify(responseSpec, times(1)).toBodilessEntity();
+
+    ResendEmailRequest request = captureEmailRequest();
+    assertEquals("test@example.com", request.to().getFirst());
+    assertEquals("TaskNote App password confirmation", request.subject());
+    assertNull(request.cc());
+    assertTrue(request.html().contains("<html"));
   }
 
   @Test
   void testSendNewUser() {
     User user = new User();
     user.setEmail("test@example.com");
-    user.setEmailUuid(java.util.UUID.randomUUID());
+    user.setEmailUuid(UUID.randomUUID());
 
     setupMockChain();
 
-    mailgunEmailService.sendNewUser(user);
+    resendEmailService.sendNewUser(user);
 
     verify(restClient, times(1)).post();
     verify(responseSpec, times(1)).toBodilessEntity();
+
+    ResendEmailRequest request = captureEmailRequest();
+    assertEquals("TaskNote App confirmation email", request.subject());
+    assertTrue(
+        request
+            .html()
+            .contains(
+                "http://localhost:5000/email-confirmation?identification="
+                    + user.getEmailUuid()));
   }
 
   @Test
@@ -102,7 +136,7 @@ class MailgunEmailServiceTest {
     when(responseSpec.toBodilessEntity())
         .thenThrow(new HttpClientErrorException(HttpStatusCode.valueOf(400)));
 
-    mailgunEmailService.sendResetPassword(user);
+    resendEmailService.sendResetPassword(user);
 
     verify(restClient, times(1)).post();
     verify(responseSpec, times(1)).toBodilessEntity();
@@ -117,9 +151,15 @@ class MailgunEmailServiceTest {
 
     String oldEmail = "old@example.com";
 
-    mailgunEmailService.sendEmailChangedNotification(user, oldEmail);
+    resendEmailService.sendEmailChangedNotification(user, oldEmail);
 
     verify(restClient, times(1)).post();
     verify(responseSpec, times(1)).toBodilessEntity();
+
+    ResendEmailRequest request = captureEmailRequest();
+    assertEquals("TaskNote App email changed notification", request.subject());
+    assertEquals(oldEmail, request.cc().getFirst());
+    assertTrue(request.html().contains(oldEmail));
+    assertTrue(request.html().contains("test@example.com"));
   }
 }

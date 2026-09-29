@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Email sending migrated from Mailgun (named templates) to Resend (HTML bodies from local templates). The `MAILGUN_APIKEY` environment variable was replaced by `RESEND_APIKEY`.
+
 ## 2026-09-28
 
 ### Changed

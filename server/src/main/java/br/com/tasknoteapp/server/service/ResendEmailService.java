@@ -1,11 +1,10 @@
 package br.com.tasknoteapp.server.service;
 
 import br.com.tasknoteapp.server.entity.User;
-import br.com.tasknoteapp.server.templates.MailgunTemplate;
-import br.com.tasknoteapp.server.templates.MailgunTemplateEmailChanged;
-import br.com.tasknoteapp.server.templates.MailgunTemplateResetPwd;
-import br.com.tasknoteapp.server.templates.MailgunTemplateResetPwdConfirm;
-import br.com.tasknoteapp.server.templates.MailgunTemplateSignUp;
+import br.com.tasknoteapp.server.templates.EmailTemplate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,16 +12,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-/** This service handles email messages for Mailgun. */
+/** This service handles email messages for Resend. */
 @Service
-public class MailgunEmailService {
+public class ResendEmailService {
 
-  private static final Logger logger = LoggerFactory.getLogger(MailgunEmailService.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(ResendEmailService.class.getName());
   private final RestClient restClient;
   private final String targetEnv;
   private final String domain;
@@ -37,10 +34,10 @@ public class MailgunEmailService {
    * @param targetEnv The environment.
    * @param restClientBuilder The rest client builder.
    */
-  public MailgunEmailService(
-      @Value("${mailgun.api-key}") String apiKey,
-      @Value("${mailgun.domain}") String domain,
-      @Value("${mailgun.sender-email}") String sender,
+  public ResendEmailService(
+      @Value("${resend.api-key}") String apiKey,
+      @Value("${resend.domain}") String domain,
+      @Value("${resend.sender-email}") String sender,
       @Value("${br.com.tasknote.server.target-env}") String targetEnv,
       RestClient.Builder restClientBuilder) {
     this.domain = domain;
@@ -49,24 +46,24 @@ public class MailgunEmailService {
 
     if (apiKey != null && apiKey.length() > 6) {
       logger.info(
-          "Mailgun API Key loaded: {}...{}",
+          "Resend API Key loaded: {}...{}",
           apiKey.substring(0, 3),
           apiKey.substring(apiKey.length() - 3));
     } else {
-      logger.warn("Mailgun API Key is missing or too short!");
+      logger.warn("Resend API Key is missing or too short!");
     }
 
     this.restClient =
         restClientBuilder
-            .baseUrl("https://api.mailgun.net/v3/" + domain)
+            .baseUrl("https://api.resend.com")
             .defaultStatusHandler(
                 HttpStatusCode::isError,
                 (request, response) ->
                     logger.error(
-                        "Mailgun API Error: {} {}",
+                        "Resend API Error: {} {}",
                         response.getStatusCode(),
                         response.getStatusText()))
-            .defaultHeaders(headers -> headers.setBasicAuth("api", apiKey))
+            .defaultHeaders(headers -> headers.setBearerAuth(apiKey))
             .build();
   }
 
@@ -84,10 +81,10 @@ public class MailgunEmailService {
 
     logger.info("New user link: {}", link);
 
-    MailgunTemplateSignUp signUpTemplate = new MailgunTemplateSignUp();
-    signUpTemplate.setConfirmationLink(String.format(link, user.getEmailUuid().toString()));
+    Map<String, String> variables = new HashMap<>();
+    variables.put("CONFIRMATION_LINK", String.format(link, user.getEmailUuid().toString()));
 
-    sendEmail(to, subject, signUpTemplate);
+    sendEmail(to, subject, EmailTemplate.SIGN_UP, variables);
   }
 
   /**
@@ -104,10 +101,10 @@ public class MailgunEmailService {
 
     logger.info("Password reset link: {}", link);
 
-    MailgunTemplateResetPwd resetTemplate = new MailgunTemplateResetPwd();
-    resetTemplate.setResetLink(String.format(link, user.getResetToken()));
+    Map<String, String> variables = new HashMap<>();
+    variables.put("RESET_LINK", String.format(link, user.getResetToken()));
 
-    sendEmail(to, subject, resetTemplate);
+    sendEmail(to, subject, EmailTemplate.PASSWORD_RESET, variables);
   }
 
   /**
@@ -121,9 +118,7 @@ public class MailgunEmailService {
     String to = user.getEmail();
     String subject = "TaskNote App password confirmation";
 
-    MailgunTemplateResetPwdConfirm resetTemplate = new MailgunTemplateResetPwdConfirm();
-
-    sendEmail(to, subject, resetTemplate);
+    sendEmail(to, subject, EmailTemplate.PASSWORD_RESET_CONFIRM, Map.of());
   }
 
   /**
@@ -135,14 +130,18 @@ public class MailgunEmailService {
   public void sendEmailChangedNotification(User user, String oldEmail) {
     logger.info("Sending message with changed email notification");
 
-    MailgunTemplateEmailChanged emailChanged = new MailgunTemplateEmailChanged();
-    emailChanged.setEmailFrom(oldEmail);
-    emailChanged.setEmailTo(user.getEmail());
-    emailChanged.setCarbonCopy(oldEmail);
+    Map<String, String> variables = new HashMap<>();
+    variables.put("EMAIL_FROM", oldEmail);
+    variables.put("EMAIL_TO", user.getEmail());
 
     String subject = "TaskNote App email changed notification";
 
-    sendEmail(user.getEmail(), subject, emailChanged);
+    sendEmail(user.getEmail(), subject, EmailTemplate.EMAIL_CHANGED, variables, oldEmail);
+  }
+
+  private void sendEmail(String to, String subject, EmailTemplate template,
+      Map<String, String> variables) {
+    sendEmail(to, subject, template, variables, null);
   }
 
   /**
@@ -150,30 +149,29 @@ public class MailgunEmailService {
    *
    * @param to The target email address.
    * @param subject The message subject.
-   * @param template The Mailgun template.
+   * @param template The email template.
+   * @param variables The template variables.
+   * @param carbonCopy The carbon copy email address, if any.
    */
-  private void sendEmail(String to, String subject, MailgunTemplate template) {
+  private void sendEmail(String to, String subject, EmailTemplate template,
+      Map<String, String> variables, String carbonCopy) {
     String from = "TaskNote App <" + senderEmail + ">";
+    String html = template.render(variables);
 
-    MultiValueMap<String, String> mailData = new LinkedMultiValueMap<>();
-    mailData.add("from", from);
-    mailData.add("to", to);
-    if (template.getCarbonCopy().isPresent()) {
-      mailData.add("cc", template.getCarbonCopy().get());
-    }
-    mailData.add("subject", subject);
-    mailData.add("template", template.getName());
-    if (!template.getVariables().isEmpty()) {
-      mailData.add("h:X-Mailgun-Variables", template.getVariableValuesJson());
-      logger.info("JSON template variables: {}", template.getVariableValuesJson());
-    }
+    ResendEmailRequest emailRequest =
+        new ResendEmailRequest(
+            from,
+            List.of(to),
+            carbonCopy != null ? List.of(carbonCopy) : null,
+            subject,
+            html);
 
     try {
       restClient
           .post()
-          .uri("/messages")
-          .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-          .body(mailData)
+          .uri("/emails")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(emailRequest)
           .retrieve()
           .toBodilessEntity();
 

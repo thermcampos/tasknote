@@ -12,8 +12,8 @@ logging:
     root: ${ROOT_LOG_LEVEL:INFO}
     br.com.tasknoteapp: INFO
 
-mailgun:
-  api-key: ${MAILGUN_APIKEY:abc123456}
+resend:
+  api-key: ${RESEND_APIKEY:abc123456}
   domain: tasknote.cc
   sender-email: no-reply@tasknote.cc
 

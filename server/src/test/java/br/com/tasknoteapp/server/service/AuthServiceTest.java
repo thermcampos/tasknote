@@ -56,7 +56,7 @@ class AuthServiceTest {
 
   @Mock private UserPwdLimitRepository userPwdLimitRepository;
 
-  @Mock private MailgunEmailService mailgunEmailService;
+  @Mock private ResendEmailService resendEmailService;
 
   @Mock private Environment environment;
 
@@ -72,7 +72,7 @@ class AuthServiceTest {
             authenticationManager,
             authUtil,
             userPwdLimitRepository,
-            mailgunEmailService,
+            resendEmailService,
             environment);
   }
 
@@ -549,17 +549,17 @@ class AuthServiceTest {
     existing.setId(919L);
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
-    when(environment.getProperty("MAILGUN_APIKEY")).thenReturn("abc");
+    when(environment.getProperty("RESEND_APIKEY")).thenReturn("abc");
 
-    doNothing().when(mailgunEmailService).sendNewUser(existing);
+    doNothing().when(resendEmailService).sendNewUser(existing);
 
     Assertions.assertDoesNotThrow(() -> authService.resendEmailConfirmation(email));
-    verify(mailgunEmailService, times(1)).sendNewUser(existing);
+    verify(resendEmailService, times(1)).sendNewUser(existing);
   }
 
   @Test
-  @DisplayName("Resend email confirmation no mailgun api key should succeed")
-  void resendEmailConfirmation_noMailgunApiKey_shouldSucceed() {
+  @DisplayName("Resend email confirmation no resend api key should succeed")
+  void resendEmailConfirmation_noResendApiKey_shouldSucceed() {
     String email = "user@domain.com";
 
     User existing = new User();
@@ -568,7 +568,7 @@ class AuthServiceTest {
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
 
     Assertions.assertDoesNotThrow(() -> authService.resendEmailConfirmation(email));
-    verify(mailgunEmailService, times(0)).sendNewUser(existing);
+    verify(resendEmailService, times(0)).sendNewUser(existing);
   }
 
   @Test
@@ -580,7 +580,7 @@ class AuthServiceTest {
 
     Assertions.assertThrows(
         UserNotFoundException.class, () -> authService.resendEmailConfirmation(email));
-    verify(mailgunEmailService, times(0)).sendNewUser(any());
+    verify(resendEmailService, times(0)).sendNewUser(any());
   }
 
   @Test
@@ -593,13 +593,13 @@ class AuthServiceTest {
     existing.setEmail(email);
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(existing));
 
-    doNothing().when(mailgunEmailService).sendResetPassword(any());
+    doNothing().when(resendEmailService).sendResetPassword(any());
     when(userRepository.save(any())).thenReturn(existing);
-    when(environment.getProperty("MAILGUN_APIKEY")).thenReturn("abc");
+    when(environment.getProperty("RESEND_APIKEY")).thenReturn("abc");
 
     Assertions.assertDoesNotThrow(() -> authService.resetPasswordForUser(email));
     verify(userRepository, times(1)).save(existing);
-    verify(mailgunEmailService, times(1)).sendResetPassword(existing);
+    verify(resendEmailService, times(1)).sendResetPassword(existing);
   }
 
   @Test
@@ -611,7 +611,7 @@ class AuthServiceTest {
 
     Assertions.assertDoesNotThrow(() -> authService.resetPasswordForUser(email));
     verify(userRepository, times(0)).save(any());
-    verify(mailgunEmailService, times(0)).sendResetPassword(any());
+    verify(resendEmailService, times(0)).sendResetPassword(any());
   }
 
   @Test
@@ -630,22 +630,22 @@ class AuthServiceTest {
 
     when(userRepository.findByResetToken(token)).thenReturn(Optional.of(user));
     when(authUtil.validatePassword(newPassword)).thenReturn(Optional.empty());
-    when(environment.getProperty("MAILGUN_APIKEY")).thenReturn("abc");
+    when(environment.getProperty("RESEND_APIKEY")).thenReturn("abc");
 
     PasswordResetRequest request = new PasswordResetRequest(token, newPassword, newPassword);
 
     Assertions.assertDoesNotThrow(() -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(1)).save(user);
-    verify(mailgunEmailService, times(1)).sendPasswordResetConfirmation(user);
+    verify(resendEmailService, times(1)).sendPasswordResetConfirmation(user);
     Assertions.assertNull(user.getResetToken());
     Assertions.assertNull(user.getResetPasswordExpiration());
     Assertions.assertNotNull(user.getPassword());
   }
 
   @Test
-  @DisplayName("Confirm reset password no mailgun api token should succeed")
-  void confirmResetPasswordForUser_noMailgunApiToken_shouldSucceed() {
+  @DisplayName("Confirm reset password no resend api token should succeed")
+  void confirmResetPasswordForUser_noResendApiToken_shouldSucceed() {
     String token = "validToken";
     User user = new User();
     user.setResetToken(token);
@@ -665,7 +665,7 @@ class AuthServiceTest {
     Assertions.assertDoesNotThrow(() -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(1)).save(user);
-    verify(mailgunEmailService, times(0)).sendPasswordResetConfirmation(user);
+    verify(resendEmailService, times(0)).sendPasswordResetConfirmation(user);
     Assertions.assertNull(user.getResetToken());
     Assertions.assertNull(user.getResetPasswordExpiration());
     Assertions.assertNotNull(user.getPassword());
@@ -689,7 +689,7 @@ class AuthServiceTest {
         ResetExpiredException.class, () -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(0)).save(any());
-    verify(mailgunEmailService, times(0)).sendPasswordResetConfirmation(any());
+    verify(resendEmailService, times(0)).sendPasswordResetConfirmation(any());
   }
 
   @Test
@@ -705,7 +705,7 @@ class AuthServiceTest {
         UserNotFoundException.class, () -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(0)).save(any());
-    verify(mailgunEmailService, times(0)).sendPasswordResetConfirmation(any());
+    verify(resendEmailService, times(0)).sendPasswordResetConfirmation(any());
   }
 
   @Test
@@ -726,7 +726,7 @@ class AuthServiceTest {
         BadPasswordException.class, () -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(0)).save(any());
-    verify(mailgunEmailService, times(0)).sendPasswordResetConfirmation(any());
+    verify(resendEmailService, times(0)).sendPasswordResetConfirmation(any());
   }
 
   @Test
@@ -748,6 +748,6 @@ class AuthServiceTest {
         BadPasswordException.class, () -> authService.confirmResetPasswordForUser(request));
 
     verify(userRepository, times(0)).save(any());
-    verify(mailgunEmailService, times(0)).sendPasswordResetConfirmation(any());
+    verify(resendEmailService, times(0)).sendPasswordResetConfirmation(any());
   }
 }
