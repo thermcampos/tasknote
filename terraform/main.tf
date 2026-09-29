@@ -105,7 +105,7 @@ resource "kubernetes_secret_v1" "tasknote_secrets" {
     postgres_password = var.db_password
     postgres_db       = var.db_name
     security_key      = var.security_key
-    resend_apikey    = var.resend_apikey
+    resend_apikey     = var.resend_apikey
   }
 }
 
