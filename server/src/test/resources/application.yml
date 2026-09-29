@@ -8,8 +8,8 @@ br:
 cors:
     allowed-origins: "${CORS_ALLOWED_ORIGINS:http://localhost}\t"
 
-mailgun:
-  api-key: ${MAILGUN_APIKEY:abc123456}
+resend:
+  api-key: ${RESEND_APIKEY:abc123456}
   domain: tasknoteapp.dev.br
   sender-email: no-reply@yourdomain.com
 

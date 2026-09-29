@@ -13,7 +13,7 @@
 - Backend follows controller -> service -> repository layering (`server/src/main/java/br/com/tasknoteapp/server/{controller,service,repository}`).
 - `HomeController` (`/rest/home`) exposes aggregated data such as `/rest/home/tasks/tags`; it is separate from `TaskController` and `NoteController`.
 - Global API error shape comes from `server/src/main/java/br/com/tasknoteapp/server/controller/RestExceptionController.java`; frontend expects `message` or `fields[].fieldMessage` (`client/src/api-service/api.ts`).
-- Email and password-reset flows are Mailgun-backed (`server/src/main/java/br/com/tasknoteapp/server/service/MailgunEmailService.java`) and use templates under `server/src/main/java/br/com/tasknoteapp/server/templates/` + `mailgun-templates/`.
+- Email and password-reset flows are Resend-backed (`server/src/main/java/br/com/tasknoteapp/server/service/ResendEmailService.java`) and render HTML bodies from templates under `server/src/main/resources/email-templates/` via `server/src/main/java/br/com/tasknoteapp/server/templates/EmailTemplate.java`.
 - Backend targets **Java 25** and **Spring Boot 4.x** (`server/pom.xml`).
 
 ## Developer workflows (use these first)

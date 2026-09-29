@@ -67,7 +67,7 @@ public class AuthService {
 
   private final UserPwdLimitRepository userPwdLimitRepository;
 
-  private final MailgunEmailService mailgunEmailService;
+  private final ResendEmailService resendEmailService;
 
   private final Environment environment;
 
@@ -80,7 +80,7 @@ public class AuthService {
    * @param authenticationManager AuthenticationManager instance.
    * @param authUtil AuthUtil instance.
    * @param userPwdLimitRepository UserPwdLimitRepository instance.
-   * @param mailgunEmailService MailgunEmailService instance.
+   * @param resendEmailService ResendEmailService instance.
    * @param environment Environment instance.
    */
   public AuthService(
@@ -90,7 +90,7 @@ public class AuthService {
       AuthenticationManager authenticationManager,
       AuthUtil authUtil,
       UserPwdLimitRepository userPwdLimitRepository,
-      MailgunEmailService mailgunEmailService,
+      ResendEmailService resendEmailService,
       Environment environment) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
@@ -98,7 +98,7 @@ public class AuthService {
     this.authenticationManager = authenticationManager;
     this.authUtil = authUtil;
     this.userPwdLimitRepository = userPwdLimitRepository;
-    this.mailgunEmailService = mailgunEmailService;
+    this.resendEmailService = resendEmailService;
     this.environment = environment;
   }
 
@@ -149,8 +149,8 @@ public class AuthService {
     user.setLang(newUser.lang());
     user = userRepository.save(user);
 
-    if (hasValidMailgunApiKey()) {
-      mailgunEmailService.sendNewUser(user);
+    if (hasValidResendApiKey()) {
+      resendEmailService.sendNewUser(user);
     }
 
     logger.info("User created! ID {}", user.getId());
@@ -389,10 +389,10 @@ public class AuthService {
       userRepository.save(currentUser);
     }
 
-    if (emailChanged && hasValidMailgunApiKey()) {
+    if (emailChanged && hasValidResendApiKey()) {
       logger.info(
           "Email changed from {} to {}", email, SecurityUtil.redactEmail(patchRequest.email()));
-      mailgunEmailService.sendEmailChangedNotification(currentUser, email);
+      resendEmailService.sendEmailChangedNotification(currentUser, email);
     }
 
     return UserResponse.fromEntity(currentUser, getGravatarImageUrl(email).orElse(null));
@@ -483,8 +483,8 @@ public class AuthService {
 
     User user = userOptional.get();
 
-    if (hasValidMailgunApiKey()) {
-      mailgunEmailService.sendNewUser(user);
+    if (hasValidResendApiKey()) {
+      resendEmailService.sendNewUser(user);
     }
 
     logger.info("Confirmation email re-sent!");
@@ -520,8 +520,8 @@ public class AuthService {
         LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).plusHours(2L));
 
     userRepository.save(user);
-    if (hasValidMailgunApiKey()) {
-      mailgunEmailService.sendResetPassword(user);
+    if (hasValidResendApiKey()) {
+      resendEmailService.sendResetPassword(user);
     }
 
     logger.info("Password reset request succeeded");
@@ -571,8 +571,8 @@ public class AuthService {
     user.setLastPasswordChange(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
 
     userRepository.save(user);
-    if (hasValidMailgunApiKey()) {
-      mailgunEmailService.sendPasswordResetConfirmation(user);
+    if (hasValidResendApiKey()) {
+      resendEmailService.sendPasswordResetConfirmation(user);
     }
 
     logger.info("New password set for token {}", request.token());
@@ -622,8 +622,8 @@ public class AuthService {
     }
   }
 
-  private boolean hasValidMailgunApiKey() {
-    String apiKey = environment.getProperty("MAILGUN_APIKEY");
+  private boolean hasValidResendApiKey() {
+    String apiKey = environment.getProperty("RESEND_APIKEY");
     return Optional.ofNullable(apiKey).isPresent()
         && !"invalid-api-key-only-placeholder".equals(apiKey);
   }

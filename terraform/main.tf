@@ -43,7 +43,7 @@ variable "security_key" {
   sensitive = true
 }
 
-variable "mailgun_apikey" {
+variable "resend_apikey" {
   type      = string
   sensitive = true
 }
@@ -105,7 +105,7 @@ resource "kubernetes_secret_v1" "tasknote_secrets" {
     postgres_password = var.db_password
     postgres_db       = var.db_name
     security_key      = var.security_key
-    mailgun_apikey    = var.mailgun_apikey
+    resend_apikey    = var.resend_apikey
   }
 }
 
@@ -269,11 +269,11 @@ resource "kubernetes_deployment_v1" "tasknote_backend" {
             value = "production"
           }
           env {
-            name = "MAILGUN_APIKEY"
+            name = "RESEND_APIKEY"
             value_from {
               secret_key_ref {
                 name = kubernetes_secret_v1.tasknote_secrets.metadata[0].name
-                key  = "mailgun_apikey"
+                key  = "resend_apikey"
               }
             }
           }

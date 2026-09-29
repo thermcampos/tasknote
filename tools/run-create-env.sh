@@ -19,7 +19,7 @@ if [ "$TARGET" == "back" ]; then
     echo "SERVER_SERVLET_CONTEXT_PATH=/" >> .env
     echo "CORS_ALLOWED_ORIGINS=http://localhost:5000" >> .env
     echo "SECURITY_KEY=this-is-a-very-long-security-key-for-dev" >> .env
-    echo "MAILGUN_APIKEY=invalid-api-key-only-placeholder" >> .env
+    echo "RESEND_APIKEY=invalid-api-key-only-placeholder" >> .env
 elif [ "$TARGET" == "front" ]; then
     if [ -f "client/.env" ]; then
         echo "Env file in place. Leaving..."
