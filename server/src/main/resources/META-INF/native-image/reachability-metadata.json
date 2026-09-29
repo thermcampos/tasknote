@@ -977,6 +977,58 @@
       "type": "br.com.tasknoteapp.server.service.JwtService"
     },
     {
+      "type": "br.com.tasknoteapp.server.service.ResendEmailRequest",
+      "fields": [
+        {
+          "name": "from"
+        },
+        {
+          "name": "to"
+        },
+        {
+          "name": "cc"
+        },
+        {
+          "name": "subject"
+        },
+        {
+          "name": "html"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.util.List",
+            "java.util.List",
+            "java.lang.String",
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "from",
+          "parameterTypes": []
+        },
+        {
+          "name": "to",
+          "parameterTypes": []
+        },
+        {
+          "name": "cc",
+          "parameterTypes": []
+        },
+        {
+          "name": "subject",
+          "parameterTypes": []
+        },
+        {
+          "name": "html",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "br.com.tasknoteapp.server.service.ResendEmailService",
       "methods": [
         {
