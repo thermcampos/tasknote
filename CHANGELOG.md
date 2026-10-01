@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2026-10-01
 
 ### Fixed
-- Checkbox not rendering when creating/editing notes [PR 11](https://github.com/thermcampos/tasknote/pull/11)
+- Checkbox not rendering when creating/editing notes [PR 97](https://github.com/thermcampos/tasknote/pull/97)
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.10.01.21
+```
 
 ---
 
