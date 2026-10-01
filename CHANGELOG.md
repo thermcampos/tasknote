@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-10-01
+
+### Fixed
+- Checkbox not rendering when creating/editing notes [PR 11](https://github.com/thermcampos/tasknote/pull/11)
+
+---
+
 ## 2026-09-30
 
 ### Fixed
