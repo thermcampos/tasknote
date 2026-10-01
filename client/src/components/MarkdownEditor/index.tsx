@@ -5,6 +5,7 @@ import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
+import { insertLinkInputRule } from './linkInputRule';
 import '@milkdown/kit/prose/view/style/prosemirror.css';
 import '@milkdown/kit/prose/tables/style/tables.css';
 
@@ -36,6 +37,7 @@ const MarkdownEditorInner = forwardRef<MarkdownEditorHandle, MarkdownEditorProps
         .use(gfm)
         .use(listener)
         .use(history)
+        .use(insertLinkInputRule)
     );
 
     useImperativeHandle(ref, () => ({
