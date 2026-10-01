@@ -317,9 +317,26 @@ a:hover, .btn-link:hover {
   padding: 4px 8px;
 }
 
-.milkdown-editor .ProseMirror li:has(> input[type='checkbox']) {
+.milkdown-editor .ProseMirror li[data-item-type='task'] {
   list-style: none;
   margin-left: -1.4rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.milkdown-editor .ProseMirror li[data-item-type='task'] > input[type='checkbox'] {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.milkdown-editor .ProseMirror li[data-item-type='task'] > div {
+  flex: 1;
+}
+
+.milkdown-editor .ProseMirror li[data-item-type='task'][data-checked='true'] > div {
+  text-decoration: line-through;
+  color: var(--bs-secondary-color);
 }
 
 .milkdown-editor .ProseMirror a {

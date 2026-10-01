@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 2026-10-01
+
+### Fixed
+- Checkbox not rendering when creating/editing notes [PR 11](https://github.com/thermcampos/tasknote/pull/11)
+
+---
+
 ## 2026-09-30
 
 ### Fixed
 - URL rendering in a note.
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.10.01.20
+```
 
 ---
 
@@ -18,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Email sending migrated from Mailgun (named templates) to Resend (HTML bodies from local templates). The `MAILGUN_APIKEY` environment variable was replaced by `RESEND_APIKEY`.
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/server:api-v2026.09.29.15
+```
 
 ---
 

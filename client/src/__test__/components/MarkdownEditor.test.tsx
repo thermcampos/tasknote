@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import MarkdownEditor from '../../components/MarkdownEditor';
 
@@ -47,6 +47,37 @@ describe('MarkdownEditor', () => {
 
     await waitFor(() => {
       expect(editor.textContent).toContain('Hello');
+    });
+  });
+
+  it('should render task list items as checkboxes and toggle them', async () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <MarkdownEditor
+        defaultValue={'- [ ] open task\n- [x] done task\n- plain item'}
+        placeholder="Write something..."
+        onChange={onChange}
+      />
+    );
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('li input[type="checkbox"]').length).toBe(2);
+    });
+
+    const checkboxes = container.querySelectorAll<HTMLInputElement>('li input[type="checkbox"]');
+    expect(checkboxes[0].checked).toBe(false);
+    expect(checkboxes[1].checked).toBe(true);
+    expect(checkboxes[0].closest('li')?.getAttribute('data-item-type')).toBe('task');
+
+    const plainItem = Array.from(container.querySelectorAll('li')).find(
+      li => li.textContent === 'plain item'
+    );
+    expect(plainItem?.querySelector('input[type="checkbox"]')).toBeNull();
+
+    fireEvent.click(checkboxes[0]);
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('[x] open task'));
     });
   });
 
