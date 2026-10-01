@@ -12,12 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - URL rendering in a note.
 
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/client:app-v2026.10.01.20
+```
+
 ---
 
 ## 2026-09-29
 
 ### Changed
 - Email sending migrated from Mailgun (named templates) to Resend (HTML bodies from local templates). The `MAILGUN_APIKEY` environment variable was replaced by `RESEND_APIKEY`.
+
+```
+# Docker images
+- ghcr.io/thermcampos/tasknote/server:api-v2026.09.29.15
+```
 
 ---
 
