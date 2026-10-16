@@ -63,13 +63,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     String email = jwtService.getEmailFromToken(jwtToken);
 
+    System.out.println("email decoded from token " + email);
+
     if (Objects.isNull(email)) {
       throw new ServletException("Invalid token: email not found");
     }
 
     UserDetails user = userService.userDetailsService().loadUserByUsername(email);
 
+    System.out.println("user found: " + user);
+
     boolean valid = jwtService.validateTokenAndUser(jwtToken, user);
+
+    System.out.println("valid: " + valid);
 
     // Allow a recently expired token to be exchanged only on the refresh endpoint, so a
     // waking or previously frozen tab can resume its session without a full re-login.
