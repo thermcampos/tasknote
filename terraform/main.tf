@@ -256,6 +256,10 @@ resource "kubernetes_deployment_v1" "tasknote_backend" {
             value = var.root_log_level
           }
           env {
+            name  = "LOGGING_STRUCTURED_FORMAT_CONSOLE"
+            value = "ecs"
+          }
+          env {
             name = "SECURITY_KEY"
             value_from {
               secret_key_ref {
