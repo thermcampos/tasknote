@@ -11,6 +11,9 @@ logging:
   level:
     root: ${ROOT_LOG_LEVEL:INFO}
     br.com.tasknoteapp: INFO
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:}
 
 resend:
   api-key: ${RESEND_APIKEY:abc123456}

@@ -25,6 +25,7 @@ services:
       TARGET_ENV: production
       SECURITY_KEY: this-is-a-very-long-security-key-for-dev
       RESEND_APIKEY: invalid-api-key-only-placeholder
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     ports: ["8585:8585"]
     image: ghcr.io/thermcampos/tasknote/server:latest
     healthcheck:

@@ -15,6 +15,7 @@
 - Global API error shape comes from `server/src/main/java/br/com/tasknoteapp/server/controller/RestExceptionController.java`; frontend expects `message` or `fields[].fieldMessage` (`client/src/api-service/api.ts`).
 - Email and password-reset flows are Resend-backed (`server/src/main/java/br/com/tasknoteapp/server/service/ResendEmailService.java`) and render HTML bodies from templates under `server/src/main/resources/email-templates/` via `server/src/main/java/br/com/tasknoteapp/server/templates/EmailTemplate.java`.
 - Backend targets **Java 25** and **Spring Boot 4.x** (`server/pom.xml`).
+- Backend log format is env-driven: plain console by default, ECS JSON when `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs` (set in `terraform/main.tf` and `compose.prod-like.yaml`; leave unset locally). Log level stays controlled by `ROOT_LOG_LEVEL`.
 
 ## Developer workflows (use these first)
 - Frontend quality gate: `bash tools/check-frontend.sh` (runs `npm ci`, `lint:fix`, `build`, `test:no-watch`).
