@@ -55,6 +55,11 @@ tasks:
     desc: Run backend integration tests only (Testcontainers PostgreSQL, Docker required)
     cmd: cd server && ./mvnw --no-transfer-progress verify -P tests -Dskip.unit.tests=true -Djacoco.skip=true -Dcheckstyle.skip=true
 
+  test-client-cypress:
+    desc: Run headless cypress tests on client
+    dir: client
+    cmd: npm run cypress:run:headless
+
   run-native-tracing:
     desc: Buidl and run with native agent to trace reflections
     deps: [db-up]
