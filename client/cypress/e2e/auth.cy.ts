@@ -116,6 +116,29 @@ describe('Authentication', () => {
         body: { token: 'fake-jwt-token', email: 'user@example.com' }
       }).as('signIn');
 
+      cy.intercept('GET', /\/rest\/users\/me/, {
+        statusCode: 200,
+        body: {
+          userId: 1,
+          name: 'Test User',
+          email: 'user@example.com',
+          admin: false,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          gravatarImageUrl: '',
+          lang: 'en'
+        }
+      }).as('getCurrentUser');
+
+      cy.intercept('GET', /\/rest\/home\/tasks\/tags/, {
+        statusCode: 200,
+        body: []
+      }).as('getTags');
+
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
+
       cy.get('input[name="email"]').type('user@example.com');
       cy.get('input[name="password"]').type('Password1!');
       cy.get('button[type="submit"]').click();

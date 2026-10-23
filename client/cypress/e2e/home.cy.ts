@@ -16,7 +16,7 @@ const mockTasks = [
   {
     id: 1,
     description: 'Buy groceries',
-    done: false,
+    completed: false,
     highPriority: true,
     dueDate: '2026-06-01',
     dueDateFmt: 'Jun 1, 2026',
@@ -27,7 +27,7 @@ const mockTasks = [
   {
     id: 2,
     description: 'Write report',
-    done: false,
+    completed: false,
     highPriority: false,
     dueDate: '',
     dueDateFmt: '',
@@ -46,7 +46,8 @@ const mockNotes = [
     tags: ['work'],
     lastUpdate: '2026-05-01',
     shared: false,
-    shareToken: null
+    shareToken: null,
+    archived: false
   },
   {
     id: 2,
@@ -56,11 +57,42 @@ const mockNotes = [
     tags: ['personal'],
     lastUpdate: '2026-05-02',
     shared: false,
-    shareToken: null
+    shareToken: null,
+    archived: false
   }
 ];
 
 const mockTags = ['personal', 'work'];
+
+/**
+ * Replies to the aggregated /rest/home/items endpoint replicating the
+ * server-side search (q), type, and tag filtering semantics.
+ *
+ * @param {object} req - The intercepted request.
+ */
+const replyWithFilteredItems = (req: { url: string; reply: (response: object) => void }): void => {
+  const url = new URL(req.url);
+  const query = (url.searchParams.get('q') ?? '').toLowerCase();
+  const type = url.searchParams.get('type');
+  const tag = url.searchParams.get('tag');
+
+  let tasks = type === 'notes' ? [] : [...mockTasks];
+  let notes = type === 'tasks' ? [] : [...mockNotes];
+
+  if (tag) {
+    tasks = tasks.filter(task => task.tags.includes(tag));
+    notes = notes.filter(note => note.tags.includes(tag));
+  }
+
+  if (query) {
+    tasks = tasks.filter(task => task.description.toLowerCase().includes(query));
+    notes = notes.filter(note =>
+      note.title.toLowerCase().includes(query)
+      || note.description.toLowerCase().includes(query));
+  }
+
+  req.reply({ statusCode: 200, body: { tasks, notes } });
+};
 
 describe('Home Management', () => {
   beforeEach(() => {
@@ -79,15 +111,7 @@ describe('Home Management', () => {
       body: mockTags
     }).as('getTags');
 
-    cy.intercept('GET', /\/rest\/tasks$/, {
-      statusCode: 200,
-      body: mockTasks
-    }).as('getTasks');
-
-    cy.intercept('GET', /\/rest\/notes$/, {
-      statusCode: 200,
-      body: mockNotes
-    }).as('getNotes');
+    cy.intercept('GET', /\/rest\/home\/items/, replyWithFilteredItems).as('getItems');
 
     cy.visit('/home', {
       onBeforeLoad(win) {
@@ -102,8 +126,7 @@ describe('Home Management', () => {
    */
   describe('Display', () => {
     it('shows tasks and notes after loading', () => {
-      cy.wait('@getTasks');
-      cy.wait('@getNotes');
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Write report').should('be.visible');
@@ -117,12 +140,12 @@ describe('Home Management', () => {
    */
   describe('Search', () => {
     beforeEach(() => {
-      cy.wait('@getTasks');
-      cy.wait('@getNotes');
+      cy.wait('@getItems');
     });
 
     it('filters items by search text matching a task description', () => {
       cy.get('input[placeholder="Filter tasks & notes"]').type('groceries');
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Write report').should('not.exist');
@@ -132,6 +155,7 @@ describe('Home Management', () => {
 
     it('filters items by search text matching a note title', () => {
       cy.get('input[placeholder="Filter tasks & notes"]').type('Meeting');
+      cy.wait('@getItems');
 
       cy.contains('Meeting notes').should('be.visible');
       cy.contains('Buy groceries').should('not.exist');
@@ -140,9 +164,11 @@ describe('Home Management', () => {
 
     it('restores all items after clearing the search', () => {
       cy.get('input[placeholder="Filter tasks & notes"]').type('groceries');
+      cy.wait('@getItems');
       cy.contains('Write report').should('not.exist');
 
       cy.get('input[placeholder="Filter tasks & notes"]').clear();
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Meeting notes').should('be.visible');
@@ -154,13 +180,13 @@ describe('Home Management', () => {
    */
   describe('Dropdown Filter', () => {
     beforeEach(() => {
-      cy.wait('@getTasks');
-      cy.wait('@getNotes');
+      cy.wait('@getItems');
     });
 
     it('shows only tasks when Tasks filter is selected', () => {
       cy.get('[data-testid="dropdown-tag-filter"]').click();
-      cy.contains('Tasks').click();
+      cy.contains('.dropdown-item', 'Tasks').click();
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Write report').should('be.visible');
@@ -170,7 +196,8 @@ describe('Home Management', () => {
 
     it('shows only notes when Notes filter is selected', () => {
       cy.get('[data-testid="dropdown-tag-filter"]').click();
-      cy.contains('Notes').click();
+      cy.contains('.dropdown-item', 'Notes').click();
+      cy.wait('@getItems');
 
       cy.contains('Meeting notes').should('be.visible');
       cy.contains('Recipe').should('be.visible');
@@ -180,10 +207,12 @@ describe('Home Management', () => {
 
     it('shows everything when Everything filter is selected', () => {
       cy.get('[data-testid="dropdown-tag-filter"]').click();
-      cy.contains('Tasks').click();
+      cy.contains('.dropdown-item', 'Tasks').click();
+      cy.wait('@getItems');
 
       cy.get('[data-testid="dropdown-tag-filter"]').click();
-      cy.contains('Everything').click();
+      cy.contains('.dropdown-item', 'Everything').click();
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Meeting notes').should('be.visible');
@@ -193,7 +222,8 @@ describe('Home Management', () => {
       cy.wait('@getTags');
 
       cy.get('[data-testid="dropdown-tag-filter"]').click();
-      cy.contains('#personal').click();
+      cy.contains('.dropdown-item', '#personal').click();
+      cy.wait('@getItems');
 
       cy.contains('Buy groceries').should('be.visible');
       cy.contains('Recipe').should('be.visible');
