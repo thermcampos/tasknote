@@ -15,7 +15,7 @@ const mockUser = {
 const mockTask = {
   id: 1,
   description: 'Buy groceries',
-  done: false,
+  completed: false,
   highPriority: false,
   dueDate: '',
   dueDateFmt: '',
@@ -92,8 +92,10 @@ describe('Task Management', () => {
         }
       }).as('createTask');
 
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.get('input[name="description"]').type('New task');
       cy.contains('button', 'Save task').click();
@@ -116,8 +118,10 @@ describe('Task Management', () => {
     });
 
     it('navigates back to home when Cancel is clicked', () => {
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.contains('button', 'Cancel').click();
 
@@ -149,8 +153,10 @@ describe('Task Management', () => {
         body: { ...mockTask, description: 'Buy more groceries' }
       }).as('updateTask');
 
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.get('input[name="description"]').clear().type('Buy more groceries');
       cy.contains('button', 'Save task').click();
@@ -178,39 +184,38 @@ describe('Task Management', () => {
    */
   describe('Mark as Done', () => {
     beforeEach(() => {
-      cy.intercept('GET', /\/rest\/tasks$/, {
+      cy.intercept('GET', /\/rest\/home\/items/, {
         statusCode: 200,
-        body: [mockTask]
-      }).as('getTasks');
-
-      cy.intercept('GET', /\/rest\/notes$/, {
-        statusCode: 200,
-        body: []
-      }).as('getNotes');
+        body: { tasks: [mockTask], notes: [] }
+      }).as('getItems');
 
       visitWithAuth('/home');
-      cy.wait('@getTasks');
+      cy.wait('@getItems');
     });
 
     it('marks a task as done via the task dropdown menu', () => {
-      cy.intercept('DELETE', /\/rest\/tasks\/\d+/, {
-        statusCode: 204
+      cy.intercept('PATCH', /\/rest\/tasks\/\d+/, {
+        statusCode: 200,
+        body: { ...mockTask, completed: true }
       }).as('markDone');
 
       cy.get('[data-testid="task-dropdown-menu-1"]').click();
       cy.get('[data-testid="task-dropdown-done-item-1"]').click();
 
-      cy.wait('@markDone');
+      cy.wait('@markDone')
+        .its('request.body')
+        .should('deep.equal', { completed: true });
     });
 
     it('marks a done task as undone via the task dropdown menu', () => {
-      cy.intercept('GET', /\/rest\/tasks$/, {
+      cy.intercept('GET', /\/rest\/home\/items/, {
         statusCode: 200,
-        body: [{ ...mockTask, done: true }]
-      }).as('getDoneTasks');
+        body: { tasks: [{ ...mockTask, completed: true }], notes: [] }
+      }).as('getDoneItems');
 
-      cy.intercept('DELETE', /\/rest\/tasks\/\d+/, {
-        statusCode: 204
+      cy.intercept('PATCH', /\/rest\/tasks\/\d+/, {
+        statusCode: 200,
+        body: mockTask
       }).as('markUndone');
 
       cy.visit('/home', {
@@ -220,12 +225,14 @@ describe('Task Management', () => {
         }
       });
 
-      cy.wait('@getDoneTasks');
+      cy.wait('@getDoneItems');
 
-      cy.get('[data-testid="task-dropdown-menu-1"]').click();
-      cy.get('[data-testid="task-dropdown-done-item-1"]').click();
+      cy.get('[data-testid="completed-task-dropdown-menu-1"]').click();
+      cy.get('[data-testid="completed-task-dropdown-undone-item-1"]').click();
 
-      cy.wait('@markUndone');
+      cy.wait('@markUndone')
+        .its('request.body')
+        .should('deep.equal', { completed: false });
     });
   });
 });

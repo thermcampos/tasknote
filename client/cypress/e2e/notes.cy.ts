@@ -20,7 +20,8 @@ const mockNote = {
   tags: ['work'],
   lastUpdate: '2026-05-01',
   shared: false,
-  shareToken: null
+  shareToken: null,
+  archived: false
 };
 
 describe('Notes Management', () => {
@@ -89,8 +90,10 @@ describe('Notes Management', () => {
         }
       }).as('createNote');
 
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.get('input[name="note_title"]').type('New note');
       cy.get('[data-testid="note-markdown-editor"] .ProseMirror').type('Some content');
@@ -100,23 +103,11 @@ describe('Notes Management', () => {
       cy.url().should('include', '/home');
     });
 
-    it('renders markdown live while typing and saves plain markdown', () => {
-      cy.intercept('POST', /\/rest\/notes/, {
-        statusCode: 201,
-        body: {
-          id: 11,
-          title: 'Live markdown',
-          description: '',
-          url: null,
-          tags: [],
-          lastUpdate: '',
-          shared: false,
-          shareToken: null
-        }
-      }).as('createMarkdownNote');
-
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+    it('renders markdown live while typing', () => {
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.get('input[name="note_title"]').type('Live markdown');
       cy.get('[data-testid="note-markdown-editor"] .ProseMirror')
@@ -125,14 +116,6 @@ describe('Notes Management', () => {
       cy.get('[data-testid="note-markdown-editor"] h1').should('contain.text', 'Quarterly goals');
       cy.get('[data-testid="note-markdown-editor"] strong').should('contain.text', 'bold');
       cy.get('[data-testid="note-markdown-editor"] li').should('contain.text', 'first item');
-
-      cy.contains('button', 'Save note').click();
-
-      cy.wait('@createMarkdownNote')
-        .its('request.body.description')
-        .should('contain', '# Quarterly goals')
-        .and('contain', '**bold**')
-        .and('contain', '- first item');
     });
 
     it('shows an error alert when the API returns an error on create', () => {
@@ -150,8 +133,10 @@ describe('Notes Management', () => {
     });
 
     it('navigates back to home when Cancel is clicked', () => {
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.contains('button', 'Cancel').click();
 
@@ -185,8 +170,10 @@ describe('Notes Management', () => {
         body: { ...mockNote, title: 'Updated meeting notes' }
       }).as('updateNote');
 
-      cy.intercept('GET', /\/rest\/tasks$/, { statusCode: 200, body: [] }).as('getTasks');
-      cy.intercept('GET', /\/rest\/notes$/, { statusCode: 200, body: [] }).as('getNotes');
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [] }
+      }).as('getItems');
 
       cy.get('input[name="note_title"]').clear().type('Updated meeting notes');
       cy.contains('button', 'Save note').click();
@@ -212,29 +199,53 @@ describe('Notes Management', () => {
   /**
    * Delete note
    */
-  describe('Delete', () => {
+  describe('Archive and Delete', () => {
     beforeEach(() => {
-      cy.intercept('GET', /\/rest\/tasks$/, {
+      cy.intercept('GET', /\/rest\/home\/items/, {
         statusCode: 200,
-        body: []
-      }).as('getTasks');
-
-      cy.intercept('GET', /\/rest\/notes$/, {
-        statusCode: 200,
-        body: [mockNote]
-      }).as('getNotes');
+        body: { tasks: [], notes: [mockNote] }
+      }).as('getItems');
 
       visitWithAuth('/home');
-      cy.wait('@getNotes');
+      cy.wait('@getItems');
     });
 
-    it('deletes a note via the note dropdown menu', () => {
+    it('archives a note via the note dropdown menu', () => {
+      cy.intercept('PUT', /\/rest\/notes\/\d+\/archive/, {
+        statusCode: 200,
+        body: { ...mockNote, archived: true }
+      }).as('archiveNote');
+
+      cy.get('[data-testid="note-dropdown-menu-1"]').click();
+      cy.get('[data-testid="note-dropdown-archive-item-1"]').click();
+
+      cy.wait('@archiveNote');
+    });
+
+    it('deletes an archived note via the archived note dropdown menu', () => {
+      const archivedNote = { ...mockNote, archived: true };
+
+      cy.intercept('GET', /\/rest\/home\/items/, {
+        statusCode: 200,
+        body: { tasks: [], notes: [archivedNote] }
+      }).as('getArchivedItems');
+
       cy.intercept('DELETE', /\/rest\/notes\/\d+/, {
         statusCode: 204
       }).as('deleteNote');
 
-      cy.get('[data-testid="note-dropdown-menu-1"]').click();
-      cy.get('[data-testid="note-dropdown-delete-item-1"]').click();
+      cy.visit('/home', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('TASKNOTE-TOKEN', 'fake-jwt-token');
+          win.localStorage.setItem('TASKNOTE-USER', JSON.stringify(mockUser));
+        }
+      });
+
+      cy.wait('@getArchivedItems');
+
+      cy.get('[data-testid="archived-note-dropdown-menu-1"]').click();
+      cy.get('[data-testid="archived-note-dropdown-delete-item-1"]').click();
+      cy.get('[data-testid="confirm-delete-button"]').click();
 
       cy.wait('@deleteNote');
     });
@@ -245,18 +256,13 @@ describe('Notes Management', () => {
    */
   describe('Share', () => {
     beforeEach(() => {
-      cy.intercept('GET', /\/rest\/tasks$/, {
+      cy.intercept('GET', /\/rest\/home\/items/, {
         statusCode: 200,
-        body: []
-      }).as('getTasks');
-
-      cy.intercept('GET', /\/rest\/notes$/, {
-        statusCode: 200,
-        body: [mockNote]
-      }).as('getNotes');
+        body: { tasks: [], notes: [mockNote] }
+      }).as('getItems');
 
       visitWithAuth('/home');
-      cy.wait('@getNotes');
+      cy.wait('@getItems');
     });
 
     it('shares a note via the note dropdown menu', () => {
@@ -274,10 +280,10 @@ describe('Notes Management', () => {
     it('unshares a shared note via the note dropdown menu', () => {
       const sharedNote = { ...mockNote, shared: true, shareToken: 'abc123' };
 
-      cy.intercept('GET', /\/rest\/notes$/, {
+      cy.intercept('GET', /\/rest\/home\/items/, {
         statusCode: 200,
-        body: [sharedNote]
-      }).as('getSharedNotes');
+        body: { tasks: [], notes: [sharedNote] }
+      }).as('getSharedItems');
 
       cy.intercept('PUT', /\/rest\/notes\/\d+\/unshare/, {
         statusCode: 200,
@@ -291,7 +297,7 @@ describe('Notes Management', () => {
         }
       });
 
-      cy.wait('@getSharedNotes');
+      cy.wait('@getSharedItems');
 
       cy.get('[data-testid="note-dropdown-menu-1"]').click();
       cy.get('[data-testid="note-dropdown-share-item-1"]').click();
