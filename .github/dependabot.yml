@@ -16,11 +16,11 @@ updates:
     schedule:
       internal: "weekly"
     open-pull-requests-limit: 10
-      groups:
-        maven-minor-patch:
-          update-types:
-            - minor
-            - patch
+    groups:
+      maven-minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: "github-actions"
     directory: "/"
