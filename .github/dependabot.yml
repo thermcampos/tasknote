@@ -14,7 +14,7 @@ updates:
   - package-ecosystem: "maven"
     directory: "/server"
     schedule:
-      internal: "weekly"
+      interval: "weekly"
     open-pull-requests-limit: 10
     groups:
       maven-minor-patch:
@@ -25,4 +25,4 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      internal: "weekly"
+      interval: "weekly"
