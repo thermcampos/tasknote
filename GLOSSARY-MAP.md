@@ -1,4 +1,4 @@
-# Context Map
+# Glossary Map
 
 TaskNote is effectively a single domain context, deployed as two codebases that share one vocabulary and one PostgreSQL schema.
 
@@ -6,14 +6,14 @@ TaskNote is effectively a single domain context, deployed as two codebases that 
 
 | Context | Path | Role |
 |---|---|---|
-| TaskNote domain | [`CONTEXT.md`](./CONTEXT.md) | Glossary shared by client and server: users, tasks, notes, tags, sharing |
+| TaskNote domain | [`GLOSSARY.md`](./GLOSSARY.md) | Glossary shared by client and server: users, tasks, notes, tags, sharing |
 | Client | `client/` | React/Vite SPA; talks to the API via `client/src/api-service/` |
 | Server | `server/` | Spring Boot API (controller → service → repository); Flyway-managed schema |
 
 ## Relationships
 
 - **Client → Server**: REST over `/auth/**` (unauthenticated), `/rest/**` (JWT) and `/public/**` (shared notes). Path changes must be made on both sides.
-- Both contexts use the terms in [`CONTEXT.md`](./CONTEXT.md); neither has its own `CONTEXT.md` yet. Add one under `client/` or `server/` only if their vocabularies diverge.
+- Both contexts use the terms in [`GLOSSARY.md`](./GLOSSARY.md); neither has its own `GLOSSARY.md` yet. Add one under `client/` or `server/` only if their vocabularies diverge.
 
 ## Decisions
 

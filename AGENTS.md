@@ -56,4 +56,4 @@ The skills speak in terms of five canonical triage roles mapped to the label str
 
 ### Domain docs
 
-Single-context repo: read `CONTEXT.md` at the repo root (when it exists) and ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+Effectively single-context with a context map: read `GLOSSARY-MAP.md` and `GLOSSARY.md` at the repo root, plus ADRs under `docs/adr/`. See `docs/agents/domain.md`.
