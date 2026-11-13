@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.1.1</version>
+    <version>4.1.2</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   
@@ -51,13 +51,13 @@
     <jacoco.output.data>${project.build.directory}/coverage-reports</jacoco.output.data>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
-    <failsafe.version>3.6.0</failsafe.version>
-    <surefire.version>3.6.0</surefire.version>
-    <jacoco.version>0.8.15</jacoco.version>
+    <failsafe.version>3.6.1</failsafe.version>
+    <surefire.version>3.6.1</surefire.version>
+    <jacoco.version>0.8.16</jacoco.version>
     <checkstyle.version>3.6.0</checkstyle.version>
-    <springboot.version>4.1.1</springboot.version>
-    <jjwt.version>0.12.6</jjwt.version>
-    <flyway.version>13.5.0</flyway.version>
+    <springboot.version>4.1.2</springboot.version>
+    <jjwt.version>0.13.0</jjwt.version>
+    <flyway.version>13.12.1</flyway.version>
   </properties>
 
   <!-- Profiles -->
@@ -327,7 +327,7 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>13.7.0</version>
+            <version>14.3.0</version>
           </dependency>
         </dependencies>
         <configuration>

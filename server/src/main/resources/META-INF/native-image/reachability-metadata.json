@@ -203,18 +203,6 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.HomeService"
           ]
-        },
-        {
-          "name": "getHomeItems",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String"
-          ]
-        },
-        {
-          "name": "getTasksTags",
-          "parameterTypes": []
         }
       ]
     },
@@ -226,6 +214,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.NoteService"
           ]
+        },
+        {
+          "name": "getAllNotes",
+          "parameterTypes": []
         },
         {
           "name": "postNotes",
@@ -252,6 +244,12 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        },
+        {
+          "name": "handleBadRequestException",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.exception.BaseBadRequestException"
+          ]
         }
       ]
     },
@@ -263,6 +261,10 @@
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.TaskService"
           ]
+        },
+        {
+          "name": "getAllTasks",
+          "parameterTypes": []
         },
         {
           "name": "postTasks",
@@ -279,16 +281,6 @@
           "name": "<init>",
           "parameterTypes": [
             "br.com.tasknoteapp.server.service.AuthService"
-          ]
-        },
-        {
-          "name": "getCurrentUser",
-          "parameterTypes": []
-        },
-        {
-          "name": "patchUserInfo",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.request.UserPatchRequest"
           ]
         }
       ]
@@ -364,6 +356,38 @@
       "type": "br.com.tasknoteapp.server.hint.JjwtRuntimeHints$JjwtHintsRegistrar"
     },
     {
+      "type": "br.com.tasknoteapp.server.hint.ResendEmailRuntimeHints"
+    },
+    {
+      "type": "br.com.tasknoteapp.server.hint.ResendEmailRuntimeHints$$SpringCGLIB$$0",
+      "fields": [
+        {
+          "name": "$$beanFactory"
+        },
+        {
+          "name": "CGLIB$CALLBACK_FILTER"
+        },
+        {
+          "name": "CGLIB$FACTORY_DATA"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "CGLIB$SET_STATIC_CALLBACKS",
+          "parameterTypes": [
+            "org.springframework.cglib.proxy.Callback[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.hint.ResendEmailRuntimeHints$ResendEmailHintsRegistrar"
+    },
+    {
       "type": "br.com.tasknoteapp.server.repository.NoteRepository",
       "methods": [
         {
@@ -374,12 +398,9 @@
           ]
         },
         {
-          "name": "findHomeNotes",
+          "name": "findAllByUserId",
           "parameterTypes": [
-            "java.lang.Long",
-            "java.lang.String",
-            "java.lang.String",
-            "boolean"
+            "java.lang.Long"
           ]
         },
         {
@@ -414,6 +435,12 @@
           "name": "findByNoteId",
           "parameterTypes": [
             "java.lang.Long"
+          ]
+        },
+        {
+          "name": "save",
+          "parameterTypes": [
+            "br.com.tasknoteapp.server.entity.NoteUrl"
           ]
         }
       ]
@@ -459,12 +486,6 @@
           ]
         },
         {
-          "name": "findAllTagNamesByUserId",
-          "parameterTypes": [
-            "java.lang.Long"
-          ]
-        },
-        {
           "name": "findByUserIdAndName",
           "parameterTypes": [
             "java.lang.Long",
@@ -480,15 +501,9 @@
           ]
         },
         {
-          "name": "updateTagForNote",
+          "name": "updateTagForTask",
           "parameterTypes": [
             "br.com.tasknoteapp.server.entity.Tag",
-            "java.lang.Long"
-          ]
-        },
-        {
-          "name": "userHasUntaggedItems",
-          "parameterTypes": [
             "java.lang.Long"
           ]
         }
@@ -516,12 +531,9 @@
           ]
         },
         {
-          "name": "findHomeTasks",
+          "name": "findAllByUserId",
           "parameterTypes": [
-            "java.lang.Long",
-            "java.lang.String",
-            "java.lang.String",
-            "boolean"
+            "java.lang.Long"
           ]
         },
         {
@@ -556,6 +568,12 @@
           "name": "findAllById_taskId",
           "parameterTypes": [
             "java.lang.Long"
+          ]
+        },
+        {
+          "name": "saveAll",
+          "parameterTypes": [
+            "java.util.List"
           ]
         }
       ]
@@ -683,31 +701,14 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.request.UserPatchRequest",
+      "type": "br.com.tasknoteapp.server.response.FieldIssueResponse",
       "methods": [
         {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "br.com.tasknoteapp.server.response.HomeItemsResponse",
-      "methods": [
-        {
-          "name": "notes",
+          "name": "fieldMessage",
           "parameterTypes": []
         },
         {
-          "name": "tasks",
+          "name": "fieldName",
           "parameterTypes": []
         }
       ]
@@ -754,9 +755,6 @@
       ]
     },
     {
-      "type": "br.com.tasknoteapp.server.response.NoteResponse[]"
-    },
-    {
       "type": "br.com.tasknoteapp.server.response.TaskResponse",
       "methods": [
         {
@@ -793,50 +791,6 @@
         },
         {
           "name": "urls",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "br.com.tasknoteapp.server.response.TaskResponse[]"
-    },
-    {
-      "type": "br.com.tasknoteapp.server.response.UserResponse",
-      "methods": [
-        {
-          "name": "admin",
-          "parameterTypes": []
-        },
-        {
-          "name": "createdAt",
-          "parameterTypes": []
-        },
-        {
-          "name": "email",
-          "parameterTypes": []
-        },
-        {
-          "name": "gravatarImageUrl",
-          "parameterTypes": []
-        },
-        {
-          "name": "inactivatedAt",
-          "parameterTypes": []
-        },
-        {
-          "name": "lastLogin",
-          "parameterTypes": []
-        },
-        {
-          "name": "name",
-          "parameterTypes": []
-        },
-        {
-          "name": "theme",
-          "parameterTypes": []
-        },
-        {
-          "name": "userId",
           "parameterTypes": []
         }
       ]
@@ -887,6 +841,19 @@
       ]
     },
     {
+      "type": "br.com.tasknoteapp.server.response.ValidationExceptionResponse",
+      "methods": [
+        {
+          "name": "getErrorMessage",
+          "parameterTypes": []
+        },
+        {
+          "name": "getFields",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "br.com.tasknoteapp.server.service.AppVersionService",
       "methods": [
         {
@@ -921,16 +888,6 @@
           "name": "findByEmail",
           "parameterTypes": [
             "java.lang.String"
-          ]
-        },
-        {
-          "name": "getCurrentUserResponse",
-          "parameterTypes": []
-        },
-        {
-          "name": "patchUserInfo",
-          "parameterTypes": [
-            "br.com.tasknoteapp.server.request.UserPatchRequest"
           ]
         },
         {
@@ -977,73 +934,6 @@
       "type": "br.com.tasknoteapp.server.service.JwtService"
     },
     {
-      "type": "br.com.tasknoteapp.server.service.ResendEmailRequest",
-      "fields": [
-        {
-          "name": "from"
-        },
-        {
-          "name": "to"
-        },
-        {
-          "name": "cc"
-        },
-        {
-          "name": "subject"
-        },
-        {
-          "name": "html"
-        }
-      ],
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.util.List",
-            "java.util.List",
-            "java.lang.String",
-            "java.lang.String"
-          ]
-        },
-        {
-          "name": "from",
-          "parameterTypes": []
-        },
-        {
-          "name": "to",
-          "parameterTypes": []
-        },
-        {
-          "name": "cc",
-          "parameterTypes": []
-        },
-        {
-          "name": "subject",
-          "parameterTypes": []
-        },
-        {
-          "name": "html",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "br.com.tasknoteapp.server.service.ResendEmailService",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "java.lang.String",
-            "org.springframework.web.client.RestClient$Builder"
-          ]
-        }
-      ]
-    },
-    {
       "type": "br.com.tasknoteapp.server.service.NoteService",
       "methods": [
         {
@@ -1063,12 +953,8 @@
           ]
         },
         {
-          "name": "getHomeNotes",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "boolean"
-          ]
+          "name": "getAllNotes",
+          "parameterTypes": []
         }
       ]
     },
@@ -1080,6 +966,21 @@
         },
         {
           "name": "CGLIB$FACTORY_DATA"
+        }
+      ]
+    },
+    {
+      "type": "br.com.tasknoteapp.server.service.ResendEmailService",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "java.lang.String",
+            "org.springframework.web.client.RestClient$Builder"
+          ]
         }
       ]
     },
@@ -1103,12 +1004,8 @@
           ]
         },
         {
-          "name": "getHomeTasks",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String",
-            "boolean"
-          ]
+          "name": "getAllTasks",
+          "parameterTypes": []
         }
       ]
     },
@@ -1205,6 +1102,15 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "com.fasterxml.jackson.annotation.JacksonAnnotation"
+    },
+    {
+      "type": "com.fasterxml.jackson.annotation.JsonInclude"
+    },
+    {
+      "type": "com.fasterxml.jackson.annotation.JsonInclude$Include"
     },
     {
       "type": "com.fasterxml.jackson.databind.ObjectMapper"
@@ -1345,25 +1251,7 @@
       ]
     },
     {
-      "type": "com.sun.crypto.provider.TlsKeyMaterialGenerator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "com.sun.crypto.provider.TlsMasterSecretGenerator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "com.sun.crypto.provider.TlsPrfGenerator$V12",
       "methods": [
         {
           "name": "<init>",
@@ -1423,7 +1311,10 @@
       "type": "io.jsonwebtoken.impl.DefaultClaims"
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder",
+      "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultClaimsBuilder$Supplier",
       "methods": [
         {
           "name": "<init>",
@@ -1435,7 +1326,10 @@
       "type": "io.jsonwebtoken.impl.DefaultJwsHeader"
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder",
+      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtBuilder$Supplier",
       "methods": [
         {
           "name": "<init>",
@@ -1444,7 +1338,19 @@
       ]
     },
     {
-      "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder",
+      "type": "io.jsonwebtoken.impl.DefaultJwtHeaderBuilder$Supplier",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder"
+    },
+    {
+      "type": "io.jsonwebtoken.impl.DefaultJwtParserBuilder$Supplier",
       "methods": [
         {
           "name": "<init>",
@@ -1454,6 +1360,24 @@
     },
     {
       "type": "io.jsonwebtoken.impl.io.StandardCompressionAlgorithms",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.security.DefaultKeyOperationBuilder$Supplier",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.jsonwebtoken.impl.security.DefaultKeyOperationPolicyBuilder$Supplier",
       "methods": [
         {
           "name": "<init>",
@@ -1851,12 +1775,6 @@
       "type": "java.security.interfaces.EdECKey"
     },
     {
-      "type": "java.security.interfaces.RSAPrivateKey"
-    },
-    {
-      "type": "java.security.interfaces.RSAPublicKey"
-    },
-    {
       "type": "java.security.interfaces.XECKey"
     },
     {
@@ -2025,6 +1943,9 @@
     },
     {
       "type": "java.util.ImmutableCollections$AbstractImmutableList"
+    },
+    {
+      "type": "java.util.ImmutableCollections$List12"
     },
     {
       "type": "java.util.ImmutableCollections$ListN"
@@ -2408,6 +2329,9 @@
     },
     {
       "type": "org.flywaydb.core.internal.proprietaryStubs.GenerateCommandExtensionStub"
+    },
+    {
+      "type": "org.flywaydb.core.internal.proprietaryStubs.InitCommandExtensionStub"
     },
     {
       "type": "org.flywaydb.core.internal.proprietaryStubs.LicenseSupportStub"
@@ -4644,10 +4568,10 @@
       "type": "org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration"
     },
     {
-      "type": "org.springframework.boot.security.autoconfigure.web.servlet.ConditionalOnDefaultWebSecurity"
+      "type": "org.springframework.boot.security.autoconfigure.web.servlet.ConditionalOnDefaultServletWebSecurity"
     },
     {
-      "type": "org.springframework.boot.security.autoconfigure.web.servlet.DefaultWebSecurityCondition",
+      "type": "org.springframework.boot.security.autoconfigure.web.servlet.DefaultServletWebSecurityCondition",
       "methods": [
         {
           "name": "<init>",
@@ -5186,7 +5110,9 @@
       "methods": [
         {
           "name": "<init>",
-          "parameterTypes": []
+          "parameterTypes": [
+            "org.springframework.beans.factory.BeanFactory"
+          ]
         }
       ]
     },
@@ -6540,9 +6466,6 @@
       "type": "org.springframework.web.bind.annotation.RequestMethod[]"
     },
     {
-      "type": "org.springframework.web.bind.annotation.RequestParam"
-    },
-    {
       "type": "org.springframework.web.bind.annotation.ResponseBody"
     },
     {
@@ -7020,24 +6943,6 @@
       ]
     },
     {
-      "type": "sun.security.provider.JavaKeyStore$DualFormatJKS",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.JavaKeyStore$JKS",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "sun.security.provider.NativePRNG",
       "methods": [
         {
@@ -7103,15 +7008,6 @@
       ]
     },
     {
-      "type": "sun.security.provider.certpath.PKIXCertPathValidator",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "sun.security.rsa.PSSParameters",
       "methods": [
         {
@@ -7140,15 +7036,6 @@
     },
     {
       "type": "sun.security.rsa.RSASignature$SHA224withRSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.rsa.RSASignature$SHA256withRSA",
       "methods": [
         {
           "name": "<init>",
@@ -7292,7 +7179,7 @@
       ]
     },
     {
-      "type": "sun.security.x509.SubjectAlternativeNameExtension",
+      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
       "methods": [
         {
           "name": "<init>",
@@ -7304,16 +7191,13 @@
       ]
     },
     {
-      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
+      "type": "sun.text.resources.FormatData"
+    },
+    {
+      "type": "sun.text.resources.FormatData_en"
+    },
+    {
+      "type": "sun.text.resources.JavaTimeSupplementary"
     },
     {
       "type": "sun.text.resources.cldr.FormatData"
@@ -7477,13 +7361,6 @@
     },
     {
       "type": {
-        "proxy": [
-          "org.springframework.web.bind.annotation.RequestParam"
-        ]
-      }
-    },
-    {
-      "type": {
         "lambda": {
           "declaringClass": "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration",
           "interfaces": [
@@ -7526,9 +7403,6 @@
   "resources": [
     {
       "glob": "META-INF/build-info.properties"
-    },
-    {
-      "glob": "email-templates/*.html"
     },
     {
       "glob": "META-INF/resources/index.html"
@@ -7618,9 +7492,6 @@
       "glob": "application.yml"
     },
     {
-      "glob": "banner.txt"
-    },
-    {
       "glob": "br/com/tasknoteapp/server"
     },
     {
@@ -7670,6 +7541,12 @@
     },
     {
       "glob": "br/com/tasknoteapp/server/hint/JjwtRuntimeHints.class"
+    },
+    {
+      "glob": "br/com/tasknoteapp/server/hint/ResendEmailRuntimeHints$ResendEmailHintsRegistrar.class"
+    },
+    {
+      "glob": "br/com/tasknoteapp/server/hint/ResendEmailRuntimeHints.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/repository/NoteRepository$NoteRowMapper.class"
@@ -7726,10 +7603,10 @@
       "glob": "br/com/tasknoteapp/server/service/JwtService.class"
     },
     {
-      "glob": "br/com/tasknoteapp/server/service/ResendEmailService.class"
+      "glob": "br/com/tasknoteapp/server/service/NoteService.class"
     },
     {
-      "glob": "br/com/tasknoteapp/server/service/NoteService.class"
+      "glob": "br/com/tasknoteapp/server/service/ResendEmailService.class"
     },
     {
       "glob": "br/com/tasknoteapp/server/service/TaskService.class"
@@ -7888,10 +7765,16 @@
       "glob": "jakarta/servlet/LocalStrings_en.properties"
     },
     {
+      "glob": "jakarta/servlet/LocalStrings_en_US.properties"
+    },
+    {
       "glob": "jakarta/servlet/http/LocalStrings.properties"
     },
     {
       "glob": "jakarta/servlet/http/LocalStrings_en.properties"
+    },
+    {
+      "glob": "jakarta/servlet/http/LocalStrings_en_US.properties"
     },
     {
       "glob": "jndi.properties"
@@ -8008,6 +7891,9 @@
       "glob": "org/apache/naming/LocalStrings_en.properties"
     },
     {
+      "glob": "org/apache/naming/LocalStrings_en_US.properties"
+    },
+    {
       "glob": "org/apache/tomcat/jni/AprStatus.class"
     },
     {
@@ -8063,9 +7949,6 @@
     },
     {
       "glob": "org/springframework/beans/factory/Aware.class"
-    },
-    {
-      "glob": "org/springframework/beans/factory/BeanFactoryAware.class"
     },
     {
       "glob": "org/springframework/beans/factory/BeanNameAware.class"
@@ -8569,16 +8452,16 @@
       "glob": "org/springframework/boot/security/autoconfigure/UserDetailsServiceAutoConfiguration.class"
     },
     {
-      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/ConditionalOnDefaultWebSecurity.class"
+      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/ConditionalOnDefaultServletWebSecurity.class"
     },
     {
-      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultWebSecurityCondition$Beans.class"
+      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultServletWebSecurityCondition$Beans.class"
     },
     {
-      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultWebSecurityCondition$Classes.class"
+      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultServletWebSecurityCondition$Classes.class"
     },
     {
-      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultWebSecurityCondition.class"
+      "glob": "org/springframework/boot/security/autoconfigure/web/servlet/DefaultServletWebSecurityCondition.class"
     },
     {
       "glob": "org/springframework/boot/security/autoconfigure/web/servlet/SecurityFilterAutoConfiguration.class"
@@ -8895,14 +8778,6 @@
     {
       "module": "java.base",
       "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
-    },
-    {
-      "module": "java.base",
-      "glob": "jdk/internal/icu/impl/data/icudt76b/uprops.icu"
-    },
-    {
-      "module": "java.base",
-      "glob": "sun/net/idn/uidna.spp"
     },
     {
       "bundle": "jakarta.servlet.LocalStrings"
