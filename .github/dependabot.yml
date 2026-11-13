@@ -2,25 +2,19 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/client"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+    schedule: { interval: "weekly", day: "monday" }
+    cooldown: { default-days: 7, semver-major-days: 14 }
     groups:
-      npm-minor-patch:
-        update-types:
-          - minor
-          - patch
+      js-minor-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "maven"
     directory: "/server"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+    schedule: { interval: "weekly", day: "monday" }
+    cooldown: { default-days: 7, semver-major-days: 14 }
     groups:
-      maven-minor-patch:
-        update-types:
-          - minor
-          - patch
+      java-minor-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
