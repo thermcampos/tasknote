@@ -38,6 +38,8 @@
   <!-- Properties -->
   <properties>
     <java.version>25</java.version>
+    <!-- Default image name for spring-boot:build-image; override with -Dspring-boot.build-image.imageName=... -->
+    <spring-boot.build-image.imageName>ghcr.io/thermcampos/tasknote/server:latest</spring-boot.build-image.imageName>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <skip.integration.tests>true</skip.integration.tests>
@@ -363,7 +365,7 @@
 	<version>${springboot.version}</version>
         <configuration>
           <image>
-            <name>ghcr.io/thermcampos/tasknote/server:latest</name>
+            <name>${spring-boot.build-image.imageName}</name>
             <buildpacks>
                 <buildpack>file://${project.basedir}/buildpacks/healthcheck</buildpack>
                 <buildpack>urn:cnb:builder:paketo-buildpacks/java-native-image</buildpack>

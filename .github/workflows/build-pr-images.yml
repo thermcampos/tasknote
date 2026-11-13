@@ -142,3 +142,57 @@ jobs:
         run: |
           echo "Pushed image:"
           echo "  ${{ env.SERVER_IMAGE }}:${{ steps.version.outputs.tag }}"
+
+  smoke-test-app:
+    name: Smoke Test App
+    needs: build-and-push-app
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+
+      - name: Run frontend smoke test in dev container
+        uses: devcontainers/ci@v0.3
+        env:
+          APP_IMAGE: ${{ env.APP_IMAGE }}:pr-${{ github.event.pull_request.number }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          imageName: ghcr.io/thermcampos/tasknote/devcontainer
+          push: never
+          env: |
+            APP_IMAGE
+            GHCR_USER
+            GHCR_TOKEN
+          runCmd: bash tools/smoke-test-frontend.sh
+
+  smoke-test-server:
+    name: Smoke Test Server
+    needs: build-and-push-server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+
+      - name: Run backend smoke test in dev container
+        uses: devcontainers/ci@v0.3
+        env:
+          SERVER_IMAGE: ${{ env.SERVER_IMAGE }}:pr-${{ github.event.pull_request.number }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          imageName: ghcr.io/thermcampos/tasknote/devcontainer
+          push: never
+          env: |
+            SERVER_IMAGE
+            GHCR_USER
+            GHCR_TOKEN
+          runCmd: bash tools/smoke-test-backend.sh
