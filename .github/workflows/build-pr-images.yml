@@ -1,0 +1,144 @@
+name: Build PR Images
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  REGISTRY: ghcr.io
+  APP_IMAGE: "ghcr.io/thermcampos/tasknote/client"
+  SERVER_IMAGE: "ghcr.io/thermcampos/tasknote/server"
+
+jobs:
+  changes:
+    name: Detect changed files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+      server: ${{ steps.filter.outputs.server }}
+
+    steps:
+      - name: Check changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            client:
+              - 'client/**'
+              - '.github/workflows/build-pr-images.yml'
+            server:
+              - 'server/**'
+              - '.github/workflows/build-pr-images.yml'
+
+  build-and-push-app:
+    name: Build & Push App
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Generate version tag
+        id: version
+        run: |
+          TAG="pr-${{ github.event.pull_request.number }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.4.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.APP_IMAGE }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.APP_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.APP_IMAGE }}:buildcache,mode=max
+          build-args: |
+            VITE_BUILD=${{ steps.version.outputs.tag }}
+
+      - name: Log pushed images
+        run: |
+          echo "Pushed image:"
+          echo "  ${{ env.APP_IMAGE }}:${{ steps.version.outputs.tag }}"
+
+  build-and-push-server:
+    name: Build & Push Server
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Generate version tag
+        id: version
+        run: |
+          TAG="pr-${{ github.event.pull_request.number }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}"
+
+      - name: Set up Java
+        uses: actions/setup-java@v6.0.0
+        with:
+          distribution: 'graalvm-community'
+          java-version: '25'
+          cache: 'maven'
+          cache-dependency-path: 'server/pom.xml'
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        working-directory: ./server
+        run: |
+          ./mvnw -Pnative -DskipTests spring-boot:build-image \
+            -Dspring-boot.build-image.imageName=${{ env.SERVER_IMAGE }}:${{ steps.version.outputs.tag }} \
+            -Dspring-boot.build-image.builder=paketobuildpacks/builder-jammy-tiny:0.0.560
+
+      - name: Push image
+        run: |
+          docker push ${{ env.SERVER_IMAGE }}:${{ steps.version.outputs.tag }}
+
+      - name: Log pushed image
+        run: |
+          echo "Pushed image:"
+          echo "  ${{ env.SERVER_IMAGE }}:${{ steps.version.outputs.tag }}"
