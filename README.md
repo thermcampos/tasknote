@@ -137,8 +137,12 @@ task docker-build-web
 ### Frontend Testing
 
 ```bash
-./tools/check-frontend.sh
+./tools/check-frontend.sh       # lint, build, unit tests
+./tools/check-frontend-e2e.sh   # Cypress headless E2E
+task quality:frontend           # both of the above
 ```
+
+E2E specs stub every API call with `cy.intercept`, so no backend or database is needed. The script starts Vite on `:5000` (or reuses whatever already runs there, e.g. `task dev-up`) and stops it afterwards. CI runs the same script.
 
 ### Backend Testing
 
@@ -151,8 +155,10 @@ Integration tests (`*IntTest`) run against a real PostgreSQL instance via Testco
 ```bash
 task test-api-unit   # unit tests only, no Docker
 task test-api-it     # integration tests only, Docker required
-task test-api        # full backend gate (same as tools/check-backend.sh)
+task quality:backend # full backend gate (same as tools/check-backend.sh)
 ```
+
+In CI, the full backend gate (including Testcontainers integration tests) runs inside the dev container defined in `.devcontainer/devcontainer.json`, via [`devcontainers/ci`](https://github.com/devcontainers/ci).
 
 ## 🤝 Contributing
 
@@ -173,6 +179,7 @@ We welcome contributions from the community! This project follows the **Fork & M
 5. **Run quality checks**
    ```bash
    bash tools/check-frontend.sh
+   bash tools/check-frontend-e2e.sh
    bash tools/check-backend.sh
    ```
 6. **Commit your changes**

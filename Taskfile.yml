@@ -27,9 +27,13 @@ tasks:
     desc: Stops and remove database, API, SchemaSpy and the Python http server
     cmd: docker compose -f compose.schemaspy.yaml down -v --remove-orphans
 
+  dev-up-ngrok:
+    desc: Starts database, API and web app locally
+    cmd: doppler run --project tasknote --config dev -- docker compose -f compose.dev.yaml --profile ngrok up -d
+
   dev-up:
     desc: Starts database, API and web app locally
-    cmd: doppler run --project tasknote --config dev -- docker compose -f compose.dev.yaml up -d
+    cmd: export NGROK_AUTHTOKEN=1 && docker compose -f compose.dev.yaml up -d
 
   dev-down:
     desc: Stops and remove database, API and web app containers
@@ -43,7 +47,7 @@ tasks:
     desc: Stops and remove Postgres, GraalVM API and Docker web app using prod images
     cmd: docker compose -f compose.prod-like.yaml down -v --remove-orphans
 
-  test-api:
+  quality:backend:
     desc: Run all backend checks (checkstyle, build, unit and integration tests). Integration tests run on Testcontainers PostgreSQL, so Docker is required
     cmd: bash tools/check-backend.sh
 
@@ -56,9 +60,14 @@ tasks:
     cmd: cd server && ./mvnw --no-transfer-progress verify -P tests -Dskip.unit.tests=true -Djacoco.skip=true -Dcheckstyle.skip=true
 
   test-client-cypress:
-    desc: Run headless cypress tests on client
-    dir: client
-    cmd: npm run cypress:run:headless
+    desc: Run headless cypress tests on client (starts Vite on :5000 if nothing is running there; API calls are stubbed, no backend needed)
+    cmd: bash tools/check-frontend-e2e.sh
+
+  quality:frontend:
+    desc: Run the quality gate for the frontend
+    cmds:
+      - bash ./tools/check-frontend.sh
+      - task: test-client-cypress
 
   run-native-tracing:
     desc: Buidl and run with native agent to trace reflections
