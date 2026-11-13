@@ -9,6 +9,7 @@ client.pnp.js
 client/coverage
 client/cypress/videos
 client/cypress/screenshots
+client/vite-e2e.log
 
 # production
 client/build

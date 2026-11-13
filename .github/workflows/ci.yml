@@ -17,25 +17,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java
-        uses: actions/setup-java@v6.0.0
+      # Runs the full backend gate (checkstyle, compile, unit + Testcontainers
+      # integration tests) inside the dev container defined in .devcontainer/.
+      # Docker-in-Docker gives Testcontainers its own daemon inside the container.
+      - name: Run backend quality gate in dev container
+        uses: devcontainers/ci@v0.3
         with:
-          distribution: 'temurin'
-          java-version: '25'
-          cache: 'maven'
-          cache-dependency-path: 'server/pom.xml'
-
-      - name: Run Check Style
-        working-directory: ./server
-        run: ./mvnw --no-transfer-progress checkstyle:check -Dcheckstyle.skip=false
-
-      - name: Run build
-        working-directory: ./server
-        run: ./mvnw --no-transfer-progress clean compile -DskipTests
-
-      - name: Run unit tests (skip integration on purpose)
-        working-directory: ./server
-        run: ./mvnw --no-transfer-progress verify -P tests -Dskip.unit.tests=true -Djacoco.skip=true -Dcheckstyle.skip=true
+          imageName: ghcr.io/thermcampos/tasknote/devcontainer
+          push: never
+          runCmd: bash tools/check-backend.sh
 
   build-frontend:
     name: Build Frontend
@@ -48,6 +38,12 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+      
+      - name: Set up node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          package-manager-cache: false
 
       - name: Cache npm dependencies
         uses: actions/cache@v6.1.0
@@ -56,6 +52,12 @@ jobs:
           key: ${{ runner.os }}-npm-${{ hashFiles('**/client/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/client/package-lock.json') }}
 
       - name: Install dependencies
         run: npm install
@@ -72,3 +74,14 @@ jobs:
       - name: Run tests
         run: npm run test:no-watch
         working-directory: ./client
+
+      - name: Run Cypress E2E tests (headless)
+        run: bash tools/check-frontend-e2e.sh
+
+      - name: Upload Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: client/cypress/screenshots
+          if-no-files-found: ignore
