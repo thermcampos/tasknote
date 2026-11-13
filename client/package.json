@@ -32,7 +32,7 @@
     "react-router": "^8.5.1",
     "react-router-bootstrap": "^0.26.3",
     "remark-gfm": "^4.0.1",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.6"
   },
   "scripts": {
