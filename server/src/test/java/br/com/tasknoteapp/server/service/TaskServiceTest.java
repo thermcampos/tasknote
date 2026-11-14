@@ -387,13 +387,12 @@ class TaskServiceTest {
 
     when(taskRepository.findByIdAndUserId(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
-    when(taskUrlRepository.findAllByTaskId(taskId)).thenReturn(List.of());
-
     when(taskRepository.delete(taskEntity)).thenReturn(1);
 
     taskService.deleteTask(taskId);
 
     verify(taskRepository, times(1)).delete(any());
+    verify(taskUrlRepository, times(1)).deleteAllByTaskId(taskId);
   }
 
   @Test
