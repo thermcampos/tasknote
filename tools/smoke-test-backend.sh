@@ -127,4 +127,16 @@ status=$(tail -n1 <<<"$body")
 grep -q "$TASK_DESCRIPTION" <<<"$body" || fail "created task not found in task list"
 echo "OK: list tasks"
 
+echo "Fetching home items..."
+body=$(curl -s -w '\n%{http_code}' \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  "${API_URL}/rest/home/items?q=vps")
+status=$(tail -n1 <<<"$body")
+[ "$status" = "200" ] || fail "fetch home returned HTTP ${status}, expected 200"
+grep -q "tasks" <<<"$body" || fail "fetch home items did not return tasks"
+grep -q "notes" <<<"$body" || fail "fetch home items did not return notes"
+echo "OK: fetch home items"
+
+
 echo "Backend smoke test passed."
