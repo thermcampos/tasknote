@@ -433,15 +433,21 @@
           ]
         },
         {
-          "name": "findByNoteId",
+          "name": "findAllByNoteId",
           "parameterTypes": [
             "java.lang.Long"
           ]
         },
         {
-          "name": "save",
+          "name": "saveAll",
           "parameterTypes": [
-            "br.com.tasknoteapp.server.entity.NoteUrl"
+            "java.util.List"
+          ]
+        },
+        {
+          "name": "deleteAllByNoteId",
+          "parameterTypes": [
+            "java.lang.Long"
           ]
         }
       ]
