@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.com.tasknoteapp.server.entity.Note;
-import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
