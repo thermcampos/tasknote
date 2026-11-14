@@ -8,7 +8,6 @@ import org.springframework.context.annotation.ImportRuntimeHints;
 /** This class contains configurations for the GraalVM Cloud Native image. */
 @Configuration
 @RegisterReflectionForBinding({
-  br.com.tasknoteapp.server.response.TaskResponse,
   io.jsonwebtoken.Claims.class,
   io.jsonwebtoken.Jwts.class,
   io.jsonwebtoken.Jwts.SIG.class,
