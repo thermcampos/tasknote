@@ -4,7 +4,6 @@ import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.Task;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
-import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.InternalValidationException;
 import br.com.tasknoteapp.server.exception.RequestValidationException;
@@ -16,6 +15,7 @@ import br.com.tasknoteapp.server.request.TaskPatchRequest;
 import br.com.tasknoteapp.server.request.TaskRequest;
 import br.com.tasknoteapp.server.response.TaskResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.UrlSyncPlan;
 import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -157,7 +157,7 @@ public class TaskService {
     }
 
     if (!Objects.isNull(taskRequest.urls()) && !taskRequest.urls().isEmpty()) {
-      saveUrls(created, taskRequest.urls());
+      saveUrls(created.id(), taskRequest.urls());
     }
 
     int deleted = tagRepository.deleteOrphanedTags(user.getId());
@@ -257,13 +257,8 @@ public class TaskService {
 
     Task taskEntity = task.get();
 
-    List<TaskUrl> urlsToDelete = taskUrlRepository.findAllById_taskId(taskEntity.id());
-    if (!urlsToDelete.isEmpty()) {
-      taskUrlRepository.deleteAllById_taskId(taskId);
-      logger.info("Deleted {} URLs from task ID {} in deleteTask", urlsToDelete.size(), taskId);
-    } else {
-      logger.info("No URLs to delete for task ID {} in deleteTask", taskId);
-    }
+    int deletedUrls = taskUrlRepository.deleteAllByTaskId(taskId);
+    logger.info("Deleted {} URLs from task ID {} in deleteTask", deletedUrls, taskId);
 
     taskRepository.delete(taskEntity);
 
@@ -406,44 +401,6 @@ public class TaskService {
     return tags;
   }
 
-  private Set<TaskUrl> getOrCreateUrls(List<String> urls, User user, Long taskId) {
-    if (Objects.isNull(urls) || urls.isEmpty()) {
-      return new HashSet<>();
-    }
-
-    Set<String> normalizedUrls =
-        urls.stream()
-            .filter(name -> !Objects.isNull(name) && !name.isBlank())
-            .map(name -> name.trim().toLowerCase())
-            .collect(Collectors.toSet());
-
-    logger.info("Handling {} urls: {}", normalizedUrls.size(), normalizedUrls);
-
-    List<TaskUrl> currentTaskUrls = taskUrlRepository.findAllById_taskId(taskId);
-
-    logger.info("Found {} urls: {} for task {}", currentTaskUrls.size(), currentTaskUrls, taskId);
-
-    Set<TaskUrl> taskUrls = new HashSet<>();
-
-    List<TaskUrl> taskUrlsToInsert = new ArrayList<>();
-    for (String url : normalizedUrls) {
-      Optional<TaskUrl> taskUrlOp = currentTaskUrls
-          .stream()
-          .filter((tu) -> tu.id().url().equals(url))
-          .findFirst();
-
-      if (taskUrlOp.isEmpty()) {
-        TaskUrl newTaskUrl = new TaskUrl(new TaskUrlPk(taskId, url));
-        taskUrlsToInsert.add(newTaskUrl);
-        taskUrls.add(newTaskUrl);
-      } else {
-        taskUrls.add(taskUrlOp.get());
-      }
-    }
-
-    return taskUrls;
-  }
-
   private User getCurrentUser() {
     Optional<String> currentUserEmail = authUtil.getCurrentUserEmail();
     String email = currentUserEmail.orElseThrow();
@@ -451,20 +408,22 @@ public class TaskService {
   }
 
   private List<String> getAllTasksUrls(Long taskId) {
-    List<TaskUrl> urls = taskUrlRepository.findAllById_taskId(taskId);
-    return urls.stream().map((tu) -> tu.id()).map((pk) -> pk.url()).toList();
+    return taskUrlRepository.findAllByTaskId(taskId).stream()
+        .map(TaskUrl::url)
+        .toList();
   }
 
-  private void saveUrls(Task taskEntity, List<String> urls) {
-    List<TaskUrl> tasksUrl = new ArrayList<>();
-    for (String url : urls) {
-      TaskUrlPk pk = new TaskUrlPk(taskEntity.id(), url);
-      TaskUrl taskUrl = new TaskUrl(pk);
-      tasksUrl.add(taskUrl);
+  private void saveUrls(Long taskId, List<String> urls) {
+    List<TaskUrl> taskUrls = UrlSyncPlan.normalize(urls).stream()
+        .map(url -> new TaskUrl(taskId, url))
+        .toList();
+
+    if (taskUrls.isEmpty()) {
+      return;
     }
 
-    taskUrlRepository.saveAll(tasksUrl);
-    logger.info("Added {} URLs from task ID {}", tasksUrl.size(), taskEntity.id());
+    taskUrlRepository.saveAll(taskUrls);
+    logger.info("Added {} URLs from task ID {}", taskUrls.size(), taskId);
   }
 
   private LocalDate resolvDueDate(Task taskEntity, TaskPatchRequest patch) {
@@ -509,29 +468,23 @@ public class TaskService {
   }
 
   private void patchTaskUrl(Task task, TaskPatchRequest patch, User user) {
-    if (!Objects.isNull(patch.urls()) && !patch.urls().isEmpty()) {
-      getOrCreateUrls(patch.urls(), user, task.id());
-    }
+    if (!Objects.isNull(patch.urls())) {
+      List<String> storedUrls = taskUrlRepository.findAllByTaskId(task.id()).stream()
+          .map(TaskUrl::url)
+          .toList();
 
-    List<TaskUrl> taskUrls = taskUrlRepository.findAllById_taskId(task.id());
+      UrlSyncPlan plan = UrlSyncPlan.of(patch.urls(), storedUrls);
 
-    logger.info("Found {} urls for task {}", taskUrls.size(), task.id());
+      saveUrls(task.id(), List.copyOf(plan.toInsert()));
+      plan.obsolete()
+          .forEach(url -> taskUrlRepository.deleteByTaskIdAndUrl(task.id(), url));
 
-    int deletedCount = 0;
-    
-    for (TaskUrl tnt : taskUrls) {
-      if (!Objects.isNull(patch.urls()) && !patch.urls().contains(tnt.id().url())) {
-        taskUrlRepository.deleteById(tnt.id());
-        deletedCount++;
-      }
-    }
-
-    if (deletedCount > 0) {
-      logger.info("Deleted {} tags from task id {}", deletedCount, task.id());
+      logger.info("Added {} and deleted {} urls for task {}",
+          plan.toInsert().size(), plan.obsolete().size(), task.id());
     }
 
     int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
-    logger.info("Deleted {} orphaned tags from task id {}", deletedOrphan, task.id());
+    logger.info("Deleted {} orphaned urls from task id {}", deletedOrphan, task.id());
   }
 
   private Optional<InternalValidationException> isTaskPatchRequestValid(TaskPatchRequest request) {

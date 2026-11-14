@@ -98,11 +98,10 @@ class AccountDeletionIntTest {
     activeNote = noteRepository.save(activeNote);
 
     NoteUrl noteUrl = new NoteUrl(
-        null,
         activeNote.id(),
         "http://example.com"
     );
-    noteUrlRepository.save(noteUrl);
+    noteUrlRepository.saveAll(List.of(noteUrl));
 
     Note archivedNote = new Note(
         null,
@@ -136,7 +135,7 @@ class AccountDeletionIntTest {
 
     assertTrue(userRepository.findById(userId).isEmpty());
     assertTrue(noteRepository.findAllByUserId(userId).isEmpty());
-    assertTrue(noteUrlRepository.findByNoteId(activeNoteId).isEmpty());
+    assertTrue(noteUrlRepository.findAllByNoteId(activeNoteId).isEmpty());
     assertTrue(taskRepository.findAllByUserId(userId).isEmpty());
     assertFalse(tagRepository.userHasAnyTags(userId));
     assertTrue(
