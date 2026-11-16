@@ -51,6 +51,12 @@
     <jacoco.output.data>${project.build.directory}/coverage-reports</jacoco.output.data>
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+    <!--
+      Maven 3.10's super POM pins this to 1980-02-01 for reproducible builds, and
+      spring-boot-maven-plugin's build-info uses it as build.time, which feeds the
+      X-BUILD-INFO header. Clearing it makes build-info fall back to the real build time.
+    -->
+    <project.build.outputTimestamp></project.build.outputTimestamp>
     <failsafe.version>3.6.1</failsafe.version>
     <surefire.version>3.6.1</surefire.version>
     <jacoco.version>0.8.16</jacoco.version>
