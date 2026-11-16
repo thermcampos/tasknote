@@ -28,7 +28,7 @@ const filterContextMock = {
 };
 
 vi.mock('react-charts', () => ({
-  Chart: ({ options }) => <div data-testid="mocked-chart">Mocked Chart</div>
+  Chart: () => <div data-testid="mocked-chart">Mocked Chart</div>
 }));
 
 const fakeUser = (theme: string) => ({
