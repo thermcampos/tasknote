@@ -1,5 +1,8 @@
 # Spec: Live Markdown Editor
 
+> **Superseded in part by [ADR 004](004-milkdown-read-views.md):** read views
+> (Home note modal, SharedNote page) now render with Milkdown, not react-markdown.
+
 ## Goal
 
 Replace the plain-textarea note editor and the "Preview Markdown" toggle with a
