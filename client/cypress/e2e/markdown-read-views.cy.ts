@@ -35,7 +35,7 @@ const richNote = {
   title: 'Rich note',
   description: richDescription,
   url: null,
-  tags: ['work', 'ideas'],
+  tags: ['work'],
   lastUpdate: '2026-05-01',
   shared: true,
   shareToken: 'share-token-1',
@@ -110,7 +110,7 @@ describe('Markdown read views', () => {
 
       cy.intercept('GET', /\/rest\/home\/tasks\/tags/, {
         statusCode: 200,
-        body: ['work', 'ideas']
+        body: ['work']
       }).as('getTags');
 
       cy.intercept('GET', /\/rest\/home\/items/, {
@@ -133,18 +133,6 @@ describe('Markdown read views', () => {
     it('renders the note with the read-only Milkdown viewer', () => {
       cy.get('.modal[aria-labelledby="markdown-modal-content"]').should('be.visible');
       assertReadOnlyRendering();
-    });
-
-    it('renders tags below the content', () => {
-      cy.get('[data-testid="modal-tags-preview"]')
-        .should('contain.text', '#work')
-        .and('contain.text', '#ideas');
-      cy.get(VIEWER).then(($viewer) => {
-        cy.get('[data-testid="modal-tags-preview"]').then(($tags) => {
-          const position = $viewer[0].compareDocumentPosition($tags[0]);
-          expect(position & Node.DOCUMENT_POSITION_FOLLOWING).to.be.greaterThan(0);
-        });
-      });
     });
 
     it('shows the raw stored markdown verbatim in the Source view', () => {

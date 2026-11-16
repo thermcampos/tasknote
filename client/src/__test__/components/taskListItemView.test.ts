@@ -65,6 +65,15 @@ describe('TaskListItemView', () => {
     expect(view.dispatch).not.toHaveBeenCalled();
   });
 
+  it('should keep a read-only checkbox unchanged on a dispatched click', () => {
+    const nodeView = new TaskListItemView(fakeNode(false), fakeView(), () => 3, true);
+
+    const checkbox = checkboxOf(nodeView);
+    checkbox.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(checkbox.checked).toBe(false);
+  });
+
   it('should render no checkbox for a plain list item', () => {
     const nodeView = new TaskListItemView(fakeNode(null), fakeView(), () => 3, true);
 

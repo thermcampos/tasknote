@@ -65,6 +65,10 @@ export class TaskListItemView implements NodeView {
         // programmatic transactions, so the checkbox gets no change handler.
         checkbox.disabled = true;
         checkbox.setAttribute('aria-label', 'Task');
+        // `disabled` stops real user clicks, but a dispatched click event still
+        // runs the checkbox's toggle default action; cancel it so the read view
+        // can never show a state that differs from the stored markdown.
+        checkbox.addEventListener('click', event => event.preventDefault());
       }
       else {
         checkbox.setAttribute('aria-label', 'Toggle task');
