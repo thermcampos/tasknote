@@ -5,6 +5,7 @@ import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { history } from '@milkdown/kit/plugin/history';
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
+import { headingBackspaceKeymap } from './headingBackspace';
 import { insertLinkInputRule } from './linkInputRule';
 import { taskListItemView } from './taskListItemView';
 import '@milkdown/kit/prose/view/style/prosemirror.css';
@@ -39,6 +40,7 @@ const MarkdownEditorInner = forwardRef<MarkdownEditorHandle, MarkdownEditorProps
         .use(listener)
         .use(history)
         .use(insertLinkInputRule)
+        .use(headingBackspaceKeymap)
         .use(taskListItemView)
     );
 

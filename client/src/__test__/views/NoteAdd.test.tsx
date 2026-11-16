@@ -103,7 +103,6 @@ vi.mock('../../utils/TranslatorUtils', () => ({
   translateServerResponse: (message: string) => message
 }));
 
-const mockedApi = vi.mocked(api);
 const mockedUseParams = vi.mocked(useParams);
 const mockedUseSearchParams = vi.mocked(useSearchParams);
 

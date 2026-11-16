@@ -24,7 +24,6 @@ describe('AlertError Component tests', () => {
   it('should not display the message if no error', () => {
     const errorMessage = "";
     const { queryByTestId } = renderAlert(errorMessage);
-    (errorMessage);
 
     expect(queryByTestId(dataTestId)).toBeNull();
   });
