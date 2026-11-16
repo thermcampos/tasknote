@@ -16,6 +16,7 @@ import br.com.tasknoteapp.server.repository.TagRepository;
 import br.com.tasknoteapp.server.request.NoteRequest;
 import br.com.tasknoteapp.server.response.NoteResponse;
 import br.com.tasknoteapp.server.util.AuthUtil;
+import br.com.tasknoteapp.server.util.UrlSyncPlan;
 import br.com.tasknoteapp.server.util.ValidationUtil;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -171,7 +172,7 @@ public class NoteService {
     }
 
     if (!Objects.isNull(noteRequest.url()) && !noteRequest.url().isEmpty()) {
-      saveUrl(created, noteRequest.url());
+      saveUrls(created.id(), List.of(noteRequest.url()));
     }
 
     int deleted = tagRepository.deleteOrphanedTags(user.getId());
@@ -264,7 +265,7 @@ public class NoteService {
 
     List<Note> notes = noteRepository.findAllByUserId(user.getId());
     for (Note note : notes) {
-      noteUrlRepository.deleteByNoteId(note.id());
+      noteUrlRepository.deleteAllByNoteId(note.id());
       noteRepository.delete(note);
     }
 
@@ -294,7 +295,7 @@ public class NoteService {
       throw new NoteNotArchivedException();
     }
 
-    noteUrlRepository.deleteByNoteId(noteId);
+    noteUrlRepository.deleteAllByNoteId(noteId);
     logger.info("URL deleted from note ID {}", noteId);
 
     noteRepository.delete(noteEntity);
@@ -477,8 +478,10 @@ public class NoteService {
   }
 
   private String getNoteUrl(Long noteId) {
-    Optional<NoteUrl> noteUrl = noteUrlRepository.findByNoteId(noteId);
-    return noteUrl.isPresent() ? noteUrl.get().url() : null;
+    return noteUrlRepository.findAllByNoteId(noteId).stream()
+        .map(NoteUrl::url)
+        .findFirst()
+        .orElse(null);
   }
 
   /**
@@ -598,66 +601,23 @@ public class NoteService {
   }
 
   private void patchNoteUrl(Note note, NoteRequest patch, User user) {
-    if (!Objects.isNull(patch.url()) && !patch.url().isBlank()) {
-      getOrCreateUrls(List.of(patch.url()), user, note.id());
-    }
+    if (!Objects.isNull(patch.url())) {
+      List<String> storedUrls = noteUrlRepository.findAllByNoteId(note.id()).stream()
+          .map(NoteUrl::url)
+          .toList();
 
-    List<NoteUrl> noteUrls = noteUrlRepository.findAllByNoteIdList(List.of(note.id()));
+      UrlSyncPlan plan = UrlSyncPlan.of(List.of(patch.url()), storedUrls);
 
-    logger.info("Found {} urls for note {}", noteUrls.size(), note.id());
+      saveUrls(note.id(), List.copyOf(plan.toInsert()));
+      plan.obsolete()
+          .forEach(url -> noteUrlRepository.deleteByNoteIdAndUrl(note.id(), url));
 
-    int deletedCount = 0;
-    
-    for (NoteUrl nu : noteUrls) {
-      if (!Objects.isNull(patch.url()) && !patch.url().contains(nu.url())) {
-        noteUrlRepository.deleteByNoteId(note.id());
-        deletedCount++;
-      }
-    }
-
-    if (deletedCount > 0) {
-      logger.info("Deleted {} url from note id {}", deletedCount, note.id());
+      logger.info("Added {} and deleted {} urls for note {}",
+          plan.toInsert().size(), plan.obsolete().size(), note.id());
     }
 
     int deletedOrphan = tagRepository.deleteOrphanedTags(user.getId());
     logger.info("Deleted {} orphaned urls from note id {}", deletedOrphan, note.id());
-  }
-
-  private Set<NoteUrl> getOrCreateUrls(List<String> urls, User user, Long noteId) {
-    if (Objects.isNull(urls) || urls.isEmpty()) {
-      return new HashSet<>();
-    }
-
-    Set<String> normalizedUrls =
-        urls.stream()
-            .filter(name -> !Objects.isNull(name) && !name.isBlank())
-            .map(name -> name.trim().toLowerCase())
-            .collect(Collectors.toSet());
-
-    logger.info("Handling {} urls: {}", normalizedUrls.size(), normalizedUrls);
-
-    List<NoteUrl> currentNoteUrls = noteUrlRepository.findAllByNoteIdList(List.of(noteId));
-
-    logger.info("Found {} urls: {} for note {}", currentNoteUrls.size(), currentNoteUrls, noteId);
-
-    Set<NoteUrl> noteUrls = new HashSet<>();
-
-    for (String url : normalizedUrls) {
-      Optional<NoteUrl> noteUrlOp = currentNoteUrls
-          .stream()
-          .filter((tu) -> tu.url().equals(url))
-          .findFirst();
-
-      if (noteUrlOp.isEmpty()) {
-        NoteUrl newNotekUrl = new NoteUrl(null, noteId, url);
-        NoteUrl added = noteUrlRepository.save(newNotekUrl);
-        noteUrls.add(added);
-      } else {
-        noteUrls.add(noteUrlOp.get());
-      }
-    }
-
-    return noteUrls;
   }
   
   private List<NoteResponse> buildNoteResponse(List<Note> noteList, Long userId) {
@@ -684,11 +644,17 @@ public class NoteService {
     return responseList;
   }
 
-  private NoteUrl saveUrl(Note noteEntity, String url) {
-    NoteUrl noteUrl = new NoteUrl(null, noteEntity.id(), url);
-    NoteUrl savedUrl = noteUrlRepository.save(noteUrl);
-    logger.info("URL saved to note ID {}", noteEntity.id());
-    return savedUrl;
+  private void saveUrls(Long noteId, List<String> urls) {
+    List<NoteUrl> noteUrls = UrlSyncPlan.normalize(urls).stream()
+        .map(url -> new NoteUrl(noteId, url))
+        .toList();
+
+    if (noteUrls.isEmpty()) {
+      return;
+    }
+
+    noteUrlRepository.saveAll(noteUrls);
+    logger.info("Saved {} URLs for note ID {}", noteUrls.size(), noteId);
   }
 
   private Optional<InternalValidationException> isNoteRequestValid(NoteRequest request) {

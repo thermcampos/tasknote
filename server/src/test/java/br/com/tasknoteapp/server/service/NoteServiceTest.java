@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.com.tasknoteapp.server.entity.Note;
-import br.com.tasknoteapp.server.entity.NoteUrl;
 import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.NoteNotFoundException;
@@ -114,7 +113,7 @@ class NoteServiceTest {
     when(authUtil.getCurrentUserEmail()).thenReturn(Optional.of(user.getEmail()));
     when(authService.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
     when(noteRepository.save(any(Note.class))).thenReturn(note);
-    when(noteUrlRepository.save(any(NoteUrl.class))).thenReturn(new NoteUrl(null, null, null));
+    when(noteUrlRepository.saveAll(any())).thenReturn(1);
     when(tagRepository.findByUserIdAndName(eq(user.getId()), anyString()))
         .thenReturn(Optional.of(new Tag(null, "tag", user.getId())));
 
@@ -122,7 +121,7 @@ class NoteServiceTest {
 
     assertEquals("Test Note", createdNote.title());
     verify(noteRepository, times(1)).save(any(Note.class));
-    verify(noteUrlRepository, times(1)).save(any(NoteUrl.class));
+    verify(noteUrlRepository, times(1)).saveAll(any());
   }
 
   @Test
@@ -151,6 +150,7 @@ class NoteServiceTest {
     assertEquals("Updated Note", patchedNote.title());
     verify(noteRepository, times(1)).findByIdAndUserId(note.id(), user.getId());
     verify(noteRepository, times(1)).save(any(Note.class));
+    verify(noteUrlRepository, times(1)).saveAll(any());
   }
 
   @Test
@@ -207,8 +207,8 @@ class NoteServiceTest {
 
     noteService.deleteAllNotesForCurrentUser();
 
-    verify(noteUrlRepository, times(1)).deleteByNoteId(note.id());
-    verify(noteUrlRepository, times(1)).deleteByNoteId(archivedNote.id());
+    verify(noteUrlRepository, times(1)).deleteAllByNoteId(note.id());
+    verify(noteUrlRepository, times(1)).deleteAllByNoteId(archivedNote.id());
     verify(noteRepository, times(1)).delete(note);
     verify(noteRepository, times(1)).delete(archivedNote);
     verify(tagRepository, times(1)).deleteOrphanedTags(user.getId());
