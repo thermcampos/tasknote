@@ -317,6 +317,26 @@ a:hover, .btn-link:hover {
   padding: 4px 8px;
 }
 
+/*
+ * Draw bullet/number markers ourselves instead of using the native ::marker.
+ * iOS Safari (WebKit) stops painting the native marker of the list item being
+ * edited, so the bullet vanished while typing (issue #130). data-label holds
+ * the marker text ("•", "1.", "2.", ...) and is kept in sync by Milkdown.
+ */
+.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task']) {
+  list-style: none;
+  position: relative;
+}
+
+.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task'])::before {
+  content: attr(data-label);
+  position: absolute;
+  right: calc(100% + 0.5em);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
 .milkdown-editor .ProseMirror li[data-item-type='task'] {
   list-style: none;
   margin-left: -1.4rem;
