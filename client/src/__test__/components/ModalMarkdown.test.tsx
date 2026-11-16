@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, vi, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import ModalMarkdown from '../../components/ModalMarkdown';
 
 describe('ModalMarkdown Component', () => {
