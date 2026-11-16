@@ -3,7 +3,7 @@ import type { Node } from '@milkdown/kit/prose/model';
 import type { EditorView, NodeView, ViewMutationRecord } from '@milkdown/kit/prose/view';
 import { $view } from '@milkdown/kit/utils';
 
-class TaskListItemView implements NodeView {
+export class TaskListItemView implements NodeView {
   dom: HTMLLIElement;
   contentDOM: HTMLDivElement;
   private checkbox: HTMLInputElement | null = null;
@@ -11,7 +11,8 @@ class TaskListItemView implements NodeView {
   constructor(
     private node: Node,
     private readonly view: EditorView,
-    private readonly getPos: () => number | undefined
+    private readonly getPos: () => number | undefined,
+    private readonly readOnly: boolean = false
   ) {
     this.dom = document.createElement('li');
     this.contentDOM = document.createElement('div');
@@ -59,9 +60,21 @@ class TaskListItemView implements NodeView {
       checkbox.type = 'checkbox';
       checkbox.className = 'task-list-item-checkbox';
       checkbox.setAttribute('contenteditable', 'false');
-      checkbox.setAttribute('aria-label', 'Toggle task');
-      checkbox.addEventListener('mousedown', event => event.preventDefault());
-      checkbox.addEventListener('change', this.handleToggle);
+      if (this.readOnly) {
+        // Read views must not dispatch: `editable: false` does not block
+        // programmatic transactions, so the checkbox gets no change handler.
+        checkbox.disabled = true;
+        checkbox.setAttribute('aria-label', 'Task');
+        // `disabled` stops real user clicks, but a dispatched click event still
+        // runs the checkbox's toggle default action; cancel it so the read view
+        // can never show a state that differs from the stored markdown.
+        checkbox.addEventListener('click', event => event.preventDefault());
+      }
+      else {
+        checkbox.setAttribute('aria-label', 'Toggle task');
+        checkbox.addEventListener('mousedown', event => event.preventDefault());
+        checkbox.addEventListener('change', this.handleToggle);
+      }
       this.dom.insertBefore(checkbox, this.contentDOM);
       this.checkbox = checkbox;
     }
@@ -69,6 +82,7 @@ class TaskListItemView implements NodeView {
   }
 
   private handleToggle = (event: Event): void => {
+    if (this.readOnly) return;
     const pos = this.getPos();
     if (pos === undefined) return;
     const checked = (event.target as HTMLInputElement).checked;
@@ -85,4 +99,12 @@ class TaskListItemView implements NodeView {
  */
 export const taskListItemView = $view(listItemSchema.node, () => {
   return (node, view, getPos) => new TaskListItemView(node, view, getPos);
+});
+
+/**
+ * Read-only variant of {@link taskListItemView} for read views: renders the
+ * same DOM, but the checkbox is disabled and never dispatches a transaction.
+ */
+export const readOnlyTaskListItemView = $view(listItemSchema.node, () => {
+  return (node, view, getPos) => new TaskListItemView(node, view, getPos, true);
 });

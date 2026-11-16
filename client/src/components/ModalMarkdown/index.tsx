@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import Badge from 'react-bootstrap/Badge';
 import Modal from 'react-bootstrap/Modal';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownViewer from '../MarkdownViewer';
 import './style.css';
 
 type Props = {
@@ -64,7 +63,7 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
               {props.title === '' ? 'No title' : props.title}
             </Modal.Title>
           </Modal.Header>
-          <Modal.Body className="markdown-modal">
+          <Modal.Body>
             {showSource
               ? (
                   <pre className="markdown-source" data-testid="markdown-source-view">
@@ -72,7 +71,7 @@ const ModalMarkdown: React.FC<Props> = (props: Props): React.ReactNode => {
                   </pre>
                 )
               : (
-                  <Markdown remarkPlugins={[remarkGfm]}>{props.markdownText}</Markdown>
+                  <MarkdownViewer markdown={props.markdownText} />
                 )}
             {props.tags && props.tags.length > 0 && (
               <div className="d-flex flex-wrap gap-1 mt-3" data-testid="modal-tags-preview">

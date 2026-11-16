@@ -3,6 +3,14 @@ import { describe, vi, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import ModalMarkdown from '../../components/ModalMarkdown';
 
+// The read-only Milkdown viewer is unit-tested on its own; here a stand-in
+// keeps the `markdown` contract. Real rendering is covered by Cypress.
+vi.mock('../../components/MarkdownViewer', () => ({
+  default: ({ markdown }: { markdown: string }) => (
+    <div data-testid="markdown-viewer">{markdown}</div>
+  )
+}));
+
 describe('ModalMarkdown Component', () => {
   const props = {
     show: true,
@@ -29,7 +37,7 @@ describe('ModalMarkdown Component', () => {
     render(<ModalMarkdown {...props} />);
 
     expect(screen.getByTestId('modal-header-title').innerHTML).toBe('Test Title');
-    expect(screen.getByText('Test Markdown')).toBeDefined();
+    expect(screen.getByTestId('markdown-viewer').textContent).toBe('# Test Markdown');
   });
 
   it('should call onHide when the close button is clicked', () => {
@@ -67,6 +75,7 @@ describe('ModalMarkdown Component', () => {
 
     expect(screen.getByTestId('markdown-source-view')).toBeDefined();
     expect(screen.getByTestId('markdown-source-view').textContent).toBe('# Test Markdown');
+    expect(screen.queryByTestId('markdown-viewer')).toBeNull();
   });
 
   it('should toggle back to rendered view when Source button is clicked again', () => {
@@ -113,6 +122,15 @@ describe('ModalMarkdown Component', () => {
 
     expect(screen.getByTestId('modal-copy-button').textContent).toBe('Copy');
     vi.useRealTimers();
+  });
+
+  it('should render tags below the content', () => {
+    render(<ModalMarkdown {...props} tags={['work', 'ideas']} />);
+
+    const tags = screen.getByTestId('modal-tags-preview');
+    expect(tags.textContent).toBe('#work#ideas');
+    const viewer = screen.getByTestId('markdown-viewer');
+    expect(viewer.compareDocumentPosition(tags) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('should reset source view state when modal is closed', () => {

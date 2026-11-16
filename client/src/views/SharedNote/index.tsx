@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Col, Container, Row } from 'react-bootstrap';
 import { useParams } from 'react-router';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import MarkdownViewer from '../../components/MarkdownViewer';
 import { NoteResponse } from '../../types/NoteResponse';
 import api from '../../api-service/api';
 import ApiConfig from '../../api-service/apiConfig';
@@ -87,7 +86,7 @@ function SharedNote(): React.ReactNode {
                   </a>
                 </p>
               )}
-              <Markdown remarkPlugins={[remarkGfm]}>{note.description}</Markdown>
+              <MarkdownViewer markdown={note.description} />
             </Card.Body>
             {note.lastUpdate && (
               <Card.Footer className="text-muted">

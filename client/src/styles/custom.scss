@@ -255,10 +255,19 @@ a:hover, .btn-link:hover {
   pointer-events: none;
 }
 
-.milkdown-editor .ProseMirror {
+/*
+ * Markdown typography shared by the note editor and the read-only viewer
+ * (Home note modal, SharedNote page), so every view renders a note the same.
+ */
+.milkdown-editor .ProseMirror,
+.milkdown-viewer .ProseMirror {
   outline: none;
-  min-height: 300px;
   font-size: 14px;
+}
+
+/* Editor-only: must follow the shared rule above to override its font size. */
+.milkdown-editor .ProseMirror {
+  min-height: 300px;
 
   /* iOS Safari zooms the page when focusing inputs under 16px */
   @media (max-width: 576px) {
@@ -266,35 +275,41 @@ a:hover, .btn-link:hover {
   }
 }
 
-.milkdown-editor .ProseMirror h1 {
+.milkdown-editor .ProseMirror h1,
+.milkdown-viewer .ProseMirror h1 {
   font-size: 1.75rem;
   font-weight: 700;
 }
 
-.milkdown-editor .ProseMirror h2 {
+.milkdown-editor .ProseMirror h2,
+.milkdown-viewer .ProseMirror h2 {
   font-size: 1.5rem;
   font-weight: 600;
 }
 
-.milkdown-editor .ProseMirror h3 {
+.milkdown-editor .ProseMirror h3,
+.milkdown-viewer .ProseMirror h3 {
   font-size: 1.25rem;
   font-weight: 600;
 }
 
-.milkdown-editor .ProseMirror blockquote {
+.milkdown-editor .ProseMirror blockquote,
+.milkdown-viewer .ProseMirror blockquote {
   border-left: 3px solid var(--bs-primary);
   padding-left: 1rem;
   margin-left: 0;
   color: var(--bs-secondary-color);
 }
 
-.milkdown-editor .ProseMirror code {
+.milkdown-editor .ProseMirror code,
+.milkdown-viewer .ProseMirror code {
   background-color: var(--bs-tertiary-bg);
   border-radius: 3px;
   padding: 0.1em 0.3em;
 }
 
-.milkdown-editor .ProseMirror pre {
+.milkdown-editor .ProseMirror pre,
+.milkdown-viewer .ProseMirror pre {
   background-color: var(--bs-dark);
   color: var(--bs-light);
   padding: 0.75rem 1rem;
@@ -302,17 +317,21 @@ a:hover, .btn-link:hover {
   overflow-x: auto;
 }
 
-.milkdown-editor .ProseMirror pre code {
+.milkdown-editor .ProseMirror pre code,
+.milkdown-viewer .ProseMirror pre code {
   background-color: transparent;
   padding: 0;
 }
 
-.milkdown-editor .ProseMirror table {
+.milkdown-editor .ProseMirror table,
+.milkdown-viewer .ProseMirror table {
   border-collapse: collapse;
 }
 
 .milkdown-editor .ProseMirror th,
-.milkdown-editor .ProseMirror td {
+.milkdown-editor .ProseMirror td,
+.milkdown-viewer .ProseMirror th,
+.milkdown-viewer .ProseMirror td {
   border: 1px solid var(--bs-border-color);
   padding: 4px 8px;
 }
@@ -323,12 +342,14 @@ a:hover, .btn-link:hover {
  * edited, so the bullet vanished while typing (issue #130). data-label holds
  * the marker text ("•", "1.", "2.", ...) and is kept in sync by Milkdown.
  */
-.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task']) {
+.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task']),
+.milkdown-viewer .ProseMirror li[data-list-type]:not([data-item-type='task']) {
   list-style: none;
   position: relative;
 }
 
-.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task'])::before {
+.milkdown-editor .ProseMirror li[data-list-type]:not([data-item-type='task'])::before,
+.milkdown-viewer .ProseMirror li[data-list-type]:not([data-item-type='task'])::before {
   content: attr(data-label);
   position: absolute;
   right: calc(100% + 0.5em);
@@ -337,7 +358,8 @@ a:hover, .btn-link:hover {
   user-select: none;
 }
 
-.milkdown-editor .ProseMirror li[data-item-type='task'] {
+.milkdown-editor .ProseMirror li[data-item-type='task'],
+.milkdown-viewer .ProseMirror li[data-item-type='task'] {
   list-style: none;
   margin-left: -1.4rem;
   display: flex;
@@ -345,21 +367,33 @@ a:hover, .btn-link:hover {
   gap: 0.5rem;
 }
 
-.milkdown-editor .ProseMirror li[data-item-type='task'] > input[type='checkbox'] {
-  cursor: pointer;
+.milkdown-editor .ProseMirror li[data-item-type='task'] > input[type='checkbox'],
+.milkdown-viewer .ProseMirror li[data-item-type='task'] > input[type='checkbox'] {
   flex-shrink: 0;
 }
 
-.milkdown-editor .ProseMirror li[data-item-type='task'] > div {
+.milkdown-editor .ProseMirror li[data-item-type='task'] > input[type='checkbox'] {
+  cursor: pointer;
+}
+
+/* Read-only checkboxes are disabled; keep them at full contrast. */
+.milkdown-viewer .ProseMirror li[data-item-type='task'] > input[type='checkbox']:disabled {
+  opacity: 1;
+}
+
+.milkdown-editor .ProseMirror li[data-item-type='task'] > div,
+.milkdown-viewer .ProseMirror li[data-item-type='task'] > div {
   flex: 1;
 }
 
-.milkdown-editor .ProseMirror li[data-item-type='task'][data-checked='true'] > div {
+.milkdown-editor .ProseMirror li[data-item-type='task'][data-checked='true'] > div,
+.milkdown-viewer .ProseMirror li[data-item-type='task'][data-checked='true'] > div {
   text-decoration: line-through;
   color: var(--bs-secondary-color);
 }
 
-.milkdown-editor .ProseMirror a {
+.milkdown-editor .ProseMirror a,
+.milkdown-viewer .ProseMirror a {
   color: var(--bs-link-color);
 }
 
