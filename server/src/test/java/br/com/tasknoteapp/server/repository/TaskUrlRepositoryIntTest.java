@@ -25,7 +25,7 @@ class TaskUrlRepositoryIntTest {
 
   @Test
   @DisplayName("Delete all task url by task id")
-  void deleteAllById_taskIdIntTest() {
+  void deleteAllByTaskIdIntTest() {
     Optional<User> user = userRepository.findByEmail(USER_EMAIL);
     Assertions.assertFalse(user.isEmpty());
 
@@ -39,9 +39,9 @@ class TaskUrlRepositoryIntTest {
 
     Long taskId = debianTask.get().id();
 
-    taskUrlRepository.deleteAllById_taskId(taskId);
+    taskUrlRepository.deleteAllByTaskId(taskId);
 
-    List<TaskUrl> taskUrls = taskUrlRepository.findAllById_taskId(taskId);
+    List<TaskUrl> taskUrls = taskUrlRepository.findAllByTaskId(taskId);
     Assertions.assertTrue(taskUrls.isEmpty());
   }
 }

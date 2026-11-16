@@ -17,7 +17,6 @@ import br.com.tasknoteapp.server.entity.Tag;
 import br.com.tasknoteapp.server.entity.Task;
 import br.com.tasknoteapp.server.entity.TaskNoteTag;
 import br.com.tasknoteapp.server.entity.TaskUrl;
-import br.com.tasknoteapp.server.entity.TaskUrlPk;
 import br.com.tasknoteapp.server.entity.User;
 import br.com.tasknoteapp.server.exception.TaskNotFoundException;
 import br.com.tasknoteapp.server.repository.TagRepository;
@@ -315,8 +314,8 @@ class TaskServiceTest {
 
     when(taskRepository.save(any())).thenReturn(entity);
 
-    TaskUrl urlEntity = new TaskUrl(new TaskUrlPk(entity.id(), "https://debian.org"));
-    when(taskUrlRepository.findAllById_taskId(entity.id())).thenReturn(List.of(urlEntity));
+    TaskUrl urlEntity = new TaskUrl(entity.id(), "https://debian.org");
+    when(taskUrlRepository.findAllByTaskId(entity.id())).thenReturn(List.of(urlEntity));
 
     TaskResponse response = taskService.createTask(request);
 
@@ -388,13 +387,12 @@ class TaskServiceTest {
 
     when(taskRepository.findByIdAndUserId(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
-    when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
-
     when(taskRepository.delete(taskEntity)).thenReturn(1);
 
     taskService.deleteTask(taskId);
 
     verify(taskRepository, times(1)).delete(any());
+    verify(taskUrlRepository, times(1)).deleteAllByTaskId(taskId);
   }
 
   @Test
@@ -440,7 +438,7 @@ class TaskServiceTest {
 
     when(taskRepository.findByIdAndUserId(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
-    when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
+    when(taskUrlRepository.findAllByTaskId(taskId)).thenReturn(List.of());
 
     final String dueDate = "2026-12-31";
 
@@ -504,8 +502,8 @@ class TaskServiceTest {
 
     when(taskRepository.findByIdAndUserId(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
-    TaskUrl urlEntity = new TaskUrl(new TaskUrlPk(taskId, "www.url.com"));
-    when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of(urlEntity));
+    TaskUrl urlEntity = new TaskUrl(taskId, "www.url.com");
+    when(taskUrlRepository.findAllByTaskId(taskId)).thenReturn(List.of(urlEntity));
 
     final String dueDate = "2026-12-31";
 
@@ -546,6 +544,9 @@ class TaskServiceTest {
     assertFalse(patched.highPriority());
     assertTrue(patched.tags().contains("test"));
     assertFalse(patched.urls().isEmpty());
+
+    verify(taskUrlRepository, times(1)).saveAll(List.of(new TaskUrl(taskId, url)));
+    verify(taskUrlRepository, times(1)).deleteByTaskIdAndUrl(taskId, "www.url.com");
   }
 
   @Test
@@ -595,7 +596,7 @@ class TaskServiceTest {
 
     when(taskRepository.findByIdAndUserId(taskId, USER_ID)).thenReturn(Optional.of(taskEntity));
 
-    when(taskUrlRepository.findAllById_taskId(taskId)).thenReturn(List.of());
+    when(taskUrlRepository.findAllByTaskId(taskId)).thenReturn(List.of());
 
     Task savedTask = new Task(
         taskId,
