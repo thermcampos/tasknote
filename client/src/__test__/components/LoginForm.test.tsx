@@ -1,5 +1,5 @@
 import React, { act } from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router';
 import { fireEvent, render, screen } from '@testing-library/react';
 import LoginForm from '../../components/LoginForm';
